@@ -12,7 +12,7 @@ const stats = [
   {
     title: "Total Users",
     value: userStats.total.toLocaleString(),
-    change: `↑ ${userStats.growthPercent}% from last month`,
+    // change: `↑ ${userStats.growthPercent}% from last month`,
     changeColor: "text-green-600",
     icon: RiUserLine,
     iconColor: "text-purple-600 bg-purple-50",
@@ -20,7 +20,7 @@ const stats = [
   {
     title: "Active Users",
     value: userStats.active.toLocaleString(),
-    change: `${userStats.activePercent}% of total users`,
+    // change: `${userStats.activePercent}% of total users`,
     changeColor: "text-green-600",
     icon: RiUserFollowLine,
     iconColor: "text-green-600 bg-green-50",
@@ -28,7 +28,7 @@ const stats = [
   {
     title: "Inactive Users",
     value: userStats.inactive.toLocaleString(),
-    change: `↓ ${userStats.inactivePercent}% of total users`,
+    // change: `↓ ${userStats.inactivePercent}% of total users`,
     changeColor: "text-orange-600",
     icon: RiUserUnfollowLine,
     iconColor: "text-orange-600 bg-orange-50",
@@ -36,7 +36,7 @@ const stats = [
   {
     title: "Admins",
     value: userStats.admins.toLocaleString(),
-    change: `↑ ${userStats.adminPercent}% of total users`,
+    // change: `↑ ${userStats.adminPercent}% of total users`,
     changeColor: "text-green-600",
     icon: RiShieldUserLine,
     iconColor: "text-blue-600 bg-blue-50",
@@ -67,9 +67,9 @@ export function UserStatsCards() {
               <p className="text-2xl font-bold tracking-tight text-[#0f172a]">
                 {stat.value}
               </p>
-              <p className={`mt-1 text-xs font-medium ${stat.changeColor}`}>
+              {/* <p className={`mt-1 text-xs font-medium ${stat.changeColor}`}>
                 {stat.change}
-              </p>
+              </p> */}
             </CardContent>
           </Card>
         )

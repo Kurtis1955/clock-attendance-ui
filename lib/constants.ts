@@ -38,3 +38,26 @@ export const branchOptions = [
 export const SIDEBAR_WIDTH_EXPANDED = 280
 export const SIDEBAR_WIDTH_COLLAPSED = 80
 export const HEADER_HEIGHT = 64
+
+export const modalContentTypeData = {
+  addUser: "addUser",
+  addRole: "addRole",
+  editRole: "editRole",
+  viewRole: "viewRole",
+  confirmation: "confirmation",
+  approvalConfirmation: "approvalConfirmation",
+  viewUser: "viewUser",
+  editLeave: "editLeave",
+  batchConfirmation: "batchConfirmation",
+  filter: "filter",
+  searchUser: "searchUser",
+  assignDelegate: "assignDelegate",
+  assignDelegateAction: "assignDelegateAction",
+  filterExternalLoan: "filterExternalLoan",
+  viewExternalLoan: "viewExternalLoan",
+  editExternalLoan: "editExternalLoan",
+  viewLoan: "viewLoan",
+  editLoan: "editLoan",
+  addExternalLoan: "addExternalLoan",
+  editUser: "editUser",
+}

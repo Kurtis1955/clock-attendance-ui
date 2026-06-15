@@ -1,4 +1,4 @@
-export type UserRole =
+export type Userroles =
   | "Super Admin"
   | "Branch Admin"
   | "Manager"
@@ -8,10 +8,12 @@ export type UserStatus = "active" | "inactive"
 
 export interface ManagedUser {
   id: string
-  name: string
+  lastName: string
+  firstName: string
+  userName: string
   email: string
   initials: string
-  role: UserRole
+  roles: Userroles
   branch: string
   status: UserStatus
   lastLogin: string
@@ -30,8 +32,8 @@ export const userStats = {
   growthPercent: 15.2,
 }
 
-export const roleFilterOptions = [
-  { value: "all", label: "All Roles" },
+export const rolesFilterOptions = [
+  { value: "all", label: "All roless" },
   { value: "Super Admin", label: "Super Admin" },
   { value: "Branch Admin", label: "Branch Admin" },
   { value: "Manager", label: "Manager" },
@@ -56,10 +58,12 @@ export const statusFilterOptions = [
 export const managedUsers: ManagedUser[] = [
   {
     id: "1",
-    name: "Sarah Mensah",
+    firstName: "Sarah",
+    lastName: "Mensah",
+    userName: "sarah.mensah",
     email: "sarah.mensah@company.com",
     initials: "SM",
-    role: "Super Admin",
+    roles: "Super Admin",
     branch: "Head Office",
     status: "active",
     lastLogin: "Today, 09:01 AM",
@@ -68,10 +72,12 @@ export const managedUsers: ManagedUser[] = [
   },
   {
     id: "2",
-    name: "Kwame Osei",
+    firstName: "Kwame",
+    lastName: "Osei",
+    userName: "kwame.osei",
     email: "kwame.osei@company.com",
     initials: "KO",
-    role: "Branch Admin",
+    roles: "Branch Admin",
     branch: "Kumasi Branch",
     status: "active",
     lastLogin: "Today, 08:47 AM",
@@ -80,10 +86,12 @@ export const managedUsers: ManagedUser[] = [
   },
   {
     id: "3",
-    name: "Ama Darko",
+    firstName: "Ama",
+    lastName: "Darko",
+    userName: "ama.darko",
     email: "ama.darko@company.com",
     initials: "AD",
-    role: "Manager",
+    roles: "Manager",
     branch: "Tema Branch",
     status: "active",
     lastLogin: "Yesterday, 05:12 PM",
@@ -92,10 +100,12 @@ export const managedUsers: ManagedUser[] = [
   },
   {
     id: "4",
-    name: "Emmanuel Boateng",
+    firstName: "Emmanuel",
+    lastName: "Boateng",
+    userName: "emmanuel.boateng",
     email: "emmanuel.boateng@company.com",
     initials: "EB",
-    role: "Operator",
+    roles: "Operator",
     branch: "Head Office",
     status: "inactive",
     lastLogin: "Mar 12, 2026",
@@ -104,10 +114,12 @@ export const managedUsers: ManagedUser[] = [
   },
   {
     id: "5",
-    name: "Grace Addo",
+    firstName: "Grace",
+    lastName: "Addo",
+    userName: "grace.addo",
     email: "grace.addo@company.com",
     initials: "GA",
-    role: "Manager",
+    roles: "Manager",
     branch: "Accra HQ",
     status: "active",
     lastLogin: "Today, 07:55 AM",
@@ -116,10 +128,12 @@ export const managedUsers: ManagedUser[] = [
   },
   {
     id: "6",
-    name: "Daniel Kwarteng",
+    firstName: "Daniel",
+    lastName: "Kwarteng",
+    userName: "daniel.kwarteng",
     email: "daniel.kwarteng@company.com",
     initials: "DK",
-    role: "Branch Admin",
+    roles: "Branch Admin",
     branch: "Takoradi Branch",
     status: "active",
     lastLogin: "Today, 08:20 AM",
@@ -128,10 +142,12 @@ export const managedUsers: ManagedUser[] = [
   },
   {
     id: "7",
-    name: "Abena Owusu",
+    firstName: "Abena",
+    lastName: "Owusu",
+    userName: "abena.owusu",
     email: "abena.owusu@company.com",
     initials: "AO",
-    role: "Operator",
+    roles: "Operator",
     branch: "Kumasi Branch",
     status: "active",
     lastLogin: "Today, 08:05 AM",
@@ -140,10 +156,12 @@ export const managedUsers: ManagedUser[] = [
   },
   {
     id: "8",
-    name: "Michael Asante",
+    firstName: "Michael",
+    lastName: "Asante",
+    userName: "michael.asante",
     email: "michael.asante@company.com",
     initials: "MA",
-    role: "Super Admin",
+    roles: "Super Admin",
     branch: "Head Office",
     status: "active",
     lastLogin: "Today, 09:15 AM",
@@ -152,10 +170,12 @@ export const managedUsers: ManagedUser[] = [
   },
   {
     id: "9",
-    name: "Patience Adjei",
+    firstName: "Patience",
+    lastName: "Adjei",
+    userName: "patience.adjei",
     email: "patience.adjei@company.com",
     initials: "PA",
-    role: "Operator",
+    roles: "Operator",
     branch: "Tema Branch",
     status: "inactive",
     lastLogin: "Feb 28, 2026",
@@ -164,103 +184,111 @@ export const managedUsers: ManagedUser[] = [
   },
   {
     id: "10",
-    name: "Francis Nyarko",
+    firstName: "Francis",
+    lastName: "Nyarko",
+    userName: "francis.nyarko",
     email: "francis.nyarko@company.com",
     initials: "FN",
-    role: "Manager",
+    roles: "Manager",
     branch: "Takoradi Branch",
     status: "active",
     lastLogin: "Yesterday, 04:30 PM",
     lastLoginAt: Date.now() - 1000 * 60 * 60 * 20,
     devices: 4,
   },
-  {
-    id: "11",
-    name: "Rita Agyeman",
-    email: "rita.agyeman@company.com",
-    initials: "RA",
-    role: "Branch Admin",
-    branch: "Accra HQ",
-    status: "active",
-    lastLogin: "Today, 07:40 AM",
-    lastLoginAt: Date.now() - 1000 * 60 * 140,
-    devices: 9,
-  },
-  {
-    id: "12",
-    name: "Samuel Tetteh",
-    email: "samuel.tetteh@company.com",
-    initials: "ST",
-    role: "Operator",
-    branch: "Head Office",
-    status: "active",
-    lastLogin: "Today, 08:58 AM",
-    lastLoginAt: Date.now() - 1000 * 60 * 50,
-    devices: 2,
-  },
-  ...generateMockUsers(36),
+  // {
+  //   id: "11",
+  //   firstName: "Rita",
+  //   lastName: "Agyeman",
+  //   userName: "rita.agyeman",
+  //   email: "rita.agyeman@company.com",
+  //   initials: "RA",
+  //   roles: "Branch Admin",
+  //   branch: "Accra HQ",
+  //   status: "active",
+  //   lastLogin: "Today, 07:40 AM",
+  //   lastLoginAt: Date.now() - 1000 * 60 * 140,
+  //   devices: 9,
+  // },
+  // {
+  //   id: "12",
+  //   firstName: "Samuel",
+  //   lastName: "Tetteh",
+  //   userName: "samuel.tetteh",
+  //   email: "samuel.tetteh@company.com",
+  //   initials: "ST",
+  //   roles: "Operator",
+  //   branch: "Head Office",
+  //   status: "active",
+  //   lastLogin: "Today, 08:58 AM",
+  //   lastLoginAt: Date.now() - 1000 * 60 * 50,
+  //   devices: 2,
+  // },
+  // ...generateMockUsers(36),
 ]
 
-function generateMockUsers(count: number): ManagedUser[] {
-  const firstNames = [
-    "John",
-    "Mary",
-    "Joseph",
-    "Elizabeth",
-    "David",
-    "Ruth",
-    "Peter",
-    "Esther",
-  ]
-  const lastNames = [
-    "Mensah",
-    "Osei",
-    "Darko",
-    "Boateng",
-    "Addo",
-    "Kwarteng",
-    "Owusu",
-    "Asante",
-  ]
-  const roles: UserRole[] = [
-    "Super Admin",
-    "Branch Admin",
-    "Manager",
-    "Operator",
-  ]
-  const branches = [
-    "Head Office",
-    "Kumasi Branch",
-    "Tema Branch",
-    "Takoradi Branch",
-    "Accra HQ",
-  ]
-  const statuses: UserStatus[] = ["active", "inactive"]
+// function generateMockUsers(count: number): ManagedUser[] {
+//   const firstNames = [
+//     "John",
+//     "Mary",
+//     "Joseph",
+//     "Elizabeth",
+//     "David",
+//     "Ruth",
+//     "Peter",
+//     "Esther",
+//   ]
+//   const lastNames = [
+//     "Mensah",
+//     "Osei",
+//     "Darko",
+//     "Boateng",
+//     "Addo",
+//     "Kwarteng",
+//     "Owusu",
+//     "Asante",
+//   ]
+//   const roless: Userroles[] = [
+//     "Super Admin",
+//     "Branch Admin",
+//     "Manager",
+//     "Operator",
+//   ]
+//   const branches = [
+//     "Head Office",
+//     "Kumasi Branch",
+//     "Tema Branch",
+//     "Takoradi Branch",
+//     "Accra HQ",
+//   ]
+//   const statuses: UserStatus[] = ["active", "inactive"]
 
-  return Array.from({ length: count }, (_, index) => {
-    const first = firstNames[index % firstNames.length]
-    const last = lastNames[(index + 3) % lastNames.length]
-    const name = `${first} ${last}`
-    const role = roles[index % roles.length]
-    const branch = branches[index % branches.length]
-    const status = statuses[index % 7 === 0 ? 1 : 0]
+//   return Array.from({ length: count }, (_, index) => {
+//     const first = firstNames[index % firstNames.length]
+//     const last = lastNames[(index + 3) % lastNames.length]
+//     const userName = `${first.toLowerCase()}.${last.toLowerCase()}`
+//     const roles: Userroles = roless[index % roless.length]
+//     const branch = branches[index % branches.length]
+//     const status = statuses[index % 7 === 0 ? 1 : 0]
 
-    return {
-      id: String(index + 13),
-      name,
-      email: `${first.toLowerCase()}.${last.toLowerCase()}${index + 1}@company.com`,
-      initials: `${first[0]}${last[0]}`,
-      role,
-      branch,
-      status,
-      lastLogin: status === "active" ? "Today, 08:00 AM" : "Jan 15, 2026",
-      lastLoginAt: Date.now() - 1000 * 60 * 60 * (index + 2),
-      devices: (index % 10) + 1,
-    }
-  })
-}
+//     return {
+//       id: String(index + 13),
+//       firstName: first,
+//       lastName: last,
+//       userName,
+//       email: `${first.toLowerCase()}.${last.toLowerCase()}${index + 1}@company.com`,
+//       initials: `${first[0]}${last[0]}`,
+//       roles,
+//       branch,
+//       status,
+//       lastLogin: status === "active" ? "Today, 08:00 AM" : "Jan 15, 2026",
+//       lastLoginAt: Date.now() - 1000 * 60 * 60 * (index + 2),
+//       devices: (index % 10) + 1,
+//     }
+//   })
+// }
 
-export const roleBadgeStyles: Record<UserRole, string> = {
+export const rolesBadgeStyles: Record<Userroles, string> = {
   "Super Admin": "border-purple-200 bg-purple-50 text-purple-700",
   "Branch Admin": "border-blue-200 bg-blue-50 text-blue-700",
   Manager: "border-green-200 bg-green-50 text-green-700",
