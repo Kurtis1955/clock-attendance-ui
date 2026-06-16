@@ -1,0 +1,169 @@
+          <Card className="border-slate-200 shadow-sm">
+            <CardHeader className="border-b">
+              <CardTitle>Quick Actions</CardTitle>
+            </CardHeader>
+            <CardContent className="divide-y divide-slate-200 p-0">
+              <button className="flex w-full items-center justify-between gap-3 px-4 py-4 text-left hover:bg-slate-50">
+                <span className="flex items-center gap-3">
+                  <span className="flex size-9 items-center justify-center rounded-lg bg-blue-50 text-blue-700">
+                    <RiRefreshLine className="size-5" />
+                  </span>
+                  <span>
+                    <span className="block font-semibold text-blue-700">
+                      View Permission Matrix
+                    </span>
+                    <span className="text-xs text-slate-500">
+                      View all permissions across roles
+                    </span>
+                  </span>
+                </span>
+                <RiArrowRightSLine className="size-5 shrink-0 text-slate-500" />
+              </button>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <button className="flex w-full items-center justify-between gap-3 px-4 py-4 text-left hover:bg-slate-50">
+                    <span className="flex items-center gap-3">
+                      <span className="flex size-9 items-center justify-center rounded-lg bg-blue-50 text-blue-700">
+                        <RiAddLine className="size-5" />
+                      </span>
+                      <span>
+                        <span className="block font-semibold text-blue-700">
+                          Add New Role
+                        </span>
+                        <span className="text-xs text-slate-500">
+                          Create a role with custom permissions
+                        </span>
+                      </span>
+                    </span>
+                    <RiArrowRightSLine className="size-5 shrink-0 text-slate-500" />
+                  </button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-3xl">
+                  <DialogHeader>
+                    <DialogTitle>Add Role</DialogTitle>
+                    <DialogDescription>
+                      Create a role and choose the permissions it can access.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <RoleForm />
+                </DialogContent>
+              </Dialog>
+            </CardContent>
+          </Card>
+
+                <Card className="border-slate-200 shadow-sm mt-5">
+        <CardHeader className="border-b">
+          <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+            <CardTitle>Attendance Records</CardTitle>
+            <span className="text-sm text-slate-500">Today, Jun 15, 2026</span>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* <div className="overflow-x-auto rounded-lg border border-slate-200">
+            <table className="w-full min-w-235 text-left text-sm">
+              <thead className="bg-slate-50 text-xs uppercase text-slate-600">
+                <tr>
+                  <th className="px-4 py-3 font-semibold">Employee ID</th>
+                  <th className="px-4 py-3 font-semibold">Employee</th>
+                  <th className="px-4 py-3 font-semibold">Branch</th>
+                  <th className="px-4 py-3 font-semibold">Device</th>
+                  <th className="px-4 py-3 font-semibold">Clock In</th>
+                  <th className="px-4 py-3 font-semibold">Clock Out</th>
+                  <th className="px-4 py-3 font-semibold">Hours</th>
+                  <th className="px-4 py-3 font-semibold">Status</th>
+                  <th className="px-4 py-3 font-semibold">Clocking Method</th>
+                  <th className="px-4 py-3 text-right font-semibold">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200">
+                {filteredRecords.map((record) => (
+                  <tr
+                    key={record.employeeId}
+                    className="bg-white hover:bg-slate-50"
+                  >
+                    <td className="px-4 py-3 font-medium text-[#0f172a]">
+                      {record.employeeId}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div>
+                        <p className="font-semibold text-[#0f172a]">
+                          {record.name}
+                        </p>
+                        <p className="text-xs text-slate-500">{record.team}</p>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-slate-700">
+                      {record.branch}
+                    </td>
+                    <td className="px-4 py-3 text-slate-700">
+                      {record.device}
+                    </td>
+                    <td className="px-4 py-3 text-slate-700">
+                      {record.clockIn}
+                    </td>
+                    <td className="px-4 py-3 text-slate-700">
+                      {record.clockOut}
+                    </td>
+                    <td className="px-4 py-3 text-slate-700">
+                      {record.hours}
+                    </td>
+                    <td className="px-4 py-3">
+                      <Badge className={statusStyles[record.status]}>
+                        {record.status}
+                      </Badge>
+                    </td>
+                    <td className="px-4 py-3 text-slate-700">
+                      {record.method}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex justify-end gap-2">
+                        <Button variant="outline" size="icon-sm">
+                          <RiEyeLine className="size-4" />
+                          <span className="sr-only">View attendance</span>
+                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="outline" size="icon-sm">
+                              <RiMore2Fill className="size-4" />
+                              <span className="sr-only">Attendance actions</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem>View timeline</DropdownMenuItem>
+                            <DropdownMenuItem>Request correction</DropdownMenuItem>
+                            <DropdownMenuItem>Export record</DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div> */}
+
+          <div className="flex flex-col gap-3 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-between">
+            <span>
+              Showing {filteredRecords.length ? 1 : 0} to{" "}
+              {filteredRecords.length} of {records.length} records
+            </span>
+            <div className="flex items-center gap-2">
+              <select className="h-9 rounded-lg border border-input bg-white px-3 text-sm">
+                <option>10 per page</option>
+                <option>25 per page</option>
+              </select>
+              <Button variant="outline" size="icon-sm">
+                <RiArrowLeftSLine className="size-4" />
+              </Button>
+              <Button className="size-8 bg-blue-700 text-white hover:bg-blue-800">
+                1
+              </Button>
+              <Button variant="outline" size="icon-sm">
+                <RiArrowRightSLine className="size-4" />
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
