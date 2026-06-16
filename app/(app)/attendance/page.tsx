@@ -24,12 +24,24 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { DataTable } from "@/components/tables/data-table";
+import { attendanceTableColumns } from "@/components/tables/attendanceTable/attendance-table";
+import _debounce from "lodash/debounce";
+import { regrexForSpecialDashChars } from "@/lib/helpers";
+import AddEditAttendant from "@/components/modals/addeditattendantModal/AddEditAttendant";
 
 type AttendanceStatus = "Present" | "Absent" | "On Duty" | "Remote";
 
@@ -92,7 +104,7 @@ const records: AttendanceRecord[] = [
     clockIn: "08:07 AM",
     clockOut: "-",
     hours: "6h 42m",
-    status: "On Duty",
+    status: "Present",
     method: "Face",
   },
   {
@@ -116,8 +128,8 @@ const records: AttendanceRecord[] = [
     clockIn: "08:14 AM",
     clockOut: "-",
     hours: "6h 35m",
-    status: "Remote",
-    method: "Mobile",
+    status: "Present",
+    method: "Fingerprint",
   },
 ];
 
@@ -166,9 +178,19 @@ const liveActivity = [
 
 const branchCoverage = [
   { branch: "Head Office", present: 612, expected: 650, color: "bg-blue-600" },
-  { branch: "Kumasi Branch", present: 318, expected: 340, color: "bg-green-500" },
+  {
+    branch: "Kumasi Branch",
+    present: 318,
+    expected: 340,
+    color: "bg-green-500",
+  },
   { branch: "Tema Branch", present: 274, expected: 302, color: "bg-amber-500" },
-  { branch: "Takoradi Branch", present: 221, expected: 248, color: "bg-cyan-500" },
+  {
+    branch: "Takoradi Branch",
+    present: 221,
+    expected: 248,
+    color: "bg-cyan-500",
+  },
 ];
 
 const statCards = [
@@ -218,6 +240,45 @@ export default function AttendancePage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [branchFilter, setBranchFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [attendanceRecords, setAttendanceRecords] =
+    useState<AttendanceRecord[]>(records);
+  const [pageCount, setPageCount] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [filterData, setFilterData] = useState("");
+  const [selectedAttendant, setSelectedAttendant] =
+    useState<AttendanceRecord | null>(null);
+  const [attendantModalAction, setAttendantModalAction] = useState<
+    "view" | "edit"
+  >("view");
+  const [isAttendantModalOpen, setIsAttendantModalOpen] = useState(false);
+
+  const totalPages = Math.ceil(attendanceRecords.length / pageSize);
+  const currentPageRecords = attendanceRecords.slice(
+    (pageCount - 1) * pageSize,
+    pageCount * pageSize,
+  );
+
+  const handleChangeTextSearch = (e: any) => {
+    const dataToSearch = regrexForSpecialDashChars(e.target.value);
+    setSearchQuery(dataToSearch);
+    debouncedSearch(dataToSearch);
+  };
+
+  const debouncedSearch = _debounce((query: string) => {
+    if (query.trim() === "") {
+      setAttendanceRecords(records);
+    } else {
+      const filteredData = records.filter((attendant) => {
+        const fullName = `${attendant.name}`.toLowerCase();
+        return (
+          fullName.includes(query.toLowerCase()) ||
+          attendant.employeeId.toLowerCase().includes(query.toLowerCase()) ||
+          attendant.branch.toLowerCase().includes(query.toLowerCase())
+        );
+      });
+      setAttendanceRecords(filteredData);
+    }
+  }, 300);
 
   const filteredRecords = useMemo(() => {
     return records.filter((record) => {
@@ -230,321 +291,165 @@ export default function AttendancePage() {
       const matchesStatus =
         statusFilter === "all" ||
         record.status.toLowerCase().replace(" ", "-") === statusFilter;
-
       return matchesSearch && matchesBranch && matchesStatus;
     });
   }, [branchFilter, searchQuery, statusFilter]);
+  
+  // setAttendanceRecords(filteredRecords);
+
+  const handleRowAction = (actionType: any, rowData: any) => {
+    console.log("actionType", actionType, "rowData>>", rowData);
+    if (actionType === "edit") {
+      setSelectedAttendant(rowData);
+      setAttendantModalAction("edit");
+      setIsAttendantModalOpen(true);
+      console.log("edit action clicked", rowData.employeeId);
+      Promise.all([
+        // getUserPermissionsByUserId(rowData.userName),
+        // getUserById(rowData.userName),
+      ]);
+    } else if (actionType === "view") {
+      setSelectedAttendant(rowData);
+      setAttendantModalAction("view");
+      setIsAttendantModalOpen(true);
+      Promise.all([
+        // getUserPermissionsByUserId(rowData.userName),
+        // getUserById(rowData.userName),
+      ]);
+      // setisLDAP(false);
+      console.log("isGeneralModalOpen:", true);
+    } else if (actionType == "switch") {
+      // getChangeUserStatus(rowData);
+    }
+  };
+
+  const handlePageChange = (pageIndex: number, pageSize: number) => {
+    //fetchPageData(pageIndex, pageSize);
+    console.log("pageIndex@11>>", pageIndex, "pageSize>>", pageSize);
+    setPageCount(pageIndex);
+    setPageSize(pageSize);
+  };
+
+  const handleAttendantSave = (updatedAttendant: AttendanceRecord) => {
+    setAttendanceRecords((currentRecords) =>
+      currentRecords.map((record) =>
+        record.employeeId === updatedAttendant.employeeId
+          ? updatedAttendant
+          : record,
+      ),
+    );
+  };
 
   return (
     <div className="flex flex-col gap-5 px-2 pt-2 lg:px-8">
       <PageHeader
         title="Attendance Command Center"
-        description="Monitor workforce coverage, device sync health, and verified clocking activity across branches."
+        // description="Monitor workforce coverage, device sync health, and verified clocking activity across branches."
         actions={
           <div className="grid w-full grid-cols-1 gap-2 sm:grid-cols-3 md:flex md:justify-end">
-            <Button variant="outline" className="border-slate-200 bg-white">
+            <Button
+              variant="outline"
+              className="h-10 border-slate-200 bg-white"
+            >
               <RiDownloadLine className="size-4 text-blue-700" />
               Export
             </Button>
-            <Button variant="outline" className="border-slate-200 bg-white">
+            <Button
+              variant="outline"
+              className="h-10 border-slate-200 bg-white"
+            >
               <RiBarChartBoxLine className="size-4 text-blue-700" />
-              Report
+              Add Attendance
             </Button>
-            <Button className="bg-blue-700 text-white hover:bg-blue-800">
+            {/* <Button className="bg-blue-700 text-white hover:bg-blue-800">
               <RiRefreshLine className="size-4" />
               Sync Records
-            </Button>
+            </Button> */}
           </div>
         }
       />
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {statCards.map((stat) => {
-          const Icon = stat.icon;
-
-          return (
-            <Card key={stat.title} className="border-slate-200 shadow-sm">
-              <CardContent className="flex items-center gap-4">
-                <div
-                  className={`flex size-14 shrink-0 items-center justify-center rounded-xl ${stat.color}`}
-                >
-                  <Icon className="size-7" />
-                </div>
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold text-[#0f172a]">
-                    {stat.title}
-                  </p>
-                  <div className="mt-2 flex items-end gap-2">
-                    <p className="text-2xl font-bold text-[#0f172a]">
-                      {stat.value}
-                    </p>
-                    <span
-                      className={`pb-1 text-xs font-semibold ${stat.trendColor ?? "text-green-600"}`}
-                    >
-                      {stat.trend}
-                    </span>
-                  </div>
-                  <p className="text-sm text-[#475569]">{stat.caption}</p>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
-
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1.25fr)_minmax(320px,0.75fr)]">
-        <Card className="border-slate-200 shadow-sm">
-          <CardHeader className="border-b">
-            <div className="flex items-center justify-between">
-              <CardTitle>Live Clock Stream</CardTitle>
-              <span className="flex items-center gap-2 text-sm font-medium text-green-700">
-                <span className="size-2 rounded-full bg-green-500" />
-                Live
-              </span>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-1">
-            {liveActivity.map((activity) => (
-              <div
-                key={`${activity.time}-${activity.name}`}
-                className="grid gap-3 border-b border-slate-100 py-3 last:border-b-0 sm:grid-cols-[72px_minmax(0,1fr)_minmax(120px,0.7fr)_auto]"
-              >
-                <span className="text-sm font-medium text-slate-500">
-                  {activity.time}
-                </span>
-                <div className="min-w-0">
-                  <p className="font-semibold text-[#0f172a]">{activity.name}</p>
-                  <p className="text-xs text-slate-500">{activity.meta}</p>
-                </div>
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium text-[#0f172a]">
-                    {activity.device}
-                  </p>
-                  <p className="truncate text-xs text-slate-500">
-                    {activity.branch}
-                  </p>
-                </div>
-                <Badge className="self-center bg-green-50 text-green-700">
-                  {activity.action}
-                </Badge>
-              </div>
+      <div className="w-full flex flex-col gap-3 lg:flex-row lg:items-center">
+        <div className="w-1/3 relative">
+          <Input
+            type="search"
+            placeholder="Search by name, employee ID, or device..."
+            value={searchQuery}
+            onChange={(e) => {
+              handleChangeTextSearch(e);
+              setFilterData("");
+            }}
+            className="w-full h-10 pr-10"
+          />
+          <RiSearchLine className="absolute right-3 top-1/2 size-5 -translate-y-1/2 text-slate-500" />
+        </div>
+        <div className="w-2/3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
+          <select
+            value={branchFilter}
+            onChange={(event) => setBranchFilter(event.target.value)}
+            className="h-10 rounded-lg border border-input bg-white px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 sm:w-44"
+          >
+            <option value="all">All Companies</option>
+            {branchCoverage.map((item) => (
+              <option key={item.branch} value={item.branch}>
+                {item.branch}
+              </option>
             ))}
-          </CardContent>
-        </Card>
-
-        <Card className="border-slate-200 shadow-sm">
-          <CardHeader className="border-b">
-            <CardTitle>Branch Coverage</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-5">
-            <div className="rounded-xl bg-slate-50 p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-semibold text-slate-600">
-                    Network Attendance
-                  </p>
-                  <p className="mt-1 text-3xl font-bold text-[#0f172a]">
-                    92.6%
-                  </p>
-                </div>
-                <div className="flex size-16 items-center justify-center rounded-full bg-blue-100 text-blue-700">
-                  <RiCalendarCheckLine className="size-8" />
-                </div>
-              </div>
-              <p className="mt-3 text-sm text-slate-600">
-                1,425 checked in across 1,540 expected staff.
-              </p>
-            </div>
-
-            <div className="space-y-4">
-              {branchCoverage.map((item) => {
-                const percent = Math.round((item.present / item.expected) * 100);
-
-                return (
-                  <div key={item.branch} className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="font-medium text-[#0f172a]">
-                        {item.branch}
-                      </span>
-                      <span className="text-slate-500">
-                        {item.present}/{item.expected} ({percent}%)
-                      </span>
-                    </div>
-                    <div className="h-2 rounded-full bg-slate-100">
-                      <div
-                        className={`h-2 rounded-full ${item.color}`}
-                        style={{ width: `${percent}%` }}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
+          </select>
+          <select
+            value={statusFilter}
+            onChange={(event) => setStatusFilter(event.target.value)}
+            className="h-10 rounded-lg border border-input bg-white px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 sm:w-36"
+          >
+            <option value="all">All Status</option>
+            <option value="present">Present</option>
+            <option value="absent">Absent</option>
+            <option value="on-duty">On Duty</option>
+            <option value="remote">Remote</option>
+          </select>
+          <Button variant="outline" className="border-slate-200 bg-white ">
+            <RiFilter3Line className="size-4 text-blue-700" />
+            Filters
+          </Button>
+        </div>
       </div>
 
-      <Card className="border-slate-200 shadow-sm">
-        <CardHeader className="border-b">
-          <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-            <CardTitle>Attendance Records</CardTitle>
-            <span className="text-sm text-slate-500">
-              Today, Jun 15, 2026
-            </span>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-            <div className="relative min-w-0 flex-1">
-              <Input
-                type="search"
-                placeholder="Search by name, employee ID, or device..."
-                value={searchQuery}
-                onChange={(event) => setSearchQuery(event.target.value)}
-                className="h-10 pr-10"
-              />
-              <RiSearchLine className="absolute right-3 top-1/2 size-5 -translate-y-1/2 text-slate-500" />
-            </div>
-            <select
-              value={branchFilter}
-              onChange={(event) => setBranchFilter(event.target.value)}
-              className="h-10 rounded-lg border border-input bg-white px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 lg:w-44"
-            >
-              <option value="all">All Branches</option>
-              {branchCoverage.map((item) => (
-                <option key={item.branch} value={item.branch}>
-                  {item.branch}
-                </option>
-              ))}
-            </select>
-            <select
-              value={statusFilter}
-              onChange={(event) => setStatusFilter(event.target.value)}
-              className="h-10 rounded-lg border border-input bg-white px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 lg:w-36"
-            >
-              <option value="all">All Status</option>
-              <option value="present">Present</option>
-              <option value="absent">Absent</option>
-              <option value="on-duty">On Duty</option>
-              <option value="remote">Remote</option>
-            </select>
-            <Button
-              variant="outline"
-              className="border-slate-200 bg-white lg:ml-auto"
-            >
-              <RiFilter3Line className="size-4 text-blue-700" />
-              Filters
-            </Button>
-          </div>
+      <DataTable
+        columns={attendanceTableColumns(handleRowAction)}
+        data={filteredRecords || attendanceRecords}
+        pageCount={totalPages}
+        pageSize={pageSize}
+        onPageChange={handlePageChange}
+        type="users"
+        defaultColumns={["Drag", "Actions", "User Number"]}
+        totalItems={attendanceRecords.length}
+      />
 
-          <div className="overflow-x-auto rounded-lg border border-slate-200">
-            <table className="w-full min-w-[940px] text-left text-sm">
-              <thead className="bg-slate-50 text-xs uppercase text-slate-600">
-                <tr>
-                  <th className="px-4 py-3 font-semibold">Employee ID</th>
-                  <th className="px-4 py-3 font-semibold">Employee</th>
-                  <th className="px-4 py-3 font-semibold">Branch</th>
-                  <th className="px-4 py-3 font-semibold">Device</th>
-                  <th className="px-4 py-3 font-semibold">Clock In</th>
-                  <th className="px-4 py-3 font-semibold">Clock Out</th>
-                  <th className="px-4 py-3 font-semibold">Hours</th>
-                  <th className="px-4 py-3 font-semibold">Status</th>
-                  <th className="px-4 py-3 font-semibold">Clocking Method</th>
-                  <th className="px-4 py-3 text-right font-semibold">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-200">
-                {filteredRecords.map((record) => (
-                  <tr
-                    key={record.employeeId}
-                    className="bg-white hover:bg-slate-50"
-                  >
-                    <td className="px-4 py-3 font-medium text-[#0f172a]">
-                      {record.employeeId}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div>
-                        <p className="font-semibold text-[#0f172a]">
-                          {record.name}
-                        </p>
-                        <p className="text-xs text-slate-500">{record.team}</p>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-slate-700">
-                      {record.branch}
-                    </td>
-                    <td className="px-4 py-3 text-slate-700">
-                      {record.device}
-                    </td>
-                    <td className="px-4 py-3 text-slate-700">
-                      {record.clockIn}
-                    </td>
-                    <td className="px-4 py-3 text-slate-700">
-                      {record.clockOut}
-                    </td>
-                    <td className="px-4 py-3 text-slate-700">
-                      {record.hours}
-                    </td>
-                    <td className="px-4 py-3">
-                      <Badge className={statusStyles[record.status]}>
-                        {record.status}
-                      </Badge>
-                    </td>
-                    <td className="px-4 py-3 text-slate-700">
-                      {record.method}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex justify-end gap-2">
-                        <Button variant="outline" size="icon-sm">
-                          <RiEyeLine className="size-4" />
-                          <span className="sr-only">View attendance</span>
-                        </Button>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="outline" size="icon-sm">
-                              <RiMore2Fill className="size-4" />
-                              <span className="sr-only">Attendance actions</span>
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem>View timeline</DropdownMenuItem>
-                            <DropdownMenuItem>Request correction</DropdownMenuItem>
-                            <DropdownMenuItem>Export record</DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="flex flex-col gap-3 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-between">
-            <span>
-              Showing {filteredRecords.length ? 1 : 0} to{" "}
-              {filteredRecords.length} of {records.length} records
-            </span>
-            <div className="flex items-center gap-2">
-              <select className="h-9 rounded-lg border border-input bg-white px-3 text-sm">
-                <option>10 per page</option>
-                <option>25 per page</option>
-              </select>
-              <Button variant="outline" size="icon-sm">
-                <RiArrowLeftSLine className="size-4" />
-              </Button>
-              <Button className="size-8 bg-blue-700 text-white hover:bg-blue-800">
-                1
-              </Button>
-              <Button variant="outline" size="icon-sm">
-                <RiArrowRightSLine className="size-4" />
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <Dialog
+        open={isAttendantModalOpen}
+        onOpenChange={setIsAttendantModalOpen}
+      >
+        <DialogContent className="sm:max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>
+              {attendantModalAction === "edit"
+                ? "Edit Attendant"
+                : "View Attendant"}
+            </DialogTitle>
+            <DialogDescription>
+              {attendantModalAction === "edit"
+                ? "Update the selected attendance record."
+                : "Review the selected attendance record."}
+            </DialogDescription>
+          </DialogHeader>
+          <AddEditAttendant
+            actionType={attendantModalAction}
+            existingAttendantData={selectedAttendant}
+            callback={handleAttendantSave}
+            onClose={() => setIsAttendantModalOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
