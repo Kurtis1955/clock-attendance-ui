@@ -4,8 +4,10 @@ import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  RiArrowDownSLine,
   RiArrowLeftDoubleLine,
   RiArrowRightDoubleLine,
+  RiArrowRightSLine,
   RiCloseLine,
   RiLogoutBoxRLine,
   RiShieldCheckLine,
@@ -44,6 +46,29 @@ interface SidebarContentProps {
 function SidebarContent({ collapsed, onNavigate }: SidebarContentProps) {
   const pathname = usePathname();
   const { toggleCollapsed } = useLayout();
+  const [expandedItems, setExpandedItems] = React.useState<string[]>([]);
+
+  React.useEffect(() => {
+    const activeParentHrefs = navigationItems
+      .filter((item) =>
+        item.children?.some((child) =>
+          isNavigationActive(pathname, child.href),
+        ),
+      )
+      .map((item) => item.href);
+
+    setExpandedItems((currentItems) =>
+      Array.from(new Set([...currentItems, ...activeParentHrefs])),
+    );
+  }, [pathname]);
+
+  const toggleExpandedItem = (href: string) => {
+    setExpandedItems((currentItems) =>
+      currentItems.includes(href)
+        ? currentItems.filter((currentHref) => currentHref !== href)
+        : [...currentItems, href],
+    );
+  };
 
   return (
     <div className="flex h-full flex-col">
@@ -92,7 +117,11 @@ function SidebarContent({ collapsed, onNavigate }: SidebarContentProps) {
           </div>
         ) : (
           <div className="fixed left-16 flex items-center justify-center">
-            <Button type="button" onClick={toggleCollapsed} className="bg-white shadow-md text-black hover:bg-white">
+            <Button
+              type="button"
+              onClick={toggleCollapsed}
+              className="bg-white shadow-md text-black hover:bg-white"
+            >
               <RiArrowRightDoubleLine className="size-4 text-[#0f172a]" />
             </Button>
           </div>
@@ -106,29 +135,35 @@ function SidebarContent({ collapsed, onNavigate }: SidebarContentProps) {
       >
         <TooltipProvider delayDuration={0}>
           {navigationItems.map((item) => {
-            const isActive = isNavigationActive(pathname, item.href);
+            const hasChildren = Boolean(item.children?.length);
+            const childIsActive = item.children?.some((child) =>
+              isNavigationActive(pathname, child.href),
+            );
+            const isExactActive = pathname === item.href;
+            const isExpanded =
+              !collapsed &&
+              hasChildren &&
+              (expandedItems.includes(item.href) || Boolean(childIsActive));
             const Icon = item.icon;
 
             const linkContent = (
               <Link
-                key={item.href}
                 href={item.href}
                 onClick={onNavigate}
-                aria-current={isActive ? "page" : undefined}
+                aria-current={isExactActive ? "page" : undefined}
                 className={cn(
-                  "group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-[#eab308]/50",
+                  "group flex min-h-10 items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-[#eab308]/50",
                   collapsed && "justify-center px-2",
-                  isActive
-                    ? "bg-[#eab308] font-bold text-[#0f172a] shadow-sm"
-                    : "text-slate-300 hover:bg-slate-800 hover:text-[#eab308]",
                 )}
               >
                 <Icon
                   className={cn(
                     "size-5 shrink-0",
-                    isActive
+                    isExactActive
                       ? "text-[#0f172a]"
-                      : "text-slate-400 group-hover:text-[#eab308]",
+                      : childIsActive
+                        ? "text-[#eab308]"
+                        : "text-slate-400 group-hover:text-[#eab308]",
                   )}
                   aria-hidden="true"
                 />
@@ -150,7 +185,85 @@ function SidebarContent({ collapsed, onNavigate }: SidebarContentProps) {
               );
             }
 
-            return linkContent;
+            return (
+              <div key={item.href} className="space-y-1">
+                <div
+                  onClick={() => toggleExpandedItem(item.href)}
+                  className={`rounded-sm px-1 flex items-center gap-1 ${
+                    isExactActive
+                      ? "bg-[#eab308] font-bold text-[#0f172a] shadow-sm"
+                      : childIsActive
+                        ? "bg-slate-800 font-semibold text-[#eab308]"
+                        : "text-slate-300 hover:bg-slate-800 hover:text-[#eab308]"
+                  }`}
+                >
+                  <div className="min-w-0 flex-1">{linkContent}</div>
+
+                  {hasChildren ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      onClick={() => toggleExpandedItem(item.href)}
+                      className={cn(
+                        "shrink-0 text-slate-400 hover:bg-slate-800 hover:text-[#eab308]",
+                        isExpanded && "text-[#eab308]",
+                      )}
+                      aria-label={
+                        isExpanded
+                          ? `Collapse ${item.label} submenu`
+                          : `Expand ${item.label} submenu`
+                      }
+                      aria-expanded={isExpanded}
+                    >
+                      {isExpanded ? (
+                        <RiArrowDownSLine className="size-4" />
+                      ) : (
+                        <RiArrowRightSLine className="size-4" />
+                      )}
+                    </Button>
+                  ) : null}
+                </div>
+
+                {isExpanded ? (
+                  <div className="ml-5 space-y-1 border-l border-slate-700 pl-3">
+                    {item.children?.map((child) => {
+                      const ChildIcon = child.icon;
+                      const isChildActive = isNavigationActive(
+                        pathname,
+                        child.href,
+                      );
+
+                      return (
+                        <Link
+                          key={child.href}
+                          href={child.href}
+                          onClick={onNavigate}
+                          aria-current={isChildActive ? "page" : undefined}
+                          className={cn(
+                            "group flex min-h-8 items-center gap-2 rounded-md px-2 py-1.5 text-xs font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[#eab308]/50",
+                            isChildActive
+                              ? "bg-[#eab308] text-[#0f172a]"
+                              : "text-slate-400 hover:bg-slate-800 hover:text-[#eab308]",
+                          )}
+                        >
+                          <ChildIcon
+                            className={cn(
+                              "size-3.5 shrink-0",
+                              isChildActive
+                                ? "text-[#0f172a]"
+                                : "text-slate-500 group-hover:text-[#eab308]",
+                            )}
+                            aria-hidden="true"
+                          />
+                          <span className="truncate">{child.label}</span>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                ) : null}
+              </div>
+            );
           })}
         </TooltipProvider>
       </nav>
