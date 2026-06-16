@@ -49,7 +49,7 @@ export const roleTableColumns = (rowCallback: any) => {
           <div className="flex items-center gap-3">
             <div
               className={`flex size-9 items-center justify-center rounded-lg ${
-                row.original.color || "bg-blue-100 text-blue-600"
+                 "bg-blue-100 text-blue-600"
               }`}
             >
               <RiShieldCheckLine className="size-5" />
@@ -119,18 +119,18 @@ export const roleTableColumns = (rowCallback: any) => {
     },
 
     {
-      accessorKey: "enabled",
+      accessorKey: "status",
       headerLabel: "Status",
       header: "Status",
       cell: ({ row }: { row: any }) => (
         <Badge
           className={
-            row.original.enabled
+            row.original.status === "Active"
               ? "bg-green-50 text-green-700"
               : "bg-slate-100 text-slate-700"
           }
         >
-          {row.original.enabled ? "Active" : "Inactive"}
+          {row.original.status}
         </Badge>
       ),
     },
