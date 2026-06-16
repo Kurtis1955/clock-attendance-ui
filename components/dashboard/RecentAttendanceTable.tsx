@@ -107,13 +107,13 @@ export function RecentAttendanceTable() {
       </CardHeader>
       <CardContent className="p-0">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[760px] text-left">
+          <table className="w-full min-w-190 text-left">
             <thead>
               <tr className="border-b border-slate-200 bg-slate-50">
                 {[
                   "User",
                   "Device / Branch",
-                  "Method",
+                  "Clocking Method",
                   "Timestamp",
                   "Status",
                 ].map((header) => (
