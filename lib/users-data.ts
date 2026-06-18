@@ -19,6 +19,7 @@ export interface ManagedUser {
   lastLogin: string
   lastLoginAt: number
   devices: number
+  userType: string
 }
 
 export const userStats = {
@@ -69,6 +70,7 @@ export const managedUsers: ManagedUser[] = [
     lastLogin: "Today, 09:01 AM",
     lastLoginAt: Date.now() - 1000 * 60 * 45,
     devices: 12,
+    userType: "System User"
   },
   {
     id: "2",
@@ -83,6 +85,7 @@ export const managedUsers: ManagedUser[] = [
     lastLogin: "Today, 08:47 AM",
     lastLoginAt: Date.now() - 1000 * 60 * 90,
     devices: 8,
+    userType: "System User"
   },
   {
     id: "3",
@@ -97,6 +100,7 @@ export const managedUsers: ManagedUser[] = [
     lastLogin: "Yesterday, 05:12 PM",
     lastLoginAt: Date.now() - 1000 * 60 * 60 * 18,
     devices: 5,
+    userType: "System User"
   },
   {
     id: "4",
@@ -111,6 +115,7 @@ export const managedUsers: ManagedUser[] = [
     lastLogin: "Mar 12, 2026",
     lastLoginAt: Date.now() - 1000 * 60 * 60 * 24 * 14,
     devices: 2,
+    userType: "System User"
   },
   {
     id: "5",
@@ -125,6 +130,7 @@ export const managedUsers: ManagedUser[] = [
     lastLogin: "Today, 07:55 AM",
     lastLoginAt: Date.now() - 1000 * 60 * 120,
     devices: 6,
+    userType: "Device User"
   },
   {
     id: "6",
@@ -139,6 +145,7 @@ export const managedUsers: ManagedUser[] = [
     lastLogin: "Today, 08:20 AM",
     lastLoginAt: Date.now() - 1000 * 60 * 105,
     devices: 7,
+    userType: "System User"
   },
   {
     id: "7",
@@ -153,6 +160,7 @@ export const managedUsers: ManagedUser[] = [
     lastLogin: "Today, 08:05 AM",
     lastLoginAt: Date.now() - 1000 * 60 * 130,
     devices: 3,
+    userType: "Device User"
   },
   {
     id: "8",
@@ -167,6 +175,7 @@ export const managedUsers: ManagedUser[] = [
     lastLogin: "Today, 09:15 AM",
     lastLoginAt: Date.now() - 1000 * 60 * 30,
     devices: 15,
+    userType: "System User"
   },
   {
     id: "9",
@@ -181,6 +190,7 @@ export const managedUsers: ManagedUser[] = [
     lastLogin: "Feb 28, 2026",
     lastLoginAt: Date.now() - 1000 * 60 * 60 * 24 * 21,
     devices: 1,
+    userType: "System User"
   },
   {
     id: "10",
@@ -195,6 +205,7 @@ export const managedUsers: ManagedUser[] = [
     lastLogin: "Yesterday, 04:30 PM",
     lastLoginAt: Date.now() - 1000 * 60 * 60 * 20,
     devices: 4,
+    userType: "System User"
   },
   // {
   //   id: "11",
