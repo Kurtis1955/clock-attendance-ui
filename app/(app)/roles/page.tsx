@@ -309,7 +309,7 @@ export default function RolesPage() {
               <DialogTrigger asChild>
                 <Button
                   variant="outline"
-                  className=" border-slate-200 bg-white"
+                  className="h-10 border-slate-200 bg-white"
                 >
                   <RiAddLine className="size-4" />
                   Add Role
@@ -395,13 +395,13 @@ export default function RolesPage() {
                 <option value="system">System</option>
                 <option value="custom">Custom</option>
               </select>
-              <Button
+              {/* <Button
                 variant="outline"
                 className="h-10 border-slate-200 bg-black text-white hover:bg-[#141313] hover:text-white"
               >
                 <RiFilter3Line className="size-4 text-yellow-500" />
                 Filters
-              </Button>
+              </Button> */}
             </div>
           </div>
 
