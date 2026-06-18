@@ -407,10 +407,10 @@ export default function AttendancePage() {
             <option value="on-duty">On Duty</option>
             <option value="remote">Remote</option>
           </select>
-          <Button variant="outline" className="border-slate-200 bg-white ">
+          {/* <Button variant="outline" className="border-slate-200 bg-white ">
             <RiFilter3Line className="size-4 text-blue-700" />
             Filters
-          </Button>
+          </Button> */}
         </div>
       </div>
 
