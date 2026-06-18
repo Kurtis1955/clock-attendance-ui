@@ -83,7 +83,7 @@ export const roleTableColumns = (rowCallback: any) => {
         </Button>
       ),
       cell: ({ row }: { row: any }) => (
-        <div className="max-w-[300px] truncate text-slate-700">
+        <div className="max-w-75 truncate text-slate-700">
           {row.original.description}
         </div>
       ),
@@ -127,7 +127,7 @@ export const roleTableColumns = (rowCallback: any) => {
           className={
             row.original.status === "Active"
               ? "bg-green-50 text-green-700"
-              : "bg-slate-100 text-slate-700"
+              : "bg-slate-100 text-red-500"
           }
         >
           {row.original.status}
