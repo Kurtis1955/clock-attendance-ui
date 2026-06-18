@@ -22,8 +22,8 @@ export interface AttendantRecord {
 }
 
 interface AddEditAttendantProps {
-  actionType: "view" | "edit";
-  existingAttendantData: AttendantRecord | null;
+  actionType: "add" | "view" | "edit";
+  existingAttendantData?: Partial<AttendantRecord> | null;
   callback?: (record: AttendantRecord) => void;
   onClose?: () => void;
 }
@@ -55,13 +55,13 @@ export default function AddEditAttendant({
   onClose,
 }: AddEditAttendantProps) {
   const [formData, setFormData] = useState<AttendantRecord>(
-    existingAttendantData ?? emptyRecord,
+    { ...emptyRecord, ...existingAttendantData },
   );
 
   const isViewMode = actionType === "view";
 
   useEffect(() => {
-    setFormData(existingAttendantData ?? emptyRecord);
+    setFormData({ ...emptyRecord, ...existingAttendantData });
   }, [existingAttendantData]);
 
   const updateField = <K extends keyof AttendantRecord>(
@@ -97,7 +97,7 @@ export default function AddEditAttendant({
           <Label>Employee ID</Label>
           <Input
             value={formData.employeeId}
-            disabled
+            disabled={isViewMode || actionType === "edit"}
             onChange={(event) => updateField("employeeId", event.target.value)}
             placeholder="Employee ID"
           />
@@ -198,13 +198,14 @@ export default function AddEditAttendant({
             type="submit"
             className="min-w-28 bg-yellow-500 text-white hover:bg-yellow-600 focus-visible:ring-yellow-400"
           >
-            Save Changes
+            {actionType === "add" ? "Save Attendance" : "Save Changes"}
           </Button>
         </div>
       ) : (
         <div className="flex justify-end border-t pt-5">
           <Button
-            type="submit"
+            type="button"
+            onClick={onClose}
             className="min-w-28 bg-yellow-500 text-white hover:bg-yellow-600 focus-visible:ring-yellow-400"
           >
             Close
