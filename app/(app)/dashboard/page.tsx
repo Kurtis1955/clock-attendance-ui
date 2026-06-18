@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FaUserFriends } from "react-icons/fa";
+import { FaUser } from "react-icons/fa6";
 import { MdOutlineOnDeviceTraining } from "react-icons/md";
 import {
   RiAddLine,
@@ -17,17 +18,24 @@ import {
 
 const stats = [
   {
-    title: "Total Users",
+    title: "Total Application Users",
     value: "12,458",
     change: "+15.2% from last month",
-    icon: FaUserFriends ,
+    icon: FaUserFriends,
     iconColor: "text-purple-600 bg-purple-50",
+  },
+  {
+    title: "Total Device Users ",
+    value: "156",
+    change: "-3.2% from last week",
+    icon: FaUser,
+    iconColor: "text-blue-600 bg-blue-50",
   },
   {
     title: "Total Devices",
     value: "342",
     change: "+8.1% from last month",
-    icon: MdOutlineOnDeviceTraining ,
+    icon: MdOutlineOnDeviceTraining,
     iconColor: "text-green-600 bg-green-50",
   },
   {
@@ -36,13 +44,6 @@ const stats = [
     change: "+12.4% from yesterday",
     icon: RiCalendarCheckLine,
     iconColor: "text-[#eab308] bg-yellow-50",
-  },
-  {
-    title: "Pending Enrollments",
-    value: "156",
-    change: "-3.2% from last week",
-    icon: RiFingerprintLine,
-    iconColor: "text-blue-600 bg-blue-50",
   },
 ];
 
