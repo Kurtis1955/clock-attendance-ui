@@ -2,27 +2,13 @@
 
 import { useMemo, useState } from "react";
 import {
-  RiArrowLeftSLine,
-  RiArrowRightSLine,
   RiBarChartBoxLine,
-  RiCalendarCheckLine,
   RiDownloadLine,
-  RiEyeLine,
-  RiFilter3Line,
-  RiFingerprintLine,
-  RiMore2Fill,
-  RiRefreshLine,
-  RiRouterLine,
   RiSearchLine,
-  RiShieldCheckLine,
-  RiTimeLine,
-  RiUserLine,
 } from "react-icons/ri";
 
 import { PageHeader } from "@/components/layout/PageHeader";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -30,16 +16,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { DataTable } from "@/components/tables/data-table";
 import { attendanceTableColumns } from "@/components/tables/attendanceTable/attendance-table";
-import _debounce from "lodash/debounce";
 import { regrexForSpecialDashChars } from "@/lib/helpers";
 import AddEditAttendant from "@/components/modals/addeditattendantModal/AddEditAttendant";
 
@@ -133,49 +112,6 @@ const records: AttendanceRecord[] = [
   },
 ];
 
-const liveActivity = [
-  {
-    time: "08:01 AM",
-    name: "John Doe",
-    meta: "EMP-1001",
-    device: "SpeedFace V5L",
-    branch: "Head Office",
-    action: "Check In",
-  },
-  {
-    time: "08:05 AM",
-    name: "Mary Smith",
-    meta: "EMP-1002",
-    device: "K40 Terminal",
-    branch: "Kumasi Branch",
-    action: "Check In",
-  },
-  {
-    time: "08:09 AM",
-    name: "Sarah Owusu",
-    meta: "EMP-1005",
-    device: "U300",
-    branch: "Head Office",
-    action: "Check In",
-  },
-  {
-    time: "12:32 PM",
-    name: "Kwame Asare",
-    meta: "EMP-1004",
-    device: "MB360",
-    branch: "Takoradi Branch",
-    action: "Break Out",
-  },
-  {
-    time: "01:04 PM",
-    name: "Ama Boateng",
-    meta: "EMP-1006",
-    device: "Mobile App",
-    branch: "Tema Branch",
-    action: "Break In",
-  },
-];
-
 const branchCoverage = [
   { branch: "Head Office", present: 612, expected: 650, color: "bg-blue-600" },
   {
@@ -193,95 +129,27 @@ const branchCoverage = [
   },
 ];
 
-const statCards = [
-  {
-    title: "My Branch Coverage",
-    value: "94.2%",
-    caption: "612 of 650 checked in",
-    trend: "+2.8% vs yesterday",
-    icon: RiShieldCheckLine,
-    color: "bg-blue-50 text-blue-700",
-  },
-  {
-    title: "On-Time Rate",
-    value: "91.8%",
-    caption: "Within shift grace period",
-    trend: "+4.1% this week",
-    icon: RiTimeLine,
-    color: "bg-green-50 text-green-700",
-  },
-  {
-    title: "Device Sync Health",
-    value: "43/45",
-    caption: "Devices synced in 5 mins",
-    trend: "Last sync 58s ago",
-    icon: RiRouterLine,
-    color: "bg-cyan-50 text-cyan-700",
-  },
-  {
-    title: "Approval Queue",
-    value: "18",
-    caption: "Manual edits awaiting review",
-    trend: "6 high priority",
-    trendColor: "text-amber-600",
-    icon: RiFingerprintLine,
-    color: "bg-amber-50 text-amber-700",
-  },
-];
-
-const statusStyles: Record<AttendanceStatus, string> = {
-  Present: "bg-green-50 text-green-700",
-  Absent: "bg-red-50 text-red-700",
-  "On Duty": "bg-blue-50 text-blue-700",
-  Remote: "bg-purple-50 text-purple-700",
-};
-
 export default function AttendancePage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [branchFilter, setBranchFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [attendanceRecords, setAttendanceRecords] =
     useState<AttendanceRecord[]>(records);
-  const [pageCount, setPageCount] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [filterData, setFilterData] = useState("");
   const [selectedAttendant, setSelectedAttendant] =
     useState<AttendanceRecord | null>(null);
   const [attendantModalAction, setAttendantModalAction] = useState<
-    "view" | "edit"
+    "add" | "view" | "edit"
   >("view");
   const [isAttendantModalOpen, setIsAttendantModalOpen] = useState(false);
-
-  const totalPages = Math.ceil(attendanceRecords.length / pageSize);
-  const currentPageRecords = attendanceRecords.slice(
-    (pageCount - 1) * pageSize,
-    pageCount * pageSize,
-  );
 
   const handleChangeTextSearch = (e: any) => {
     const dataToSearch = regrexForSpecialDashChars(e.target.value);
     setSearchQuery(dataToSearch);
-    debouncedSearch(dataToSearch);
   };
 
-  const debouncedSearch = _debounce((query: string) => {
-    if (query.trim() === "") {
-      setAttendanceRecords(records);
-    } else {
-      const filteredData = records.filter((attendant) => {
-        const fullName = `${attendant.name}`.toLowerCase();
-        return (
-          fullName.includes(query.toLowerCase()) ||
-          attendant.employeeId.toLowerCase().includes(query.toLowerCase()) ||
-          attendant.branch.toLowerCase().includes(query.toLowerCase())
-        );
-      });
-      setAttendanceRecords(filteredData);
-    }
-  }, 300);
-
   const filteredRecords = useMemo(() => {
-    return records.filter((record) => {
+    return attendanceRecords.filter((record) => {
       const matchesSearch =
         record.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         record.employeeId.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -293,7 +161,9 @@ export default function AttendancePage() {
         record.status.toLowerCase().replace(" ", "-") === statusFilter;
       return matchesSearch && matchesBranch && matchesStatus;
     });
-  }, [branchFilter, searchQuery, statusFilter]);
+  }, [attendanceRecords, branchFilter, searchQuery, statusFilter]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredRecords.length / pageSize));
   
   // setAttendanceRecords(filteredRecords);
 
@@ -326,18 +196,25 @@ export default function AttendancePage() {
   const handlePageChange = (pageIndex: number, pageSize: number) => {
     //fetchPageData(pageIndex, pageSize);
     console.log("pageIndex@11>>", pageIndex, "pageSize>>", pageSize);
-    setPageCount(pageIndex);
     setPageSize(pageSize);
   };
 
   const handleAttendantSave = (updatedAttendant: AttendanceRecord) => {
-    setAttendanceRecords((currentRecords) =>
-      currentRecords.map((record) =>
+    setAttendanceRecords((currentRecords) => {
+      const recordExists = currentRecords.some(
+        (record) => record.employeeId === updatedAttendant.employeeId,
+      );
+
+      if (!recordExists) {
+        return [updatedAttendant, ...currentRecords];
+      }
+
+      return currentRecords.map((record) =>
         record.employeeId === updatedAttendant.employeeId
           ? updatedAttendant
           : record,
-      ),
-    );
+      );
+    });
   };
 
   return (
@@ -357,6 +234,11 @@ export default function AttendancePage() {
             <Button
               variant="outline"
               className="h-10 border-slate-200 bg-white"
+              onClick={() => {
+                setSelectedAttendant(null);
+                setAttendantModalAction("add");
+                setIsAttendantModalOpen(true);
+              }}
             >
               <RiBarChartBoxLine className="size-4 text-blue-700" />
               Add Attendance
@@ -377,7 +259,6 @@ export default function AttendancePage() {
             value={searchQuery}
             onChange={(e) => {
               handleChangeTextSearch(e);
-              setFilterData("");
             }}
             className="w-full h-10 pr-10"
           />
@@ -416,13 +297,13 @@ export default function AttendancePage() {
 
       <DataTable
         columns={attendanceTableColumns(handleRowAction)}
-        data={filteredRecords || attendanceRecords}
+        data={filteredRecords}
         pageCount={totalPages}
         pageSize={pageSize}
         onPageChange={handlePageChange}
         type="users"
         defaultColumns={["Drag", "Actions", "User Number"]}
-        totalItems={attendanceRecords.length}
+        totalItems={filteredRecords.length}
       />
 
       <Dialog
@@ -432,14 +313,18 @@ export default function AttendancePage() {
         <DialogContent className="sm:max-w-3xl">
           <DialogHeader>
             <DialogTitle>
-              {attendantModalAction === "edit"
-                ? "Edit Attendant"
-                : "View Attendant"}
+              {attendantModalAction === "add"
+                ? "Add Attendance"
+                : attendantModalAction === "edit"
+                  ? "Edit Attendant"
+                  : "View Attendant"}
             </DialogTitle>
             <DialogDescription>
-              {attendantModalAction === "edit"
-                ? "Update the selected attendance record."
-                : "Review the selected attendance record."}
+              {attendantModalAction === "add"
+                ? "Create a new attendance record."
+                : attendantModalAction === "edit"
+                  ? "Update the selected attendance record."
+                  : "Review the selected attendance record."}
             </DialogDescription>
           </DialogHeader>
           <AddEditAttendant
