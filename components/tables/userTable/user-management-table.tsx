@@ -118,6 +118,21 @@ export const userTableColumns = (rowCallback: any) => {
       },
     },
     {
+      accessorKey: "userType",
+      headerLabel: "User Type",
+      header: ({ column }: { column: any }) => {
+        return (
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            User Type
+            <TfiExchangeVertical />
+          </Button>
+        );
+      },
+    },
+    {
       accessorKey: "roles",
       headerLabel: "Role",
       header: ({ column }: { column: any }) => {
