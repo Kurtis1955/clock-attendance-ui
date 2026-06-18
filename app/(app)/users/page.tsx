@@ -211,7 +211,7 @@ export default function UsersPage() {
           </button>
         </div>
 
-        <div className="sm:w-30 flex items-center gap-2">
+        {/* <div className="sm:w-30 flex items-center gap-2">
           <Button
             variant="outline"
             className="w-full rounded-sm border-slate-200 bg-black text-white hover:bg-[#333232] hover:text-white"
@@ -223,7 +223,7 @@ export default function UsersPage() {
           >
             Filters
           </Button>
-        </div>
+        </div> */}
       </div>
 
       <div className="mt-6">
