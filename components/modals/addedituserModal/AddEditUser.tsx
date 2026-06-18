@@ -34,6 +34,11 @@ const AddEditUser = ({
     { id: 6, name: "User" },
   ];
 
+  const userType = [
+    { value: "12Fes226Dkjsdfj45", label: "System User" },
+    { value: "13fs37s226Dkjsdfj", label: "Device User" },
+  ];
+
   const departments = [
     {
       department: "APPLICATIONS",
@@ -132,6 +137,7 @@ const AddEditUser = ({
     existingUserData?.permissions || userPermissions || [],
   );
   const [assignedDevices, setAssignedDevices] = useState<any[]>([]);
+  const [assignUserType, setAssignUserType] = useState<any[]>([]);
   const isView = actionType === "view";
   const selectedCount = selectedPermissions.length;
   const totalPermissionCount = useMemo(
@@ -422,6 +428,45 @@ const AddEditUser = ({
         </div>
 
         <div className="space-y-1.5">
+          <Label>User Type</Label>
+          <ReactSelect
+            instanceId="device-assignment"
+            inputId="device-assignment"
+            isMulti
+            isClearable
+            closeMenuOnSelect={false}
+            options={userType}
+            value={assignUserType}
+            onChange={(selectedOptions) =>
+              setAssignUserType(selectedOptions ? [...selectedOptions] : [])
+            }
+            isDisabled={actionType === "view"}
+            placeholder="Select devices"
+            classNamePrefix="react-select"
+            styles={{
+              control: (base, state) => ({
+                ...base,
+                minHeight: "40px",
+                borderColor: state.isFocused ? "var(--ring)" : "var(--input)",
+                borderRadius: "0.5rem",
+                boxShadow: state.isFocused
+                  ? "0 0 0 3px color-mix(in oklch, var(--ring) 50%, transparent)"
+                  : "none",
+                fontSize: "0.875rem",
+              }),
+              placeholder: (base) => ({
+                ...base,
+                color: "var(--muted-foreground)",
+              }),
+              multiValue: (base) => ({
+                ...base,
+                borderRadius: "0.375rem",
+              }),
+            }}
+          />
+        </div>
+
+        {/* <div className="space-y-1.5">
           <Label>
             Department <span className="text-red-500">*</span>
           </Label>
@@ -451,7 +496,7 @@ const AddEditUser = ({
             isClearable
             required
           />
-        </div>
+        </div> */}
         <div className="space-y-1.5">
           <Label>
             Temporary Password <span className="text-red-500">*</span>
