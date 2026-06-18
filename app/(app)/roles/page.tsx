@@ -71,8 +71,8 @@ const roles: RoleItem[] = [
   },
   {
     id: "3",
-    name: "Branch Manager",
-    description: "Manage branch operations and reports",
+    name: "Manager",
+    description: "Manages a branch or deparment operations and reports",
     type: "Custom",
     users: 8,
     status: "Active",
@@ -109,26 +109,16 @@ const roles: RoleItem[] = [
     permissions: ["/devices", "/enrollment"],
     color: "bg-cyan-50 text-cyan-700",
   },
-  {
-    id: "7",
-    name: "Reports Viewer",
-    description: "View reports and analytics",
-    type: "Custom",
-    users: 7,
-    status: "Inactive",
-    permissions: ["/dashboard", "/reports"],
-    color: "bg-slate-100 text-slate-700",
-  },
-  {
-    id: "8",
-    name: "Security Officer",
-    description: "Manage security and access logs",
-    type: "Custom",
-    users: 3,
-    status: "Active",
-    permissions: ["/dashboard", "/roles", "/devices"],
-    color: "bg-rose-50 text-rose-700",
-  },
+  // {
+  //   id: "7",
+  //   name: "Reports Viewer",
+  //   description: "View reports and analytics",
+  //   type: "Custom",
+  //   users: 7,
+  //   status: "Inactive",
+  //   permissions: ["/dashboard", "/reports"],
+  //   color: "bg-slate-100 text-slate-700",
+  // },
 ];
 
 const getStatCards = (currentRoles: RoleItem[]) => [
