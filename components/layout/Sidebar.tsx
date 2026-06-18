@@ -140,6 +140,7 @@ function SidebarContent({ collapsed, onNavigate }: SidebarContentProps) {
               isNavigationActive(pathname, child.href),
             );
             const isExactActive = pathname === item.href;
+            const isAdminActive = pathname.startsWith("/admin");
             const isExpanded =
               !collapsed &&
               hasChildren &&
@@ -148,7 +149,7 @@ function SidebarContent({ collapsed, onNavigate }: SidebarContentProps) {
 
             const linkContent = (
               <Link
-                href={item.href}
+                href={item.href === "/admin" ? "/users" : item.href}
                 onClick={onNavigate}
                 aria-current={isExactActive ? "page" : undefined}
                 className={cn(
@@ -190,7 +191,7 @@ function SidebarContent({ collapsed, onNavigate }: SidebarContentProps) {
                 <div
                   onClick={() => toggleExpandedItem(item.href)}
                   className={`rounded-sm px-1 flex items-center gap-1 ${
-                    isExactActive
+                    isExactActive && !isAdminActive
                       ? "bg-[#eab308] font-bold text-[#0f172a] shadow-sm"
                       : childIsActive
                         ? "bg-slate-800 font-semibold text-[#eab308]"
