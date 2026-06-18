@@ -25,55 +25,55 @@ export const navigationItems: NavigationItem[] = [
     icon: RiDashboardLine,
   },
   {
-    label: "Users",
-    href: "/users",
+    label: "Administration",
+    href: "/admin",
     icon: RiUserLine,
-    // children: [
-    //   {
-    //     label: "View Users",
-    //     href: "/users/view",
-    //     icon: RiUserLine,
-    //   },
-    //   {
-    //     label: "Create & Edit Users",
-    //     href: "/users/manage",
-    //     icon: RiUserLine,
-    //   },
-    // ],
+    children: [
+      {
+        label: "Users Management",
+        href: "/users",
+        icon: RiUserLine,
+      },
+      {
+        label: "Roles Management",
+        href: "/roles",
+        icon: RiUserLine,
+      },
+    ],
   },
-  {
-    label: "Roles & Permissions",
-    href: "/roles",
-    icon: RiShieldKeyholeLine,
-    // children: [
-    //   {
-    //     label: "View Roles",
-    //     href: "/roles/view",
-    //     icon: RiShieldKeyholeLine,
-    //   },
-    //   {
-    //     label: "Create & Edit Roles",
-    //     href: "/roles/manage",
-    //     icon: RiShieldKeyholeLine,
-    //   },
-    // ],
-  },
+  // {
+  //   label: "Roles & Permissions",
+  //   href: "/roles",
+  //   icon: RiShieldKeyholeLine,
+  //   // children: [
+  //   //   {
+  //   //     label: "View Roles",
+  //   //     href: "/roles/view",
+  //   //     icon: RiShieldKeyholeLine,
+  //   //   },
+  //   //   {
+  //   //     label: "Create & Edit Roles",
+  //   //     href: "/roles/manage",
+  //   //     icon: RiShieldKeyholeLine,
+  //   //   },
+  //   // ],
+  // },
   {
     label: "Devices",
     href: "/devices",
     icon: RiRouterLine,
-    children: [
-      {
-        label: "View Devices",
-        href: "/devices/view",
-        icon: RiRouterLine,
-      },
-      {
-        label: "Manage Devices",
-        href: "/devices/manage",
-        icon: RiRouterLine,
-      },
-    ],
+    // children: [
+    //   {
+    //     label: "View Devices",
+    //     href: "/devices/view",
+    //     icon: RiRouterLine,
+    //   },
+    //   {
+    //     label: "Manage Devices",
+    //     href: "/devices/manage",
+    //     icon: RiRouterLine,
+    //   },
+    // ],
   },
   {
     label: "Biometric Enrollment",
