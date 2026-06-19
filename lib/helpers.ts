@@ -227,6 +227,48 @@ export const regrexForSpecialDashChars = (input:any) => {
   return newValue;
 };
 
+export const validateRequiredText = (
+  value: string,
+  fieldLabel: string,
+) => {
+  return value.trim() ? "" : `${fieldLabel} is required.`;
+};
+
+export const validateMinimumTextLength = (
+  value: string,
+  fieldLabel: string,
+  minLength: number,
+) => {
+  return value.trim().length >= minLength
+    ? ""
+    : `${fieldLabel} must be at least ${minLength} characters.`;
+};
+
+export const validateRoleNameText = (value: string) => {
+  const trimmedValue = value.trim();
+  const requiredError = validateRequiredText(trimmedValue, "Role name");
+
+  if (requiredError) {
+    return requiredError;
+  }
+
+  const minimumLengthError = validateMinimumTextLength(
+    trimmedValue,
+    "Role name",
+    3,
+  );
+
+  if (minimumLengthError) {
+    return minimumLengthError;
+  }
+
+  if (!/^[A-Za-z0-9\s&'/-]+$/.test(trimmedValue)) {
+    return "Use only letters, numbers, spaces, &, apostrophes, slashes, or hyphens.";
+  }
+
+  return "";
+};
+
 export const regexForSpecialCharsSupportDecimals = (input:any) => {
   const newValue = input
     .replace(/[^a-zA-Z0-9. ]/g, "") // Allow letters, numbers, spaces, and dots

@@ -15,7 +15,7 @@ const PermissionGroup = ({
   selectedPermissions: string[];
   onToggle: (permissionValues: string[]) => void;
 }) => {
-  const [isExpanded, setIsExpanded] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(false);
   const permissionValues = getNavigationItemPermissionValues(item);
   const childValues = item.children?.flatMap((child) =>
     getNavigationItemPermissionValues(child),
