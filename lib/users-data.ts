@@ -1,25 +1,30 @@
-export type Userroles =
-  | "Super Admin"
-  | "Branch Admin"
-  | "Manager"
-  | "Operator"
+export type Userroles = "Super Admin" | "Branch Admin" | "Manager" | "Operator";
 
-export type UserStatus = "active" | "inactive"
+export type UserStatus = "active" | "inactive";
 
 export interface ManagedUser {
-  id: string
-  lastName: string
-  firstName: string
-  userName: string
-  email: string
-  initials: string
-  roles: Userroles
-  branch: string
-  status: UserStatus
-  lastLogin: string
-  lastLoginAt: number
-  devices: number
-  userType: string
+  id: string;
+  firstName: string;
+  lastName: string;
+  userName: string;
+  email: string;
+  eCode: string;
+  phoneNumber: string;
+  initials: string;
+  roles: string;
+  company: string;
+  department: string;
+  branch: string;
+  status: "active" | "inactive";
+  userType: string[];
+  assignedDevices: string[];
+  permissions: string[];
+  temporaryPassword: string;
+  confirmPassword: string;
+  enabled: boolean;
+  lastLogin: string;
+  lastLoginAt: number;
+  devices: number;
 }
 
 export const userStats = {
@@ -31,7 +36,7 @@ export const userStats = {
   inactivePercent: 4.9,
   adminPercent: 8.7,
   growthPercent: 15.2,
-}
+};
 
 export const rolesFilterOptions = [
   { value: "all", label: "All roless" },
@@ -39,7 +44,7 @@ export const rolesFilterOptions = [
   { value: "Branch Admin", label: "Branch Admin" },
   { value: "Manager", label: "Manager" },
   { value: "Operator", label: "Operator" },
-] as const
+] as const;
 
 export const branchFilterOptions = [
   { value: "all", label: "All Branches" },
@@ -48,13 +53,13 @@ export const branchFilterOptions = [
   { value: "Tema Branch", label: "Tema Branch" },
   { value: "Takoradi Branch", label: "Takoradi Branch" },
   { value: "Accra HQ", label: "Accra HQ" },
-] as const
+] as const;
 
 export const statusFilterOptions = [
   { value: "all", label: "All Status" },
   { value: "active", label: "Active" },
   { value: "inactive", label: "Inactive" },
-] as const
+] as const;
 
 export const managedUsers: ManagedUser[] = [
   {
@@ -63,180 +68,133 @@ export const managedUsers: ManagedUser[] = [
     lastName: "Mensah",
     userName: "sarah.mensah",
     email: "sarah.mensah@company.com",
+    eCode: "EMP0001",
+    phoneNumber: "+233241234567",
     initials: "SM",
     roles: "Super Admin",
+    company: "SuperTech Limited",
+    department: "ICT GENERAL",
     branch: "Head Office",
     status: "active",
+    enabled: true,
+
+    userType: ["System User"],
+    assignedDevices: ["ZKT-Pro-01", "ZKT-Pro-02", "ZKT-Pro-03"],
+
+    temporaryPassword: "Temp@123",
+    confirmPassword: "Temp@123",
+
+    permissions: [
+      "dashboard.view",
+      "users.view",
+      "users.create",
+      "users.edit",
+      "roles.view",
+      "roles.create",
+      "attendance.view",
+      "devices.view",
+      "reports.view",
+      "reports.export",
+    ],
+
     lastLogin: "Today, 09:01 AM",
     lastLoginAt: Date.now() - 1000 * 60 * 45,
     devices: 12,
-    userType: "System User"
   },
+
   {
     id: "2",
     firstName: "Kwame",
     lastName: "Osei",
     userName: "kwame.osei",
     email: "kwame.osei@company.com",
+    eCode: "EMP0002",
+    phoneNumber: "+233245678901",
     initials: "KO",
     roles: "Branch Admin",
+    company: "SuperTech Limited",
+    department: "NETWORK OPERATIONS",
     branch: "Kumasi Branch",
     status: "active",
+    enabled: true,
+
+    userType: ["System User"],
+    assignedDevices: ["ZKT-KSI-01", "ZKT-KSI-02"],
+
+    temporaryPassword: "Temp@123",
+    confirmPassword: "Temp@123",
+
+    permissions: [
+      "dashboard.view",
+      "users.view",
+      "users.edit",
+      "attendance.view",
+      "devices.view",
+    ],
+
     lastLogin: "Today, 08:47 AM",
     lastLoginAt: Date.now() - 1000 * 60 * 90,
     devices: 8,
-    userType: "System User"
   },
+
   {
     id: "3",
-    firstName: "Ama",
-    lastName: "Darko",
-    userName: "ama.darko",
-    email: "ama.darko@company.com",
-    initials: "AD",
+    firstName: "Grace",
+    lastName: "Addo",
+    userName: "grace.addo",
+    email: "grace.addo@company.com",
+    eCode: "EMP0003",
+    phoneNumber: "+233244567890",
+    initials: "GA",
     roles: "Manager",
-    branch: "Tema Branch",
+    company: "SuperTech Limited",
+    department: "APPLICATIONS",
+    branch: "Accra HQ",
     status: "active",
-    lastLogin: "Yesterday, 05:12 PM",
-    lastLoginAt: Date.now() - 1000 * 60 * 60 * 18,
-    devices: 5,
-    userType: "System User"
+    enabled: true,
+
+    userType: ["Device User"],
+    assignedDevices: ["ZKT-ACC-01"],
+
+    temporaryPassword: "Temp@123",
+    confirmPassword: "Temp@123",
+
+    permissions: ["dashboard.view", "attendance.view", "reports.view"],
+
+    lastLogin: "Today, 07:55 AM",
+    lastLoginAt: Date.now() - 1000 * 60 * 120,
+    devices: 6,
   },
+
   {
     id: "4",
     firstName: "Emmanuel",
     lastName: "Boateng",
     userName: "emmanuel.boateng",
     email: "emmanuel.boateng@company.com",
+    eCode: "EMP0004",
+    phoneNumber: "+233246789012",
     initials: "EB",
     roles: "Operator",
+    company: "SuperTech Limited",
+    department: "FIELD INSTALLATIONS",
     branch: "Head Office",
     status: "inactive",
+    enabled: false,
+
+    userType: ["System User", "Device User"],
+    assignedDevices: ["ZKT-HQ-01", "ZKT-HQ-02"],
+
+    temporaryPassword: "Temp@123",
+    confirmPassword: "Temp@123",
+
+    permissions: ["attendance.view"],
+
     lastLogin: "Mar 12, 2026",
     lastLoginAt: Date.now() - 1000 * 60 * 60 * 24 * 14,
     devices: 2,
-    userType: "System User"
   },
-  {
-    id: "5",
-    firstName: "Grace",
-    lastName: "Addo",
-    userName: "grace.addo",
-    email: "grace.addo@company.com",
-    initials: "GA",
-    roles: "Manager",
-    branch: "Accra HQ",
-    status: "active",
-    lastLogin: "Today, 07:55 AM",
-    lastLoginAt: Date.now() - 1000 * 60 * 120,
-    devices: 6,
-    userType: "Device User"
-  },
-  {
-    id: "6",
-    firstName: "Daniel",
-    lastName: "Kwarteng",
-    userName: "daniel.kwarteng",
-    email: "daniel.kwarteng@company.com",
-    initials: "DK",
-    roles: "Branch Admin",
-    branch: "Takoradi Branch",
-    status: "active",
-    lastLogin: "Today, 08:20 AM",
-    lastLoginAt: Date.now() - 1000 * 60 * 105,
-    devices: 7,
-    userType: "System User"
-  },
-  {
-    id: "7",
-    firstName: "Abena",
-    lastName: "Owusu",
-    userName: "abena.owusu",
-    email: "abena.owusu@company.com",
-    initials: "AO",
-    roles: "Operator",
-    branch: "Kumasi Branch",
-    status: "active",
-    lastLogin: "Today, 08:05 AM",
-    lastLoginAt: Date.now() - 1000 * 60 * 130,
-    devices: 3,
-    userType: "Device User"
-  },
-  {
-    id: "8",
-    firstName: "Michael",
-    lastName: "Asante",
-    userName: "michael.asante",
-    email: "michael.asante@company.com",
-    initials: "MA",
-    roles: "Super Admin",
-    branch: "Head Office",
-    status: "active",
-    lastLogin: "Today, 09:15 AM",
-    lastLoginAt: Date.now() - 1000 * 60 * 30,
-    devices: 15,
-    userType: "System User"
-  },
-  {
-    id: "9",
-    firstName: "Patience",
-    lastName: "Adjei",
-    userName: "patience.adjei",
-    email: "patience.adjei@company.com",
-    initials: "PA",
-    roles: "Operator",
-    branch: "Tema Branch",
-    status: "inactive",
-    lastLogin: "Feb 28, 2026",
-    lastLoginAt: Date.now() - 1000 * 60 * 60 * 24 * 21,
-    devices: 1,
-    userType: "System User"
-  },
-  {
-    id: "10",
-    firstName: "Francis",
-    lastName: "Nyarko",
-    userName: "francis.nyarko",
-    email: "francis.nyarko@company.com",
-    initials: "FN",
-    roles: "Manager",
-    branch: "Takoradi Branch",
-    status: "active",
-    lastLogin: "Yesterday, 04:30 PM",
-    lastLoginAt: Date.now() - 1000 * 60 * 60 * 20,
-    devices: 4,
-    userType: "System User"
-  },
-  // {
-  //   id: "11",
-  //   firstName: "Rita",
-  //   lastName: "Agyeman",
-  //   userName: "rita.agyeman",
-  //   email: "rita.agyeman@company.com",
-  //   initials: "RA",
-  //   roles: "Branch Admin",
-  //   branch: "Accra HQ",
-  //   status: "active",
-  //   lastLogin: "Today, 07:40 AM",
-  //   lastLoginAt: Date.now() - 1000 * 60 * 140,
-  //   devices: 9,
-  // },
-  // {
-  //   id: "12",
-  //   firstName: "Samuel",
-  //   lastName: "Tetteh",
-  //   userName: "samuel.tetteh",
-  //   email: "samuel.tetteh@company.com",
-  //   initials: "ST",
-  //   roles: "Operator",
-  //   branch: "Head Office",
-  //   status: "active",
-  //   lastLogin: "Today, 08:58 AM",
-  //   lastLoginAt: Date.now() - 1000 * 60 * 50,
-  //   devices: 2,
-  // },
-  // ...generateMockUsers(36),
-]
+];
 
 // function generateMockUsers(count: number): ManagedUser[] {
 //   const firstNames = [
@@ -304,7 +262,7 @@ export const rolesBadgeStyles: Record<Userroles, string> = {
   "Branch Admin": "border-blue-200 bg-blue-50 text-blue-700",
   Manager: "border-green-200 bg-green-50 text-green-700",
   Operator: "border-orange-200 bg-orange-50 text-orange-700",
-}
+};
 
 export const statusBadgeStyles: Record<
   UserStatus,
@@ -320,4 +278,4 @@ export const statusBadgeStyles: Record<
     dot: "bg-red-500",
     badge: "border-red-200 bg-red-50 text-red-700",
   },
-}
+};
