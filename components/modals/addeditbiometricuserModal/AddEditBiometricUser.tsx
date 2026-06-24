@@ -1,425 +1,741 @@
-"use client";
-
-import { useEffect, useState, type FormEvent } from "react";
+import React, { useEffect, useState } from "react";
 import ReactSelect from "react-select";
-
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { PermissionPicker } from "@/components/users/permission-picker";
+import { useCompanies } from "@/hooks/useCompanies";
+import type { CompanyOption } from "@/hooks/useCompanies";
+import { useDepartments } from "@/hooks/useDepartments";
+import { useRoles } from "@/hooks/useRoles";
+import {
+  buildUserApiPayload,
+  normalizeIdList,
+  normalizeRoleIds,
+  normalizeStringArray,
+  parseApiError,
+} from "@/lib/user-payload";
+import type { DepartmentOption } from "@/hooks/useDepartments";
 
-export type BiometricSyncStatus = "Synced" | "Pending" | "Failed";
+const deviceOptions = [
+  { value: "zk-speedface-v5l-main", label: "SpeedFace V5L - Main Entrance" },
+  { value: "zk-k40-hr", label: "K40 - HR Office" },
+  { value: "zk-u300-finance", label: "U300 - Finance" },
+  { value: "zk-mb360-warehouse", label: "MB360 - Warehouse" },
+  { value: "zk-speedface-mini-admin", label: "SpeedFace Mini - Admin Block" },
+];
 
-export interface SelectOption {
-  value: string;
-  label: string;
+function resolvePrimaryDepartment(
+  companyNames: string[],
+  departmentNames: string[],
+  options: DepartmentOption[],
+): DepartmentOption | undefined {
+  if (!options.length) {
+    return undefined;
+  }
+
+  for (const companyName of companyNames) {
+    for (const departmentName of departmentNames) {
+      const match = options.find(
+        (option) =>
+          option.companyName === companyName &&
+          option.departmentName === departmentName,
+      );
+      if (match) {
+        return match;
+      }
+    }
+  }
+
+  if (departmentNames.length) {
+    return options.find(
+      (option) => option.departmentName === departmentNames[0],
+    );
+  }
+
+  if (companyNames.length) {
+    return options.find((option) => option.companyName === companyNames[0]);
+  }
+
+  return undefined;
 }
 
-export interface BiometricUserRecord {
-  id: string;
-  firstName: string;
-  lastName: string;
-  userName: string;
-  email: string;
-  employeeId: string;
-  phoneNumber: string;
-  department: string;
-  branch: string;
-  userType: string;
-  assignedDevices: SelectOption[];
-  biometricMethods: string[];
-  syncStatus: BiometricSyncStatus;
-  dateAdded: string;
-  lastSync: string;
-  enabled: boolean;
-}
-
-interface AddEditBiometricUserProps {
-  actionType: "add" | "edit" | "view";
-  existingUserData?: Partial<BiometricUserRecord> | null;
-  callback?: (record: BiometricUserRecord) => void;
-  onClose?: () => void;
-}
-
-export const biometricDeviceOptions: SelectOption[] = [
-  { value: "head-office-main", label: "Head Office - Main Entrance" },
-  { value: "reception-front", label: "Reception - Front Desk" },
-  { value: "warehouse-gate", label: "Warehouse - Gate" },
-  { value: "server-room-access", label: "Server Room - Access" },
-  { value: "finance-office", label: "Finance Office" },
-];
-
-const departmentOptions: SelectOption[] = [
-  { value: "Information Technology", label: "Information Technology" },
-  { value: "Human Resources", label: "Human Resources" },
-  { value: "Operations", label: "Operations" },
-  { value: "Finance", label: "Finance" },
-  { value: "Security", label: "Security" },
-];
-
-const branchOptions: SelectOption[] = [
-  { value: "Head Office", label: "Head Office" },
-  { value: "Kumasi Branch", label: "Kumasi Branch" },
-  { value: "Tema Branch", label: "Tema Branch" },
-  { value: "Takoradi Branch", label: "Takoradi Branch" },
-];
-
-const userTypeOptions: SelectOption[] = [
-  { value: "Device User", label: "Device User" },
-  { value: "System User", label: "System User" },
-];
-
-const syncStatusOptions: BiometricSyncStatus[] = ["Synced", "Pending", "Failed"];
-const biometricMethodOptions = ["Face", "Fingerprint", "Palm"];
-
-const emptyBiometricUser: BiometricUserRecord = {
-  id: "",
-  firstName: "",
-  lastName: "",
-  userName: "",
-  email: "",
-  employeeId: "",
-  phoneNumber: "",
-  department: "",
-  branch: "",
-  userType: "Device User",
-  assignedDevices: [],
-  biometricMethods: ["Face"],
-  syncStatus: "Pending",
-  dateAdded: "",
-  lastSync: "-",
-  enabled: true,
-};
-
-const selectStyles = {
-  control: (base: any, state: any) => ({
-    ...base,
-    minHeight: "40px",
-    borderColor: state.isFocused ? "var(--ring)" : "var(--input)",
-    borderRadius: "0.25rem",
-    boxShadow: state.isFocused
-      ? "0 0 0 3px color-mix(in oklch, var(--ring) 50%, transparent)"
-      : "none",
-    fontSize: "0.875rem",
-  }),
-  placeholder: (base: any) => ({
-    ...base,
-    color: "var(--muted-foreground)",
-  }),
-  multiValue: (base: any) => ({
-    ...base,
-    borderRadius: "0.375rem",
-  }),
-};
-
-export default function AddEditBiometricUser({
+const AddEditBiometricUser = ({
   actionType,
   existingUserData,
+  userPermissions,
+  permissionCategories,
   callback,
   onClose,
-}: AddEditBiometricUserProps) {
-  const [formData, setFormData] = useState<BiometricUserRecord>({
-    ...emptyBiometricUser,
-    ...existingUserData,
-  });
-  const [errors, setErrors] = useState<Record<string, string>>({});
+}: any) => {
+  const { roles: roleOptions, loading: loadingRoles } = useRoles();
+  const {
+    companies,
+    loading: loadingCompanies,
+    error: companiesError,
+  } = useCompanies();
+  const [selectedCompany, setSelectedCompany] = useState<CompanyOption | null>(
+    null,
+  );
+  const {
+    departments: departmentOptions,
+    loading: loadingDepartments,
+    error: departmentsError,
+  } = useDepartments(
+    selectedCompany?.name ?? null,
+    selectedCompany?.id ?? null,
+  );
 
+  const userType = [
+    { value: "12Fes226Dkjsdfj45", label: "System User" },
+    { value: "13fs37s226Dkjsdfj", label: "Device User" },
+  ];
+
+  const [loadingSaveUpdateUser, setloadingSaveUpdateUser] =
+    useState<boolean>(false);
+  const [firstName, setFirstName] = useState<string>(
+    existingUserData?.firstName || "",
+  );
+  const [lastName, setLastName] = useState<string>(
+    existingUserData?.lastName || "",
+  );
+  const [userName, setUserName] = useState<string>(
+    existingUserData?.userName || "",
+  );
+  const [email, setEmail] = useState<string>(existingUserData?.email || "");
+  const [ecode, setEcode] = useState<string>(
+    existingUserData?.eCode || existingUserData?.ecode || "",
+  );
+  const [phoneNumber, setPhoneNumber] = useState<string>(
+    existingUserData?.phoneNumber || "",
+  );
+  const [selectedRoleIds, setSelectedRoleIds] = useState<string[]>(
+    normalizeRoleIds(existingUserData?.roles),
+  );
+  const [manager, setManager] = useState<string>(
+    existingUserData?.managerName || existingUserData?.manager || "",
+  );
+  const [enabled, setEnabled] = useState<boolean>(
+    existingUserData?.enabled ?? existingUserData?.status === "active",
+  );
+  const [isLDAP, setisLDAP] = useState<boolean>(
+    existingUserData?.isLDAP || false,
+  );
+  const [errorFirstName, setErrorFirstName] = useState<string>("");
+  const [errorLastName, setErrorLastName] = useState<string>("");
+  const [errorUsername, setErrorUsername] = useState<string>("");
+  const [errorEmail, setErrorEmail] = useState<string>("");
+  const [errorEcode, setErrorEcode] = useState<string>("");
+  const [errorPhone, setErrorPhone] = useState<string>("");
+  const [companyDepartments, setCompanyDepartments] = useState<string[]>(
+    normalizeStringArray(existingUserData?.departmentName),
+  );
+  const [submitError, setSubmitError] = useState<string>("");
+  const [resolvedUser, setResolvedUser] = useState<any>(
+    existingUserData ?? null,
+  );
+  const [selectedPermissions, setSelectedPermissions] = useState<string[]>(
+    normalizeIdList(existingUserData?.permissions || userPermissions),
+  );
+  const [assignedDevices, setAssignedDevices] = useState<any[]>([]);
+  const [assignUserType, setAssignUserType] = useState<any[]>([]);
   const isView = actionType === "view";
 
+  function applyUserToForm(user: any) {
+    if (!user) {
+      return;
+    }
+
+    setResolvedUser(user);
+    setFirstName(user?.firstName || "");
+    setLastName(user?.lastName || "");
+    setUserName(user?.userName || "");
+    setEmail(user?.email || "");
+    setEcode(user?.eCode || user?.ecode || "");
+    setPhoneNumber(user?.phoneNumber || "");
+    setSelectedRoleIds(normalizeRoleIds(user?.roles));
+    setManager(user?.managerName || user?.manager || "");
+    setEnabled(Boolean(user?.enabled));
+    setisLDAP(user?.isLDAP || false);
+    setCompanyDepartments(normalizeStringArray(user?.departmentName));
+    setSelectedPermissions(normalizeIdList(user?.permissions));
+    // Load assigned devices
+    if (user?.assignedDevices && Array.isArray(user.assignedDevices)) {
+      setAssignedDevices(user.assignedDevices);
+    }
+  }
+
   useEffect(() => {
-    setFormData({
-      ...emptyBiometricUser,
-      ...existingUserData,
-      assignedDevices: existingUserData?.assignedDevices || [],
-      biometricMethods:
-        existingUserData?.biometricMethods || emptyBiometricUser.biometricMethods,
-    });
-    setErrors({});
+    if (!companies.length) {
+      return;
+    }
+
+    const companyNames = normalizeStringArray(
+      resolvedUser?.companyName ?? existingUserData?.companyName,
+    );
+    const companyId = resolvedUser?.companyId ?? existingUserData?.companyId;
+    const matchedCompany =
+      companies.find((company) => company.id === companyId) ??
+      companies.find((company) => companyNames.includes(company.name));
+
+    if (matchedCompany) {
+      setSelectedCompany(matchedCompany);
+    }
+  }, [companies, resolvedUser, existingUserData]);
+
+  useEffect(() => {
+    async function loadUserDetails() {
+      const identifier = existingUserData?.userName || existingUserData?.id;
+      if (!identifier || actionType === "add") {
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/users/${identifier}`);
+
+        if (!response.ok) {
+          return;
+        }
+
+        const json = await response.json();
+        applyUserToForm(json?.data ?? json);
+      } catch (error) {
+        console.error("Error loading user details:", error);
+      }
+    }
+
+    loadUserDetails();
+  }, [existingUserData?.userName, existingUserData?.id, actionType]);
+
+  useEffect(() => {
+    applyUserToForm(existingUserData);
   }, [existingUserData]);
 
-  const updateField = <K extends keyof BiometricUserRecord>(
-    field: K,
-    value: BiometricUserRecord[K],
-  ) => {
-    setFormData((current) => ({ ...current, [field]: value }));
-    setErrors((current) => ({ ...current, [field]: "" }));
+  useEffect(() => {
+    async function loadUserPermissions() {
+      if (!existingUserData?.userName || actionType === "add") {
+        return;
+      }
+
+      try {
+        const response = await fetch(
+          `/api/users/${existingUserData.userName}/permissions`,
+        );
+
+        if (!response.ok) {
+          return;
+        }
+
+        const json = await response.json();
+        const content = json?.data?.content ?? json?.data ?? [];
+        const permissionIds = Array.isArray(content)
+          ? content
+              .map((item: { id?: string } | string) =>
+                typeof item === "string" ? item : (item.id ?? ""),
+              )
+              .filter(Boolean)
+          : [];
+
+        if (permissionIds.length) {
+          setSelectedPermissions(permissionIds);
+        }
+      } catch (error) {
+        console.error("Error loading user permissions:", error);
+      }
+    }
+
+    loadUserPermissions();
+  }, [existingUserData?.userName, actionType]);
+
+  const validateFirstLastName = (value: string): boolean => {
+    const regex = /^[A-Za-z\s\-']*$/;
+    return regex.test(value);
   };
 
-  const validateForm = () => {
-    const nextErrors: Record<string, string> = {};
-
-    if (!formData.firstName.trim()) nextErrors.firstName = "First name is required.";
-    if (!formData.lastName.trim()) nextErrors.lastName = "Last name is required.";
-    if (!formData.employeeId.trim()) nextErrors.employeeId = "Employee ID is required.";
-    if (!formData.email.trim()) {
-      nextErrors.email = "Email is required.";
-    } else if (!/^[a-zA-Z0-9._+-]+@[a-zA-Z0-9-]+\.[a-zA-Z]{2,}$/.test(formData.email)) {
-      nextErrors.email = "Enter a valid email address.";
-    }
-    if (!formData.department) nextErrors.department = "Department is required.";
-    if (!formData.branch) nextErrors.branch = "Branch is required.";
-    if (formData.assignedDevices.length === 0) {
-      nextErrors.assignedDevices = "Assign at least one biometric device.";
-    }
-    if (formData.biometricMethods.length === 0) {
-      nextErrors.biometricMethods = "Select at least one biometric method.";
-    }
-
-    setErrors(nextErrors);
-    return Object.keys(nextErrors).length === 0;
+  const validateUsername = (value: string): boolean => {
+    const regex = /^[A-Za-z]*$/;
+    return regex.test(value);
   };
 
-  const handleMethodToggle = (method: string) => {
-    setErrors((current) => ({ ...current, biometricMethods: "" }));
-    setFormData((current) => ({
-      ...current,
-      biometricMethods: current.biometricMethods.includes(method)
-        ? current.biometricMethods.filter((item) => item !== method)
-        : [...current.biometricMethods, method],
-    }));
+  const validateEcode = (value: string): boolean => {
+    const regex = /^[A-Za-z0-9]*$/;
+    return regex.test(value);
   };
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const validateEmail = (value: string): boolean => {
+    const regex = /^[a-zA-Z0-9._+-]+@[a-zA-Z0-9-]+\.[a-zA-Z]{2,}$/;
+    return regex.test(value);
+  };
+
+  const handlePermissionChange = (permissionIds: string[]) => {
+    setSelectedPermissions(permissionIds);
+  };
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setSubmitError("");
 
-    if (!validateForm()) return;
+    // if (!selectedRoleIds.length) {
+    //   setSubmitError("Select at least one role.");
+    //   return;
+    // }
 
-    const fullName = `${formData.firstName.trim()} ${formData.lastName.trim()}`;
-    callback?.({
-      ...formData,
-      id:
-        formData.id ||
-        `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-      firstName: formData.firstName.trim(),
-      lastName: formData.lastName.trim(),
-      userName: formData.userName.trim() || fullName,
-      email: formData.email.trim(),
-      employeeId: formData.employeeId.trim(),
-      phoneNumber: formData.phoneNumber.trim(),
-      dateAdded: formData.dateAdded || "20 May 2024 10:32 AM",
-      lastSync: formData.lastSync || "-",
-    });
-    onClose?.();
+    if (!selectedPermissions.length) {
+      setSubmitError("Select at least one permission.");
+      return;
+    }
+
+    if (!selectedCompany) {
+      setSubmitError("Select a company.");
+      return;
+    }
+
+    // if (!companyDepartments.length) {
+    //   setSubmitError("Select at least one department.");
+    //   return;
+    // }
+
+    setloadingSaveUpdateUser(true);
+
+    try {
+      const companyNames = [selectedCompany.name];
+      const primaryDepartment = resolvePrimaryDepartment(
+        companyNames,
+        companyDepartments,
+        departmentOptions,
+      );
+      const departmentId =
+        primaryDepartment?.departmentId ??
+        resolvedUser?.departmentId ??
+        existingUserData?.departmentId;
+      const companyId =
+        selectedCompany.id ??
+        primaryDepartment?.companyId ??
+        resolvedUser?.companyId ??
+        existingUserData?.companyId;
+
+      // if (actionType === "add" && (!departmentId || !companyId)) {
+      //   setSubmitError(
+      //     "Could not resolve company and department IDs. Select matching company and department values."
+      //   );
+      //   return;
+      // }
+
+      const selectedRoleNames = roleOptions
+        .filter((role) => selectedRoleIds.includes(role.id))
+        .map((role) => role.name);
+
+      const payload = buildUserApiPayload({
+        id:
+          actionType === "edit"
+            ? (resolvedUser?.id ?? existingUserData?.id)
+            : undefined,
+        userName,
+        email,
+        firstName,
+        lastName,
+        phoneNumber,
+        roleIds: selectedRoleIds,
+        permissionIds: selectedPermissions,
+        companyNames,
+        departmentNames: companyDepartments,
+        enabled,
+        ecode,
+        departmentId,
+        companyId,
+        managerId: resolvedUser?.managerId ?? existingUserData?.managerId,
+        companyBranchId:
+          primaryDepartment?.companyBranchId ??
+          resolvedUser?.companyBranchId ??
+          existingUserData?.companyBranchId,
+        managerName:
+          manager || resolvedUser?.managerName || existingUserData?.managerName,
+        companyBranchName:
+          primaryDepartment?.companyBranchName ??
+          resolvedUser?.companyBranchName ??
+          existingUserData?.companyBranchName,
+        userRoles:
+          selectedRoleNames.length > 0
+            ? selectedRoleNames
+            : normalizeStringArray(
+                resolvedUser?.userRoles ?? existingUserData?.userRoles,
+              ),
+        exists: false,
+      });
+
+      if (actionType === "edit") {
+        const userId = resolvedUser?.id ?? existingUserData?.id;
+
+        if (!userId) {
+          throw new Error("Missing user id for update.");
+        }
+
+        const response = await fetch(`/api/users/${userId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+          throw new Error(await parseApiError(response));
+        }
+
+        const json = await response.json();
+        callback?.(json?.data ?? payload);
+        onClose?.();
+        return;
+      }
+
+      const response = await fetch("/api/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        throw new Error(await parseApiError(response));
+      }
+
+      const json = await response.json();
+      callback?.(json?.data ?? payload);
+      onClose?.();
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to save user.";
+      setSubmitError(message);
+      console.error("Error saving user:", error);
+    } finally {
+      setloadingSaveUpdateUser(false);
+    }
   };
 
   return (
-    <form className="w-full space-y-5" onSubmit={handleSubmit}>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <FieldError label="First Name" error={errors.firstName}>
+    <form className="w-full space-y-5 text-gray-600" onSubmit={handleSubmit}>
+      <div className="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2">
+        <div className="space-y-1.5">
+          <Label>
+            First Name <span className="text-red-500">*</span>
+          </Label>
           <Input
-            value={formData.firstName}
-            onChange={(event) => updateField("firstName", event.target.value)}
-            disabled={isView}
-            placeholder="First name"
+            type="text"
+            className="form-control"
+            value={firstName}
+            onChange={(e) => {
+              const value = e.target.value;
+              if (validateFirstLastName(value) || value === "") {
+                setFirstName(value);
+                setErrorFirstName("");
+              } else {
+                setErrorFirstName("Only letters, spaces, and hyphens allowed");
+              }
+            }}
+            maxLength={25}
             required
+            placeholder="Firstname"
+            disabled={actionType === "view"}
           />
-        </FieldError>
+          {errorFirstName && (
+            <span className="text-red-500 text-[12px]">{errorFirstName}</span>
+          )}
+        </div>
 
-        <FieldError label="Last Name" error={errors.lastName}>
+        <div className="space-y-1.5">
+          <Label>
+            Last Name <span className="text-red-500">*</span>
+          </Label>
           <Input
-            value={formData.lastName}
-            onChange={(event) => updateField("lastName", event.target.value)}
-            disabled={isView}
-            placeholder="Last name"
+            type="text"
+            className="form-control"
+            value={lastName}
+            onChange={(e) => {
+              const value = e.target.value;
+              if (validateFirstLastName(value) || value === "") {
+                setLastName(value);
+                setErrorLastName("");
+              } else {
+                setErrorLastName("Only letters, spaces, and hyphens allowed");
+              }
+            }}
+            maxLength={25}
             required
+            placeholder="Lastname"
+            disabled={actionType === "view"}
           />
-        </FieldError>
+          {errorLastName && (
+            <span className="text-red-500 text-[12px]">{errorLastName}</span>
+          )}
+        </div>
 
-        <FieldError label="Employee ID" error={errors.employeeId}>
+        <div className="space-y-1.5">
+          <Label>
+            UserName <span className="text-red-500">*</span>
+          </Label>
           <Input
-            value={formData.employeeId}
-            onChange={(event) => updateField("employeeId", event.target.value)}
-            disabled={isView || actionType === "edit"}
-            placeholder="EMP-2041"
+            type="text"
+            className="form-control"
+            value={userName}
+            onChange={(e) => {
+              const value = e.target.value;
+              if (validateUsername(value) || value === "") {
+                setUserName(value);
+                setErrorUsername("");
+              } else {
+                setErrorUsername("Only letters and underscores allowed");
+              }
+            }}
+            maxLength={25}
             required
+            placeholder="Enter username"
+            disabled={actionType === "view" || isLDAP}
           />
-        </FieldError>
+          {errorUsername && (
+            <span className="text-red-500 text-[12px]">{errorUsername}</span>
+          )}
+        </div>
 
-        <FieldError label="Email" error={errors.email}>
+        <div className="space-y-1.5">
+          <Label>
+            Email <span className="text-red-500">*</span>
+          </Label>
           <Input
             type="email"
-            value={formData.email}
-            onChange={(event) => updateField("email", event.target.value)}
-            disabled={isView}
-            placeholder="name@company.com"
+            className="form-control"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            onBlur={() => {
+              if (email === "" || validateEmail(email)) {
+                setErrorEmail("");
+              } else {
+                setErrorEmail("Please enter a valid email");
+              }
+            }}
+            maxLength={50}
             required
+            placeholder="name@gmail.com"
+            disabled={actionType === "view"}
           />
-        </FieldError>
+          {errorEmail && (
+            <span className="text-red-500 text-[12px]">{errorEmail}</span>
+          )}
+        </div>
+        <div className="space-y-1.5">
+          <Label>
+            Ecode <span className="text-red-500">*</span>
+          </Label>
+          <Input
+            type="text"
+            className="form-control"
+            value={ecode}
+            onChange={(e) => {
+              const value = e.target.value;
+              if (validateEcode(value) || value === "") {
+                setEcode(value);
+                setErrorEcode("");
+              } else {
+                setErrorEcode("Only letters and numbers allowed");
+              }
+            }}
+            maxLength={8}
+            required
+            placeholder="Ecode"
+            disabled={actionType === "view" || actionType === "edit"}
+          />
+          {errorEcode && (
+            <span className="text-red-500 text-[12px]">{errorEcode}</span>
+          )}
+        </div>
 
-        <FieldError label="Phone Number" error={errors.phoneNumber}>
+        <div className="space-y-1.5">
+          <Label>
+            Phone Number <span className="text-red-500">*</span>
+          </Label>
           <Input
             type="tel"
-            value={formData.phoneNumber}
-            onChange={(event) => updateField("phoneNumber", event.target.value)}
-            disabled={isView}
-            placeholder="+233..."
+            placeholder="Enter phone number"
+            value={phoneNumber}
+            onChange={(e) => setPhoneNumber(e.target.value)}
+            disabled={actionType === "view"}
+            //   limitMaxLength={true}
+            //   onChange={handleChangePhoneNumber}
+            //   defaultCountry="GH"
+            //   international
           />
-        </FieldError>
 
-        <div className="space-y-1.5">
-          <Label>User Type</Label>
-          <ReactSelect
-            isDisabled={isView}
-            options={userTypeOptions}
-            value={userTypeOptions.find((item) => item.value === formData.userType)}
-            onChange={(option: any) => updateField("userType", option?.value || "")}
-            classNamePrefix="react-select"
-            styles={selectStyles}
-          />
-        </div>
-
-        <div className="space-y-1.5">
-          <Label>
-            Department <span className="text-red-500">*</span>
-          </Label>
-          <ReactSelect
-            isDisabled={isView}
-            options={departmentOptions}
-            value={departmentOptions.find((item) => item.value === formData.department)}
-            onChange={(option: any) => updateField("department", option?.value || "")}
-            placeholder="Select department"
-            classNamePrefix="react-select"
-            styles={selectStyles}
-          />
-          {errors.department ? <p className="text-xs text-red-500">{errors.department}</p> : null}
-        </div>
-
-        <div className="space-y-1.5">
-          <Label>
-            Branch <span className="text-red-500">*</span>
-          </Label>
-          <ReactSelect
-            isDisabled={isView}
-            options={branchOptions}
-            value={branchOptions.find((item) => item.value === formData.branch)}
-            onChange={(option: any) => updateField("branch", option?.value || "")}
-            placeholder="Select branch"
-            classNamePrefix="react-select"
-            styles={selectStyles}
-          />
-          {errors.branch ? <p className="text-xs text-red-500">{errors.branch}</p> : null}
+          {errorPhone && (
+            <span className="text-red-500 text-[12px]">{errorPhone}</span>
+          )}
         </div>
 
         <div className="space-y-1.5 sm:col-span-2">
           <Label>
-            Assigned Devices <span className="text-red-500">*</span>
+            Role <span className="text-red-500">*</span>
           </Label>
           <ReactSelect
-            isMulti
-            isClearable
-            closeMenuOnSelect={false}
-            isDisabled={isView}
-            options={biometricDeviceOptions}
-            value={formData.assignedDevices}
-            onChange={(selectedOptions) =>
-              updateField(
-                "assignedDevices",
-                selectedOptions ? [...selectedOptions] : [],
-              )
-            }
-            placeholder="Select biometric devices"
+            name="role"
             classNamePrefix="react-select"
-            styles={selectStyles}
+            placeholder={loadingRoles ? "Loading roles..." : "Select Role"}
+            value={
+              roleOptions.find((role) => selectedRoleIds.includes(role.id))
+                ? {
+                    label:
+                      roleOptions.find((role) =>
+                        selectedRoleIds.includes(role.id),
+                      )?.name || "",
+                    value: selectedRoleIds[0],
+                  }
+                : null
+            }
+            onChange={(selectedOption: any) => {
+              setSelectedRoleIds(
+                selectedOption?.value ? [selectedOption.value] : [],
+              );
+            }}
+            isDisabled={actionType === "view" || loadingRoles}
+            options={
+              roleOptions.map((role) => ({
+                value: role.id,
+                label: role.name,
+              })) || []
+            }
+            isClearable
+            // required
           />
-          {errors.assignedDevices ? (
-            <p className="text-xs text-red-500">{errors.assignedDevices}</p>
+        </div>
+
+        <div className="space-y-2 sm:col-span-2">
+          <Label>
+            Company <span className="text-red-500">*</span>
+          </Label>
+          <ReactSelect
+            name="company"
+            classNamePrefix="react-select"
+            placeholder={
+              loadingCompanies ? "Loading companies..." : "Select Company"
+            }
+            value={
+              selectedCompany
+                ? { value: selectedCompany.id, label: selectedCompany.name }
+                : null
+            }
+            onChange={(
+              selectedOption: { value: string; label: string } | null,
+            ) => {
+              const nextCompany =
+                companies.find(
+                  (company) => company.id === selectedOption?.value,
+                ) ?? null;
+              setSelectedCompany(nextCompany);
+              setCompanyDepartments([]);
+            }}
+            isDisabled={actionType === "view" || loadingCompanies}
+            options={companies.map((company) => ({
+              value: company.id,
+              label: company.name,
+            }))}
+            isClearable
+          />
+          {companiesError ? (
+            <p className="text-xs text-red-500">{companiesError}</p>
+          ) : null}
+        </div>
+        <div className="space-y-2 sm:col-span-2">
+          <Label>
+            Department <span className="text-red-500">*</span>
+          </Label>
+          <ReactSelect
+            name="department"
+            classNamePrefix="react-select"
+            placeholder={
+              !selectedCompany
+                ? "Select a company first"
+                : loadingDepartments
+                  ? "Loading departments..."
+                  : "Select Department"
+            }
+            isMulti
+            value={companyDepartments.map((dept) => ({
+              label: dept,
+              value: dept,
+            }))}
+            onChange={(selectedOption: any) => {
+              setCompanyDepartments(
+                selectedOption
+                  ? [...selectedOption].map((option) => option.value)
+                  : [],
+              );
+            }}
+            isDisabled={
+              actionType === "view" || !selectedCompany || loadingDepartments
+            }
+            options={
+              departmentOptions.map((dept) => ({
+                value: dept.departmentName,
+                label: dept.departmentName,
+              })) || []
+            }
+            isClearable
+          />
+          {departmentsError ? (
+            <p className="text-xs text-red-500">{departmentsError}</p>
           ) : null}
         </div>
 
         <div className="space-y-2 sm:col-span-2">
           <Label>
-            Biometric Methods <span className="text-red-500">*</span>
+            Assign Devices <span className="text-red-500">*</span>
           </Label>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            {biometricMethodOptions.map((method) => (
-              <label
-                key={method}
-                className="flex min-h-10 cursor-pointer items-center gap-2 rounded-sm border border-input px-3 text-sm has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-60"
-              >
-                <Checkbox
-                  checked={formData.biometricMethods.includes(method)}
-                  disabled={isView}
-                  onCheckedChange={() => handleMethodToggle(method)}
-                />
-                <span>{method}</span>
-              </label>
-            ))}
-          </div>
-          {errors.biometricMethods ? (
-            <p className="text-xs text-red-500">{errors.biometricMethods}</p>
-          ) : null}
-        </div>
-
-        <div className="space-y-1.5">
-          <Label>Sync Status</Label>
-          <select
-            value={formData.syncStatus}
-            disabled={isView}
-            onChange={(event) =>
-              updateField("syncStatus", event.target.value as BiometricSyncStatus)
-            }
-            className="h-10 w-full rounded-sm border border-input bg-transparent px-2.5 py-1.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-50"
-          >
-            {syncStatusOptions.map((status) => (
-              <option key={status} value={status}>
-                {status}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="flex items-center gap-2 self-end pb-2">
-          <input
-            className="size-4 rounded border-input text-primary focus:ring-ring"
-            type="checkbox"
-            checked={formData.enabled}
-            disabled={isView}
-            onChange={(event) => updateField("enabled", event.target.checked)}
+          <ReactSelect
+            name="devices"
+            classNamePrefix="react-select"
+            placeholder="Select Devices"
+            isMulti
+            value={assignedDevices.map((device) => ({
+              label: device.label,
+              value: device.value,
+            }))}
+            onChange={(selectedOption: any) => {
+              setAssignedDevices(
+                selectedOption
+                  ? [...selectedOption].map((option) => ({
+                      label: option.label,
+                      value: option.value,
+                    }))
+                  : [],
+              );
+            }}
+            isDisabled={actionType === "view"}
+            options={deviceOptions}
+            isClearable
           />
-          <Label>Enable Biometric User</Label>
+        </div>
+
+        <div className="sm:col-span-2">
+          <div className="flex items-center gap-2">
+            <Label className="mr-2">Enable User</Label>
+            <input
+              className="size-4 rounded border-input text-primary focus:ring-ring"
+              type="checkbox"
+              checked={enabled}
+              disabled={actionType === "view"}
+              onChange={(e) => setEnabled(e.target.checked)}
+            />
+          </div>
         </div>
       </div>
 
-      {actionType !== "view" ? (
+      {actionType !== "view" && (
         <div className="flex justify-end border-t pt-5">
           <Button
             type="submit"
-            className="min-w-28 bg-yellow-500 text-white hover:bg-yellow-600 focus-visible:ring-yellow-400"
+            disabled={loadingSaveUpdateUser}
+            className="min-w-24 bg-yellow-500 text-white hover:bg-yellow-600 focus-visible:ring-yellow-400 disabled:pointer-events-none disabled:opacity-50"
           >
-            {actionType === "edit" ? "Save Changes" : "Enroll User"}
-          </Button>
-        </div>
-      ) : (
-        <div className="flex justify-end border-t pt-5">
-          <Button
-            type="button"
-            onClick={onClose}
-            className="min-w-24 bg-yellow-500 text-white hover:bg-yellow-600"
-          >
-            Close
+            {actionType === "edit" ? "Save Changes" : "Save"}
           </Button>
         </div>
       )}
     </form>
   );
-}
+};
 
-function FieldError({
-  label,
-  error,
-  children,
-}: {
-  label: string;
-  error?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="space-y-1.5">
-      <Label>
-        {label} <span className="text-red-500">*</span>
-      </Label>
-      {children}
-      {error ? <p className="text-xs text-red-500">{error}</p> : null}
-    </div>
-  );
-}
+export default AddEditBiometricUser;

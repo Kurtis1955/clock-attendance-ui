@@ -91,7 +91,20 @@ function AttendanceRow({ record }: { record: RecentAttendanceRecord }) {
   )
 }
 
-export function RecentAttendanceTable() {
+interface RecentAttendanceTableProps {
+  records?: RecentAttendanceRecord[] | null;
+  loading?: boolean;
+  error?: string | null;
+}
+
+export function RecentAttendanceTable({
+  records = null,
+  loading = false,
+  error = null,
+}: RecentAttendanceTableProps) {
+  const displayRecords =
+    records && records.length > 0 ? records : recentAttendanceRecords;
+
   return (
     <Card className="border-slate-200 shadow-sm">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
@@ -128,10 +141,49 @@ export function RecentAttendanceTable() {
               </tr>
             </thead>
             <tbody>
-              {recentAttendanceRecords.map((record) => (
-                <AttendanceRow key={record.id} record={record} />
-              ))}
+              {loading ? (
+                <tr>
+                  <td colSpan={5} className="px-4 py-6 text-center text-sm text-[#64748b]">
+                    Loading recent attendance...
+                  </td>
+                </tr>
+              )  : displayRecords.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="px-4 py-6 text-center text-sm text-[#64748b]">
+                    No recent attendance records available.
+                  </td>
+                </tr>
+              ) : (
+                displayRecords.map((record) => (
+                  <AttendanceRow key={record.id} record={record} />
+                ))
+              )}
             </tbody>
+            {/* <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan={5} className="px-4 py-6 text-center text-sm text-[#64748b]">
+                    Loading recent attendance...
+                  </td>
+                </tr>
+              ) : error ? (
+                <tr>
+                  <td colSpan={5} className="px-4 py-6 text-center text-sm text-red-600">
+                    {error}
+                  </td>
+                </tr>
+              ) : displayRecords.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="px-4 py-6 text-center text-sm text-[#64748b]">
+                    No recent attendance records available.
+                  </td>
+                </tr>
+              ) : (
+                displayRecords.map((record) => (
+                  <AttendanceRow key={record.id} record={record} />
+                ))
+              )}
+            </tbody> */}
           </table>
         </div>
       </CardContent>

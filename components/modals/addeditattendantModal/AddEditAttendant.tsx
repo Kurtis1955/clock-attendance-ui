@@ -54,9 +54,10 @@ export default function AddEditAttendant({
   callback,
   onClose,
 }: AddEditAttendantProps) {
-  const [formData, setFormData] = useState<AttendantRecord>(
-    { ...emptyRecord, ...existingAttendantData },
-  );
+  const [formData, setFormData] = useState<AttendantRecord>({
+    ...emptyRecord,
+    ...existingAttendantData,
+  });
 
   const isViewMode = actionType === "view";
 
@@ -78,6 +79,72 @@ export default function AddEditAttendant({
     event.preventDefault();
     callback?.(formData);
     onClose?.();
+  };
+
+  /**
+   * Handles the submission of attendance record data to the API.
+   * Supports both creating new records (add) and updating existing ones (edit).
+   * 
+   * - For edit: sends a PUT request to `/api/attendance/{employeeId}`
+   * - For add: sends a POST request to `/api/attendance`
+   * 
+   * On success, triggers the callback with the response data and closes the modal.
+   * On error, logs the error to the console.
+   */
+  const handleAddEditSubmit = async () => {
+    try {
+      // Build the payload from form data
+      const payload = {
+        employeeId: formData.employeeId,
+        name: formData.name,
+        team: formData.team,
+        branch: formData.branch,
+        device: formData.device,
+        clockIn: formData.clockIn,
+        clockOut: formData.clockOut,
+        hours: formData.hours,
+        status: formData.status,
+        method: formData.method,
+      };
+
+      // Handle edit action - update existing record
+      if (actionType === "edit") {
+        const response = await fetch(`/api/attendance/${formData.employeeId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to update attendance record");
+        }
+
+        // Return the API response or fallback to sent payload
+        const json = await response.json();
+        callback?.(json?.data ?? payload);
+        onClose?.();
+        return;
+      }
+
+      // Handle add action - create new record
+      const response = await fetch("/api/attendance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to create attendance record");
+      }
+
+      // Return the API response or fallback to sent payload
+      const json = await response.json();
+      callback?.(json?.data ?? payload);
+      onClose?.();
+    } catch (error) {
+      // Log any errors that occur during the API request
+      console.error("Error saving attendance record:", error);
+    }
   };
 
   return (
