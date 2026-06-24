@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   RiBarChartBoxLine,
   RiDownloadLine,
@@ -21,6 +21,8 @@ import { DataTable } from "@/components/tables/data-table";
 import { attendanceTableColumns } from "@/components/tables/attendanceTable/attendance-table";
 import { regrexForSpecialDashChars } from "@/lib/helpers";
 import AddEditAttendant from "@/components/modals/addeditattendantModal/AddEditAttendant";
+import useSearchAttendance from "@/hooks/useSearchAttendance";
+import _debounce from "lodash/debounce";
 
 type AttendanceStatus = "Present" | "Absent" | "On Duty" | "Remote";
 
@@ -136,16 +138,60 @@ export default function AttendancePage() {
   const [attendanceRecords, setAttendanceRecords] =
     useState<AttendanceRecord[]>(records);
   const [pageSize, setPageSize] = useState(10);
+  const [totalItems, setTotalItems] = useState();
   const [selectedAttendant, setSelectedAttendant] =
     useState<AttendanceRecord | null>(null);
   const [attendantModalAction, setAttendantModalAction] = useState<
     "add" | "view" | "edit"
   >("view");
   const [isAttendantModalOpen, setIsAttendantModalOpen] = useState(false);
+  const [pageCount, setPageCount] = useState(0);
+  const [filterData, setFilterData] = useState("");
+  const [loadingRoleDetails, setLoadingUserDetails] = useState(false);
 
-  const handleChangeTextSearch = (e: any) => {
-    const dataToSearch = regrexForSpecialDashChars(e.target.value);
-    setSearchQuery(dataToSearch);
+  const {
+    inputValue,
+    handleInputRoleChange,
+    attendanceSearch,
+    error: attendanceSearchError,
+    loading: loadingRole,
+  } = useSearchAttendance({ pageCount, pageSize, filterData });
+
+  //useEffect implemented to run the function
+  // which fetches attendance Records
+  useEffect(() => {
+    if (inputValue == "") {
+      fetchAttendance();
+    } else {
+      if (attendanceSearch?.content?.length) {
+        console.log("roleSearch>>>", attendanceSearch);
+        setAttendanceRecords(attendanceSearch?.content);
+        setLoadingUserDetails(!loadingRoleDetails);
+      } else {
+        setAttendanceRecords([]);
+        setLoadingUserDetails(!loadingRoleDetails);
+      }
+    }
+    console.log("loadingRoleDetails>>", loadingRoleDetails);
+  }, [attendanceSearch?.content?.length, inputValue, pageCount, pageSize]);
+
+  // fetch attendance api consumed using the fetchAttendance function.
+  // the function runs to get data from the api and stores in a react
+  // state which is used for the listing in the table
+  const fetchAttendance = async () => {
+    try {
+      const res = await fetch("/api/attendance");
+
+      if (res.ok) {
+        const data = await res.json();
+        setAttendanceRecords(data.data.content);
+        setTotalItems(data.data.totalElements);
+      } else {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+    } catch (error) {
+      console.error("Error Fecthing Attendance:", error);
+    }
   };
 
   const filteredRecords = useMemo(() => {
@@ -164,7 +210,6 @@ export default function AttendancePage() {
   }, [attendanceRecords, branchFilter, searchQuery, statusFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filteredRecords.length / pageSize));
-  
   // setAttendanceRecords(filteredRecords);
 
   const handleRowAction = (actionType: any, rowData: any) => {
@@ -197,7 +242,16 @@ export default function AttendancePage() {
     //fetchPageData(pageIndex, pageSize);
     console.log("pageIndex@11>>", pageIndex, "pageSize>>", pageSize);
     setPageSize(pageSize);
+    setPageCount(pageIndex);
   };
+
+  const handleChangeTextSearch = (e: any) => {
+    const dataToSearch = regrexForSpecialDashChars(e.target.value);
+    setSearchQuery(dataToSearch);
+    debouncedSearch(dataToSearch);
+  };
+
+  const debouncedSearch = _debounce(handleInputRoleChange, 500);
 
   const handleAttendantSave = (updatedAttendant: AttendanceRecord) => {
     setAttendanceRecords((currentRecords) => {
