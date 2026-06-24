@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import useSearchDevice from "@/hooks/useSearchDevice";
 import { regrexForSpecialDashChars } from "@/lib/helpers";
 import { useMemo, useState } from "react";
 import {
@@ -321,11 +322,39 @@ export default function DevicesPage() {
   const [actionType, setActionType] = useState<"add" | "edit" | "view">("add");
   const [pageCount, setPageCount] = useState(0);
   const [pageSize, setPageSize] = useState(10);
+  const [totalItems, setTotalItems] = useState(10);
+  const [filterData, setFilterData] = useState("");
+
+  const {
+    inputValue,
+    handleInputRoleChange,
+    deviceSearch,
+    error: roleSearchError,
+    loading: loadingRole,
+  } = useSearchDevice({ pageCount, pageSize, filterData });
 
   const statCards = useMemo(
     () => getDeviceStatCards(storeRetrievedData),
     [storeRetrievedData],
   );
+
+  const fetchDevices = async () => {
+    try {
+      const res = await fetch(
+        `/api/device?paginate=true&page=${pageCount}&size=${pageSize}`,
+      );
+
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+
+      const data = await res.json();
+      setStoreRetrievedData(data.data.content);
+      setTotalItems(data.data.totalElements);
+    } catch (error) {
+      console.error("Error Fecthing users:", error);
+    }
+  };
 
   const handleRowAction = (actionType: any, rowData: any) => {
     console.log("actionType", actionType, "rowData>>", rowData);
@@ -348,8 +377,10 @@ export default function DevicesPage() {
       ]);
       // setisLDAP(false);
       console.log("isGeneralModalOpen:", true);
-    } else if (actionType == "switch") {
-      // getChangeUserStatus(rowData);
+    } else if (actionType == "delete") {
+      getChangeUserStatus(rowData, actionType);
+    } else if (actionType == "sync-device") {
+      getChangeUserStatus(rowData, actionType);
     }
   };
 
@@ -387,6 +418,92 @@ export default function DevicesPage() {
         device.id === existingDevice.id ? savedDevice : device,
       );
     });
+  };
+
+  const getChangeUserStatus = async (rowData: any, actionType: any) => {
+    try {
+      if (actionType.toLowerCase() === "delete") {
+        const deviceRemoval = await fetch(`/api/device/?id=${rowData.id}`, {
+          method: "PUT",
+          body: JSON.stringify({ enabled: rowData.statusCheck }),
+        });
+
+        if (!deviceRemoval.ok) {
+          throw new Error(`HTTP error! status: ${deviceRemoval.status}`);
+        }
+        console.log("Device removed");
+      } else {
+        const deviceResync = await fetch(`/api/device/?id=${rowData.id}`, {
+          method: "PUT",
+          body: JSON.stringify({ enabled: rowData.statusCheck }),
+        });
+
+        if (!deviceResync.ok) {
+          throw new Error(`HTTP error! status: ${deviceResync.status}`);
+        }
+        console.log("Device removed");
+      }
+      fetchDevices();
+    } catch (error) {
+      console.log("error occured");
+    }
+  };
+
+  /**
+   * Handles the submission of a new device to the API.
+   * Validates required fields, sends POST request to `/api/devices`,
+   * and updates the local devices list on success.
+   *
+   * @param deviceData - The device data to submit
+   * @returns Promise<void>
+   */
+  const handleSubmitDevice = async (deviceData: DeviceRecord) => {
+    try {
+      // Validate required fields
+      if (
+        !deviceData.device_sn ||
+        !deviceData.device_name ||
+        !deviceData.alias_name
+      ) {
+        console.error(
+          "Missing required fields: Serial Number, Device Name, or Location",
+        );
+        return;
+      }
+
+      // Build the payload with only the fields from the add modal
+      const payload = {
+        device_sn: deviceData.device_sn,
+        device_name: deviceData.device_name,
+        alias_name: deviceData.alias_name,
+        device_type: deviceData.device_type,
+      };
+
+      // Send POST request to create new device
+      const response = await fetch("/api/devices", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to create device");
+      }
+
+      // Parse response and update local state
+      const json = await response.json();
+      const newDevice = json?.data ?? payload;
+
+      handleDeviceSave(newDevice);
+      setIsAddDeviceModalOpen(false);
+      setSelectedDevice(null);
+
+      console.log("Device created successfully:", newDevice);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to save device.";
+      console.error("Error saving device:", message);
+    }
   };
 
   const filteredDevices = useMemo(() => {
@@ -454,6 +571,9 @@ export default function DevicesPage() {
                   <div className="flex justify-end  pt-6">
                     <Button
                       type="submit"
+                      onClick={() => {
+                        handleDeviceSave;
+                      }}
                       className="bg-yellow-500 hover:bg-yellow-600"
                     >
                       Save Device
