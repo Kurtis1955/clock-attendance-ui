@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   RiAddLine,
   RiBarChartBoxLine,
@@ -26,13 +26,13 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import {
-  getAllNavigationPermissionValues,
-} from "@/lib/navigation";
+import { getAllNavigationPermissionValues } from "@/lib/navigation";
 import { DataTable } from "@/components/tables/data-table";
 import { roleTableColumns } from "@/components/tables/roleTable/role-management-table";
 import AddEditRole from "@/components/modals/addeditroleModal/AddEditRole";
 import { regrexForSpecialDashChars } from "@/lib/helpers";
+import useSearchRoles from "@/hooks/useSearchRoles";
+import _debounce from "lodash/debounce";
 
 type RoleType = "System" | "Custom";
 type RoleStatus = "Active" | "Inactive";
@@ -201,7 +201,7 @@ export default function RolesPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
   const [storeRetrievedData, setStoreRetrievedData] = useState(roles);
-  const [pageCount, setPageCount] = useState(1);
+  const [pageCount, setPageCount] = useState(0);
   const [pageSize, setPageSize] = useState(10);
   const [selectedRole, setSelectedRole] = useState<RoleItem | null>(null);
   const [roleModalAction, setRoleModalAction] = useState<"view" | "edit">(
@@ -209,11 +209,38 @@ export default function RolesPage() {
   );
   const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
   const [isAddRoleModalOpen, setIsAddRoleModalOpen] = useState(false);
+  const [totalItems, setTotalItems] = useState(10);
+  const [filterData, setFilterData] = useState("");
+  const [loadingRoleDetails, setLoadingUserDetails] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const statCards = useMemo(
     () => getStatCards(storeRetrievedData),
     [storeRetrievedData],
   );
+  const {
+    inputValue,
+    handleInputRoleChange,
+    roleSearch,
+    error: roleSearchError,
+    loading: loadingRole,
+  } = useSearchRoles({ pageCount, pageSize, filterData });
+
+  useEffect(() => {
+    if (inputValue == "") {
+      fetchRoles();
+    } else {
+      if (roleSearch?.content?.length) {
+        console.log("roleSearch>>>", roleSearch);
+        setStoreRetrievedData(roleSearch?.content);
+        setLoadingUserDetails(!loadingRoleDetails);
+      } else {
+        setStoreRetrievedData([]);
+        setLoadingUserDetails(!loadingRoleDetails);
+      }
+    }
+    console.log("loadingRoleDetails>>", loadingRoleDetails);
+  }, [roleSearch?.content?.length, inputValue, pageCount, pageSize]);
 
   const filteredRoles = useMemo(() => {
     return storeRetrievedData.filter((role) => {
@@ -251,10 +278,71 @@ export default function RolesPage() {
       // setisLDAP(false);
       console.log("isGeneralModalOpen:", true);
     } else if (actionType == "switch") {
-      // getChangeUserStatus(rowData);
+      getChangeRowStatus(rowData);
     }
   };
 
+  const fetchRoles = async () => {
+    try {
+      const res = await fetch(
+        `/api/roles?paginate=true&page=${pageCount}&size=${pageSize}`,
+      );
+
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+
+      const data = await res.json();
+      setStoreRetrievedData(data.data.content);
+      setTotalItems(data.data.totalElements);
+    } catch (error) {
+      console.error("Error Fecthing users:", error);
+    }
+  };
+
+  const getChangeRowStatus = async (rowData: any) => {
+    setLoading(true);
+
+    try {
+      const userReq = await fetch(`/api/roles/?id=${rowData.id}`, {
+        method: "PUT",
+        body: JSON.stringify({ enabled: rowData.statusCheck }),
+      });
+      if (userReq.ok) {
+        // toast({
+        //   title: "Success!",
+        //   description: "User updated successfully",
+        //   status: "success", // 'info', 'warning', 'error', 'success'
+        //   duration: 3000, // Duration in milliseconds
+        //   isClosable: true, // Allows closing the toast
+        // });
+
+        setStoreRetrievedData((prevData) => {
+          if (!prevData) return prevData;
+          return prevData.map((item: any) => {
+            console.log("item", item, "equals", item.id === rowData.id);
+            return item.id === rowData.id
+              ? { ...item, enabled: rowData.statusCheck }
+              : item;
+          });
+        });
+      } else {
+        console.log("error changing role status");
+      }
+    } catch (error) {
+      console.error("Error updating role status:", error);
+      // toast({
+      //   title: "Error!",
+      //   description: "Failed to update role status",
+      //   status: "error", // 'info', 'warning', 'error', 'success'
+      //   duration: 3000, // Duration in milliseconds
+      //   isClosable: true, // Allows closing the toast
+      // });
+    }
+    setTimeout(() => {
+      setLoading(false);
+    }, 200);
+  };
   const handlePageChange = (pageIndex: number, pageSize: number) => {
     //fetchPageData(pageIndex, pageSize);
     console.log("pageIndex@11>>", pageIndex, "pageSize>>", pageSize);
@@ -264,7 +352,9 @@ export default function RolesPage() {
 
   const handleRoleSave = (updatedRole: RoleItem) => {
     setStoreRetrievedData((currentRoles) => {
-      const roleExists = currentRoles.some((role) => role.id === updatedRole.id);
+      const roleExists = currentRoles.some(
+        (role) => role.id === updatedRole.id,
+      );
 
       if (!roleExists) {
         return [updatedRole, ...currentRoles];
@@ -279,7 +369,9 @@ export default function RolesPage() {
   const handleChangeTextSearch = (e: any) => {
     const dataToSearch = regrexForSpecialDashChars(e.target.value);
     setSearchQuery(dataToSearch);
+    debouncedSearch(dataToSearch);
   };
+  const debouncedSearch = _debounce(handleInputRoleChange, 500);
 
   return (
     <div className="w-full flex flex-col gap-5 px-2 lg:px-8 pt-2">
@@ -360,7 +452,7 @@ export default function RolesPage() {
                 value={searchQuery}
                 onChange={(e) => {
                   handleChangeTextSearch(e);
-                  // setFilterData("");
+                  setFilterData("");
                 }}
                 className="h-10 pr-10"
               />
@@ -398,11 +490,11 @@ export default function RolesPage() {
           <div className="w-full flex flex-row gap-4">
             <DataTable
               columns={roleTableColumns(handleRowAction) as any}
-              data={filteredRoles as any}
+              data={storeRetrievedData as any}
               pageCount={pageCount}
               onPageChange={handlePageChange}
               pageSize={pageSize}
-              totalItems={filteredRoles.length}
+              totalItems={storeRetrievedData.length}
               type="roles"
               defaultColumns={["Drag", "Actions", "User Number"]}
             />
@@ -479,8 +571,14 @@ export default function RolesPage() {
           <AddEditRole
             actionType={roleModalAction}
             existingRoleData={selectedRole}
-            callback={handleRoleSave}
-            onClose={() => setIsRoleModalOpen(false)}
+            callback={()=>{
+              handleRoleSave
+              fetchRoles()
+            }}
+            onClose={() => 
+              setIsRoleModalOpen(false) 
+              
+            }
           />
         </DialogContent>
       </Dialog>

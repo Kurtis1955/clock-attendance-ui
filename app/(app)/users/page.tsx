@@ -9,16 +9,17 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { modalContentTypeData } from "@/lib/constants";
 import { regrexForSpecialDashChars } from "@/lib/helpers";
 import { managedUsers } from "@/lib/users-data";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import _debounce from "lodash/debounce";
 import { Button } from "@/components/ui/button";
 import AddEditUser from "@/components/modals/addedituserModal/AddEditUser";
 import { RiAddLine, RiDownloadLine } from "react-icons/ri";
+import useSearchUsers from "@/hooks/useSearchUser";
 
 const retrievedData = managedUsers;
 export default function UsersPage() {
@@ -32,8 +33,34 @@ export default function UsersPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterData, setFilterData] = useState("");
   const [isModalOpen, setModalOpen] = useState(false);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [actionType, setActionType] = useState("");
+  const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [loadingUserDetails, setLoadingUserDetails] = useState(false);
 
+  const {
+    inputValue,
+    handleInputUserChange,
+    userSearch,
+    error: userSearchError,
+    loading: loadingUser,
+  } = useSearchUsers({ pageCount, pageSize, filterData });
+
+  useEffect(() => {
+    if (inputValue == "") {
+      fetchUsers();
+    } else {
+      if (userSearch?.content?.length) {
+        console.log("userSearch>>>", userSearch);
+        setStoreRetrievedData(userSearch?.content);
+        setLoadingUserDetails(!loadingUserDetails);
+      } else {
+        setStoreRetrievedData([]);
+        setLoadingUserDetails(!loadingUserDetails);
+      }
+    }
+  }, [userSearch?.content?.length, inputValue, pageCount,pageSize]);
 
   const initiateModal = (modalType: any) => {
     console.log("Setting modal content type to:", modalType);
@@ -63,7 +90,7 @@ export default function UsersPage() {
       // setisLDAP(false);
       console.log("isGeneralModalOpen:", true);
     } else if (actionType == "switch") {
-      // getChangeUserStatus(rowData);
+      getChangeUserStatus(rowData);
     }
   };
 
@@ -74,39 +101,116 @@ export default function UsersPage() {
     setPageSize(pageSize);
   };
 
+  const getChangeUserStatus = async (rowData: any) => {
+    setLoading(true);
+    try {
+      const res = await fetch(
+        `/api/users/${rowData.id}/status?enabled=${rowData.statusCheck}`,
+        {
+          method: "PUT",
+        },
+      );
+      setStoreRetrievedData((prevData) => {
+        if (!prevData) return prevData;
+        return prevData.map((item: any) => {
+          console.log("item", item, "equals", item.id === rowData.id);
+          return item.id === rowData.id
+            ? { ...item, enabled: rowData.statusCheck }
+            : item;
+        });
+      });
+      setLoading(false);
+    } catch (error) {}
+  };
+
   const handleChangeTextSearch = (e: any) => {
     const dataToSearch = regrexForSpecialDashChars(e.target.value);
     setSearchQuery(dataToSearch);
     debouncedSearch(dataToSearch);
   };
 
-  const debouncedSearch = _debounce((query: string) => {
-    if (query.trim() === "") {
-      setStoreRetrievedData(retrievedData);
-    } else {
-      const filteredData = retrievedData.filter((user) => {
-        const fullName = `${user.firstName} ${user.lastName}`.toLowerCase();
-        return (
-          fullName.includes(query.toLowerCase()) ||
-          user.userName.toLowerCase().includes(query.toLowerCase()) ||
-          user.email.toLowerCase().includes(query.toLowerCase())
-        );
-      });
-      setStoreRetrievedData(filteredData);
-    }
-  }, 300);
+  const debouncedSearch = _debounce(handleInputUserChange, 500);
 
   const initialCallback = (e: any) => {
     setModalOpen(false);
   };
 
-  const handleUserSave = (updatedUser: any) => {
-    setStoreRetrievedData((currentUsers) =>
-      currentUsers.map((user) =>
-        user.id === updatedUser.id ? { ...user, ...updatedUser } : user,
-      ),
-    );
+  const handleUserSave = async () => {
+    await fetchUsers();
+    setIsGeneralModalOpen(false);
+    setIsAddDialogOpen(false);
   };
+
+  const fetchUsers = async () => {
+    try {
+      const res = await fetch(
+        `/api/users?paginate=true&page=${pageCount}&size=${pageSize}`,
+      );
+
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+
+      const data = await res.json();
+      setStoreRetrievedData(data.data.content);
+      setTotalItems(data.data.totalElements);
+    } catch (error) {
+      console.error("Error Fecthing users:", error);
+    }
+  };
+
+  /**
+   * Handles the export of users data to a file.
+   * Calls the export API endpoint and triggers a file download.
+   * Supports formats like CSV or Excel based on the API response.
+   */
+  const handleExportUsers = async () => {
+    try {
+      setLoading(true);
+
+      // Call the export API endpoint
+      const response = await fetch("/api/users/export", {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to export users");
+      }
+
+      // Get the blob from the response
+      const blob = await response.blob();
+
+      // Determine file name and type from response headers
+      const contentDisposition = response.headers.get("Content-Disposition");
+      let fileName = "users-export.csv";
+
+      if (contentDisposition) {
+        const match = contentDisposition.match(/filename="(.+)"/);
+        if (match) {
+          fileName = match[1];
+        }
+      }
+
+      // Create a temporary URL for the blob and trigger download
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      setLoading(false);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Export failed";
+      console.error("Error exporting users:", message);
+      setLoading(false);
+    }
+  };
+
+  console.log("stored search data>>", storeRetrievedData)
 
   return (
     <div className="px-2 lg:px-8 pt-2 flex flex-col gap-4">
@@ -117,41 +221,41 @@ export default function UsersPage() {
           </h1>
 
           <div className="w-1/2 flex items-center justify-end gap-2">
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button variant="outline" className="border-slate-200 bg-white">
-                <RiAddLine className="size-4" />
-                Add User
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-3xl">
-              <DialogHeader>
-                <DialogTitle>Add User</DialogTitle>
-                <DialogDescription>
-                  Fill in the details to add a new user.
-                </DialogDescription>
-              </DialogHeader>
-              <AddEditUser
-                actionType="add"
-                existingRolePermissionData={null}
-                permissionCategories={null}
-                callback={() => {
-                  // loadRoles();
-                }}
-                onClose={() => {
-                  setIsGeneralModalOpen(false);
-                  // loadRoles();
-                }}
-              />
-            </DialogContent>
-          </Dialog>
+            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" className="border-slate-200 bg-white">
+                  <RiAddLine className="size-4" />
+                  Add User
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-3xl">
+                <DialogHeader>
+                  <DialogTitle>Add User</DialogTitle>
+                  <DialogDescription>
+                    Fill in the details to add a new user.
+                  </DialogDescription>
+                </DialogHeader>
+                <AddEditUser
+                  actionType="add"
+                  existingUserData={null}
+                  permissionCategories={null}
+                  callback={handleUserSave}
+                  onClose={() => setIsAddDialogOpen(false)}
+                />
+              </DialogContent>
+            </Dialog>
             {/* <Button variant="outline" className="border-slate-200 bg-white">
             <RiUploadLine className="size-4" />
             Import Users
           </Button> */}
-            <Button variant="outline" className="border-slate-200 bg-white">
+            <Button
+              variant="outline"
+              className="border-slate-200 bg-white"
+              onClick={handleExportUsers}
+              disabled={loading}
+            >
               <RiDownloadLine className="size-4" />
-              Export
+              {loading ? "Exporting..." : "Export"}
             </Button>
             {/* <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -260,7 +364,6 @@ export default function UsersPage() {
           />
         </DialogContent>
       </Dialog>
-      
     </div>
   );
 }
