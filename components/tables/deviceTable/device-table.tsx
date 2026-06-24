@@ -134,19 +134,19 @@ export const deviceTableColumns = (rowCallback: any) => [
           </DropdownMenuTrigger>
 
           <DropdownMenuContent align="end">
-            <DropdownMenuItem
+            {/* <DropdownMenuItem
               onClick={() => rowCallback("assign-users", row.original)}
             >
               Assign Users
-            </DropdownMenuItem>
+            </DropdownMenuItem> */}
 
             <DropdownMenuItem
               onClick={() => rowCallback("sync-device", row.original)}
             >
-              Sync Device
+              Reboot Device
             </DropdownMenuItem>
 
-            <DropdownMenuItem
+            {/* <DropdownMenuItem
               onClick={() => rowCallback("configuration", row.original)}
             >
               Configure Device
@@ -154,7 +154,7 @@ export const deviceTableColumns = (rowCallback: any) => [
 
             <DropdownMenuItem onClick={() => rowCallback("logs", row.original)}>
               View Logs
-            </DropdownMenuItem>
+            </DropdownMenuItem> */}
 
             <DropdownMenuItem
               className="text-red-600"

@@ -1,22 +1,20 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  getNavigationItemPermissionValues,
-  navigationItems,
-} from "@/lib/navigation";
-import PermissionGroup from "@/hooks/permissions";
+import { PermissionPicker } from "@/components/users/permission-picker";
+import { normalizeIdList } from "@/lib/user-payload";
+import { useToast } from "@chakra-ui/react";
 import {
   validateMinimumTextLength,
   validateRequiredText,
   validateRoleNameText,
 } from "@/lib/helpers";
 
-type RoleStatus = "Active" | "Inactive";
+type Roleenabled = "Active" | "Inactive";
 type RoleType = "System" | "Custom";
 
 interface AddEditRoleProps {
@@ -42,34 +40,64 @@ export default function AddEditRole({
   const [description, setDescription] = useState(
     existingRoleData?.description || "",
   );
-  const [type, setType] = useState<RoleType>(existingRoleData?.type || "Custom");
-  const [status, setStatus] = useState<RoleStatus>(
-    existingRoleData?.status || "Active",
+  const [type, setType] = useState<RoleType>(
+    existingRoleData?.type || "Custom",
+  );
+  const [enabled, setenabled] = useState<boolean>(
+    Boolean(existingRoleData?.enabled),
   );
   const [selectedPermissions, setSelectedPermissions] = useState<string[]>(
-    existingRoleData?.permissions || [],
+    normalizeIdList(existingRoleData?.permissions),
   );
   const [errors, setErrors] = useState<RoleFormErrors>({});
 
   const isView = actionType === "view";
-  const selectedCount = selectedPermissions.length;
-  const totalPermissionCount = useMemo(
-    () =>
-      navigationItems.reduce(
-        (total, item) => total + getNavigationItemPermissionValues(item).length,
-        0,
-      ),
-    [],
-  );
+  const toast = useToast()
 
   useEffect(() => {
     setName(existingRoleData?.name || "");
     setDescription(existingRoleData?.description || "");
     setType(existingRoleData?.type || "Custom");
-    setStatus(existingRoleData?.status || "Active");
-    setSelectedPermissions(existingRoleData?.permissions || []);
+    setenabled(Boolean(existingRoleData?.enabled));
+    setSelectedPermissions(normalizeIdList(existingRoleData?.permissions));
     setErrors({});
   }, [existingRoleData]);
+
+  useEffect(() => {
+    async function loadRolePermissions() {
+      const roleId = existingRoleData?.id;
+
+      if (!roleId || actionType === "add") {
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/roles/${roleId}/permissions`);
+
+        if (!response.ok) {
+          return;
+        }
+
+        const json = await response.json();
+        const content = json?.data?.permissions ?? json?.data ?? [];
+        const permissionIds = Array.isArray(content)
+          ? content
+              .map((item: { permissionId?: string } | string) =>
+                typeof item === "string" ? item : (item.permissionId ?? ""),
+              )
+              .filter(Boolean)
+          : normalizeIdList(content);
+
+        if (permissionIds.length) {
+          setSelectedPermissions(permissionIds);
+        }
+      } catch (error) {
+        console.error("Error loading role permissions:", error);
+      }
+    }
+
+    loadRolePermissions();
+  }, [existingRoleData?.id, actionType]);
 
   const validateForm = () => {
     const nextErrors: RoleFormErrors = {};
@@ -104,62 +132,73 @@ export default function AddEditRole({
     return Object.keys(nextErrors).length === 0;
   };
 
-  const handlePermissionChange = (permissionValues: string[]) => {
+  const handlePermissionChange = (permissionIds: string[]) => {
     setErrors((currentErrors) => ({
       ...currentErrors,
       permissions: undefined,
     }));
-    setSelectedPermissions((currentPermissions) =>
-      permissionValues.every((permissionValue) =>
-        currentPermissions.includes(permissionValue),
-      )
-        ? currentPermissions.filter(
-            (permission) => !permissionValues.includes(permission),
-          )
-        : Array.from(new Set([...currentPermissions, ...permissionValues])),
-    );
+    setSelectedPermissions(permissionIds);
   };
 
-  const handleSelectAll = () => {
-    const allPermissions = navigationItems.flatMap((item) =>
-      getNavigationItemPermissionValues(item),
-    );
-    setErrors((currentErrors) => ({
-      ...currentErrors,
-      permissions: undefined,
-    }));
-    setSelectedPermissions((currentPermissions) =>
-      currentPermissions.length === allPermissions.length ? [] : allPermissions,
-    );
+  const handleRoleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    try {
+      const payload = {
+        name: name,
+        description: description,
+        enabled: enabled ? enabled : false,
+      };
+
+      if (actionType === "add") {
+        const res = await fetch("/api/roles", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        if (res.ok) {
+          console.log("role created successfully");
+          onClose?.();
+        } else console.log("an error occurred");
+      } else {
+        const res = await fetch(`/api/roles/${existingRoleData.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+
+        if (selectedPermissions.length) {
+          const permission = await fetch(
+            `/api/roles/${existingRoleData.id}/default-permissions`,
+            {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(selectedPermissions),
+            },
+          );
+          if (permission.ok) {
+            console.log("role created successfully");
+            onClose?.();
+          } else console.log("an error occurred");
+        }
+        if (res.ok) {
+          console.log("role updated successfully");
+          toast({
+            title: "Success!",
+            description: "User updated successfully",
+            status: "success", // 'info', 'warning', 'error', 'success'
+            duration: 3000, // Duration in milliseconds
+            isClosable: true, // Allows closing the toast
+          });
+        } else console.log("an error occurred");
+      }
+    } catch (error) {}
   };
 
   return (
-    <form
-      className="w-full space-y-5"
-      onSubmit={(event) => {
-        event.preventDefault();
-        if (!validateForm()) {
-          return;
-        }
-
-        callback?.({
-          ...existingRoleData,
-          id:
-            existingRoleData?.id ||
-            `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-          name: name.trim(),
-          description: description.trim(),
-          type,
-          users: existingRoleData?.users || 0,
-          status,
-          permissions: selectedPermissions,
-          color: existingRoleData?.color || "bg-blue-50 text-blue-700",
-        });
-        onClose?.();
-      }}
-    >
+    <form className="w-full space-y-5" onSubmit={handleRoleSubmit}>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="space-y-1.5">
+        <div className="space-y-1.5 sm:col-span-2">
           <Label>
             Role Name <span className="text-red-500">*</span>
           </Label>
@@ -186,7 +225,7 @@ export default function AddEditRole({
           ) : null}
         </div>
 
-        <div className="space-y-1.5">
+        {/* <div className="space-y-1.5">
           <Label>
             Type <span className="text-red-500">*</span>
           </Label>
@@ -199,7 +238,7 @@ export default function AddEditRole({
             <option value="Custom">Custom</option>
             <option value="System">System</option>
           </select>
-        </div>
+        </div> */}
 
         <div className="space-y-1.5 sm:col-span-2">
           <Label>
@@ -234,56 +273,20 @@ export default function AddEditRole({
           <input
             className="size-4 rounded border-input text-primary focus:ring-ring"
             type="checkbox"
-            checked={status === "Active"}
+            checked={enabled}
             disabled={isView}
-            onChange={(event) =>
-              setStatus(event.target.checked ? "Active" : "Inactive")
-            }
+            onChange={(event) => setenabled(event.target.checked)}
           />
           <Label>Active Role</Label>
         </div>
       </div>
 
-      <div className="space-y-3">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <Label>
-              Permissions <span className="text-red-500">*</span>
-            </Label>
-            <p className="mt-1 text-xs text-slate-500">
-              {selectedCount} of {totalPermissionCount} permissions selected
-            </p>
-            {errors.permissions ? (
-              <p className="mt-1 text-xs text-red-500">
-                {errors.permissions}
-              </p>
-            ) : null}
-          </div>
-
-          {!isView ? (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={handleSelectAll}
-            >
-              {selectedCount === totalPermissionCount ? "Clear All" : "Select All"}
-            </Button>
-          ) : null}
-        </div>
-
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          {navigationItems.map((item) => (
-            <PermissionGroup
-              key={item.href}
-              item={item}
-              disabled={isView}
-              selectedPermissions={selectedPermissions}
-              onToggle={handlePermissionChange}
-            />
-          ))}
-        </div>
-      </div>
+      <PermissionPicker
+        selectedPermissionIds={selectedPermissions}
+        onChange={handlePermissionChange}
+        disabled={isView}
+        error={errors.permissions}
+      />
 
       {!isView ? (
         <div className="flex justify-end border-t pt-5">

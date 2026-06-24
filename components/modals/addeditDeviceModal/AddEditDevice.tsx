@@ -91,8 +91,61 @@ export default function AddEditDevice({
     }));
   };
 
+  const handleEditDevice = async () => {
+    try {
+      const deviceId = (existingDeviceData as Partial<{ id: string }> )?.id;
+
+      if (!deviceId) {
+        throw new Error("Missing device id for update.");
+      }
+
+      const payload = {
+        device_sn: formData.device_sn,
+        device_name: formData.device_name,
+        alias_name: formData.alias_name,
+        vendor: formData.vendor,
+        device_type: formData.device_type,
+        ipaddress: formData.ipaddress,
+        push_comm_key: formData.push_comm_key,
+        time_zone: formData.time_zone,
+        trans_interval: formData.trans_interval,
+        error_delay: formData.error_delay,
+        delay: formData.delay,
+        finger_fun_on: formData.finger_fun_on,
+        face_fun_on: formData.face_fun_on,
+        palm_fun_on: formData.palm_fun_on,
+        userpicurl_fun_on: formData.userpicurl_fun_on,
+        mask_fun_on: formData.mask_fun_on,
+        real_time: formData.real_time,
+      };
+
+      const response = await fetch(`/api/device?id=${encodeURIComponent(deviceId)}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update device");
+      }
+
+      const json = await response.json();
+      const updatedDevice = json?.data ?? payload;
+
+      callback?.(updatedDevice);
+      onClose?.();
+    } catch (error) {
+      console.error("Error editing device:", error);
+    }
+  };
+
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    // if (actionType === "edit") {
+    //   void handleEditDevice();
+    //   return;
+    // }
+
     callback?.(formData);
     onClose?.();
   };

@@ -55,6 +55,22 @@ export const userTableColumns = (rowCallback: any) => {
           size: 5,
         },
     {
+      accessorKey: "eCode",
+      headerLabel: "E-code",
+      header: ({ column }: { column: any }) => {
+        return (
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            E-code
+            <TfiExchangeVertical />
+          </Button>
+        );
+      },
+      size: 50,
+    },
+    {
       accessorKey: "userName",
       headerLabel: "User Name",
       header: ({ column }: { column: any }) => {
@@ -112,21 +128,6 @@ export const userTableColumns = (rowCallback: any) => {
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           >
             Email
-            <TfiExchangeVertical />
-          </Button>
-        );
-      },
-    },
-    {
-      accessorKey: "userType",
-      headerLabel: "User Type",
-      header: ({ column }: { column: any }) => {
-        return (
-          <Button
-            variant="ghost"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          >
-            User Type
             <TfiExchangeVertical />
           </Button>
         );

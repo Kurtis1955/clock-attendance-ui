@@ -48,9 +48,7 @@ export const roleTableColumns = (rowCallback: any) => {
         return (
           <div className="flex items-center gap-3">
             <div
-              className={`flex size-9 items-center justify-center rounded-lg ${
-                 "bg-blue-100 text-blue-600"
-              }`}
+              className={`flex size-9 items-center justify-center rounded-lg ${"bg-blue-100 text-blue-600"}`}
             >
               <RiShieldCheckLine className="size-5" />
             </div>
@@ -60,9 +58,9 @@ export const roleTableColumns = (rowCallback: any) => {
                 {row.original.name}
               </p>
 
-              <p className="text-xs text-slate-500">
+              {/* <p className="text-xs text-slate-500">
                 {permissionCount} permissions
-              </p>
+              </p> */}
             </div>
           </div>
         );
@@ -83,65 +81,105 @@ export const roleTableColumns = (rowCallback: any) => {
         </Button>
       ),
       cell: ({ row }: { row: any }) => (
-        <div className="max-w-75 truncate text-slate-700">
+        <div className="max-w-75 text-left pl-2 truncate text-slate-700">
           {row.original.description}
         </div>
       ),
     },
 
-    {
-      accessorKey: "type",
-      headerLabel: "Type",
-      header: "Type",
-      cell: ({ row }: { row: any }) => (
-        <Badge
-          className={
-            row.original.type === "System"
-              ? "bg-blue-50 text-blue-700"
-              : "bg-green-50 text-green-700"
-          }
-        >
-          {row.original.type}
-        </Badge>
-      ),
-    },
+    // {
+    //   accessorKey: "type",
+    //   headerLabel: "Type",
+    //   header: "Type",
+    //   cell: ({ row }: { row: any }) => (
+    //     <Badge
+    //       className={
+    //         row.original.type === "System"
+    //           ? "bg-blue-50 text-blue-700"
+    //           : "bg-green-50 text-green-700"
+    //       }
+    //     >
+    //       {row.original.type}
+    //     </Badge>
+    //   ),
+    // },
+
+    // {
+    //   accessorKey: "users",
+    //   headerLabel: "Users",
+    //   header: "Users",
+    //   cell: ({ row }: { row: any }) => (
+    //     <div className="flex items-center gap-2 text-slate-700">
+    //       <RiUserLine className="size-4" />
+    //       {row.original.users}
+    //     </div>
+    //   ),
+    // },
 
     {
-      accessorKey: "users",
-      headerLabel: "Users",
-      header: "Users",
-      cell: ({ row }: { row: any }) => (
-        <div className="flex items-center gap-2 text-slate-700">
-          <RiUserLine className="size-4" />
-          {row.original.users}
-        </div>
-      ),
-    },
+      accessorKey: "enabled",
+      headerLabel: " Active Status",
+      header: ({ column }: { column: any }) => {
+        return (
+          <div
+            className="flex gap-1 "
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Active Status
+          </div>
+        );
+      },
+      cell: ({ row }: { row: any }) => {
+        if (row.original.enabled) {
+          return (
+            <label className="inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                className="sr-only peer"
+                checked={row.original.enabled}
+                onChange={(e) => {
+                  rowCallback("switch", {
+                    ...row.original,
+                    statusCheck: e.target.checked,
+                  });
+                }}
+              />
+              <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:w-5 after:h-5 after:transition-all dark:border-gray-600 peer-checked:bg-[#4129f6]"></div>
+              <span className="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300"></span>
+            </label>
+          );
 
-    {
-      accessorKey: "status",
-      headerLabel: "Status",
-      header: "Status",
-      cell: ({ row }: { row: any }) => (
-        <Badge
-          className={
-            row.original.status === "Active"
-              ? "bg-green-50 text-green-700"
-              : "bg-slate-100 text-red-500"
-          }
-        >
-          {row.original.status}
-        </Badge>
-      ),
+          // return <span className="text-green-500">Active</span>;
+        } else {
+          return (
+            <label className="inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={row.original.enabled}
+                className="sr-only peer"
+                onChange={(e) => {
+                  rowCallback("switch", {
+                    ...row.original,
+                    statusCheck: e.target.checked,
+                  });
+                }}
+              />
+              <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:w-5 after:h-5 after:transition-all dark:border-gray-600 peer-checked:bg-[#4129f6]"></div>
+              <span className="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300"></span>
+            </label>
+          );
+          // return <span className="text-red-500">Inactive</span>;
+        }
+      },
     },
 
     {
       accessorKey: "actions",
       headerLabel: "Actions",
-      header: () => <div className="text-right pr-2">Actions</div>,
+      header: () => <div className="text-left pr-2">Actions</div>,
 
       cell: ({ row }: { row: any }) => (
-        <div className="flex justify-end gap-2">
+        <div className="flex justify-center gap-2">
           <Tooltip label="View" hasArrow placement="bottom">
             <Button
               variant="outline"

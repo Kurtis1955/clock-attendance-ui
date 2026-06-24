@@ -1,13 +1,21 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import ReactSelect from "react-select";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { PermissionPicker } from "@/components/users/permission-picker";
+import { useCompanies } from "@/hooks/useCompanies";
+import type { CompanyOption } from "@/hooks/useCompanies";
+import { useDepartments } from "@/hooks/useDepartments";
+import { useRoles } from "@/hooks/useRoles";
 import {
-  getNavigationItemPermissionValues,
-  navigationItems,
-} from "@/lib/navigation";
-import PermissionGroup from "@/hooks/permissions";
+  buildUserApiPayload,
+  normalizeIdList,
+  normalizeRoleIds,
+  normalizeStringArray,
+  parseApiError,
+} from "@/lib/user-payload";
+import type { DepartmentOption } from "@/hooks/useDepartments";
 
 const deviceOptions = [
   { value: "zk-speedface-v5l-main", label: "SpeedFace V5L - Main Entrance" },
@@ -17,6 +25,41 @@ const deviceOptions = [
   { value: "zk-speedface-mini-admin", label: "SpeedFace Mini - Admin Block" },
 ];
 
+function resolvePrimaryDepartment(
+  companyNames: string[],
+  departmentNames: string[],
+  options: DepartmentOption[]
+): DepartmentOption | undefined {
+  if (!options.length) {
+    return undefined;
+  }
+
+  for (const companyName of companyNames) {
+    for (const departmentName of departmentNames) {
+      const match = options.find(
+        (option) =>
+          option.companyName === companyName &&
+          option.departmentName === departmentName
+      );
+      if (match) {
+        return match;
+      }
+    }
+  }
+
+  if (departmentNames.length) {
+    return options.find(
+      (option) => option.departmentName === departmentNames[0]
+    );
+  }
+
+  if (companyNames.length) {
+    return options.find((option) => option.companyName === companyNames[0]);
+  }
+
+  return undefined;
+}
+
 const AddEditUser = ({
   actionType,
   existingUserData,
@@ -25,72 +68,21 @@ const AddEditUser = ({
   callback,
   onClose,
 }: any) => {
-  const roles = [
-    { id: 1, name: "Super Admin" },
-    { id: 2, name: "Admin" },
-    { id: 3, name: "Manager" },
-    { id: 4, name: "Supervisor" },
-    { id: 5, name: "HR" },
-    { id: 6, name: "User" },
-  ];
+  const { roles: roleOptions, loading: loadingRoles } = useRoles();
+  const { companies, loading: loadingCompanies, error: companiesError } =
+    useCompanies();
+  const [selectedCompany, setSelectedCompany] = useState<CompanyOption | null>(
+    null
+  );
+  const {
+    departments: departmentOptions,
+    loading: loadingDepartments,
+    error: departmentsError,
+  } = useDepartments(selectedCompany?.name ?? null, selectedCompany?.id ?? null);
 
   const userType = [
     { value: "12Fes226Dkjsdfj45", label: "System User" },
     { value: "13fs37s226Dkjsdfj", label: "Device User" },
-  ];
-
-  const departments = [
-    {
-      department: "APPLICATIONS",
-    },
-    {
-      department: "FIELD INSTALLATIONS",
-    },
-    {
-      department: "ICT GENERAL",
-    },
-    {
-      department: "NETWORK OPERATIONS",
-    },
-    {
-      department: "NHIA BIO PROJECT",
-    },
-    {
-      department: "SYSTEM AND DATA CENT",
-    },
-    {
-      department: "STECH CCTV",
-    },
-    {
-      department: "EC BIO PROJECT",
-    },
-    {
-      department: "CUSTOMER SUPPORT CENTER",
-    },
-    {
-      department: "BUSINESS DEVELOPMENT",
-    },
-    {
-      department: "STECH H/O DRIVERS",
-    },
-    {
-      department: "BOG",
-    },
-    {
-      department: "INTEGRATED LOGISTICS SUPPORT",
-    },
-    {
-      department: "LOW VOLTAGE",
-    },
-    {
-      department: "PRINT FACTORY",
-    },
-    {
-      department: "PROJECTS",
-    },
-    {
-      department: "VOIP",
-    },
   ];
 
   const [loadingSaveUpdateUser, setloadingSaveUpdateUser] =
@@ -105,18 +97,20 @@ const AddEditUser = ({
     existingUserData?.userName || "",
   );
   const [email, setEmail] = useState<string>(existingUserData?.email || "");
-  const [ecode, setEcode] = useState<string>(existingUserData?.ecode || "");
+  const [ecode, setEcode] = useState<string>(
+    existingUserData?.eCode || existingUserData?.ecode || "",
+  );
   const [phoneNumber, setPhoneNumber] = useState<string>(
     existingUserData?.phoneNumber || "",
   );
-  const [userRoles, setUserRoles] = useState<string>(
-    existingUserData?.roles || "",
+  const [selectedRoleIds, setSelectedRoleIds] = useState<string[]>(
+    normalizeRoleIds(existingUserData?.roles),
   );
   const [manager, setManager] = useState<string>(
-    existingUserData?.manager || "",
+    existingUserData?.managerName || existingUserData?.manager || "",
   );
   const [enabled, setEnabled] = useState<boolean>(
-    existingUserData?.status === "active" ? true : false,
+    existingUserData?.enabled ?? existingUserData?.status === "active",
   );
   const [isLDAP, setisLDAP] = useState<boolean>(
     existingUserData?.isLDAP || false,
@@ -127,52 +121,118 @@ const AddEditUser = ({
   const [errorEmail, setErrorEmail] = useState<string>("");
   const [errorEcode, setErrorEcode] = useState<string>("");
   const [errorPhone, setErrorPhone] = useState<string>("");
-  const [loadingManagers, setLoadingManagers] = useState(true);
-  const [managers, setManagers] = useState<any[]>([]);
-  const [loadingCompanies, setLoadingCompanies] = useState(true);
-  const [companies, setCompanies] = useState<any[]>([]);
-  const [companyDepartments, setCompanyDepartments] = useState<any[]>([]);
-  // const [permissionCategories, setPermissionCategories] = useState<any>({});
+  const [companyDepartments, setCompanyDepartments] = useState<string[]>(
+    normalizeStringArray(existingUserData?.departmentName),
+  );
+  const [submitError, setSubmitError] = useState<string>("");
+  const [resolvedUser, setResolvedUser] = useState<any>(existingUserData ?? null);
   const [selectedPermissions, setSelectedPermissions] = useState<string[]>(
-    existingUserData?.permissions || userPermissions || [],
+    normalizeIdList(existingUserData?.permissions || userPermissions),
   );
   const [assignedDevices, setAssignedDevices] = useState<any[]>([]);
   const [assignUserType, setAssignUserType] = useState<any[]>([]);
   const isView = actionType === "view";
-  const selectedCount = selectedPermissions.length;
-  const totalPermissionCount = useMemo(
-    () =>
-      navigationItems.reduce(
-        (total, item) => total + getNavigationItemPermissionValues(item).length,
-        0,
-      ),
-    [],
-  );
 
-  const handleSelectAll = () => {
-    const allPermissions = navigationItems.flatMap((item) =>
-      getNavigationItemPermissionValues(item),
-    );
-    setSelectedPermissions((currentPermissions) =>
-      currentPermissions.length === allPermissions.length ? [] : allPermissions,
-    );
-  };
+  function applyUserToForm(user: any) {
+    if (!user) {
+      return;
+    }
+
+    setResolvedUser(user);
+    setFirstName(user?.firstName || "");
+    setLastName(user?.lastName || "");
+    setUserName(user?.userName || "");
+    setEmail(user?.email || "");
+    setEcode(user?.eCode || user?.ecode || "");
+    setPhoneNumber(user?.phoneNumber || "");
+    setSelectedRoleIds(normalizeRoleIds(user?.userRoles));
+    setManager(user?.managerName || user?.manager || "");
+    setEnabled(Boolean(user?.enabled));
+    setisLDAP(user?.isLDAP || false);
+    setCompanyDepartments(normalizeStringArray(user?.departmentName));
+    setSelectedPermissions(normalizeIdList(user?.permissions));
+  }
 
   useEffect(() => {
-    setFirstName(existingUserData?.firstName || "");
-    setLastName(existingUserData?.lastName || "");
-    setUserName(existingUserData?.userName || "");
-    setEmail(existingUserData?.email || "");
-    setEcode(existingUserData?.ecode || "");
-    setPhoneNumber(existingUserData?.phoneNumber || "");
-    setUserRoles(existingUserData?.roles || "");
-    setManager(existingUserData?.manager || "");
-    setEnabled(existingUserData?.status === "active");
-    setisLDAP(existingUserData?.isLDAP || false);
-    setSelectedPermissions(
-      existingUserData?.permissions || userPermissions || [],
+    if (!companies.length) {
+      return;
+    }
+
+    const companyNames = normalizeStringArray(
+      resolvedUser?.companyName ?? existingUserData?.companyName
     );
-  }, [existingUserData, userPermissions]);
+    const companyId = resolvedUser?.companyId ?? existingUserData?.companyId;
+    const matchedCompany =
+      companies.find((company) => company.id === companyId) ??
+      companies.find((company) => companyNames.includes(company.name));
+
+    if (matchedCompany) {
+      setSelectedCompany(matchedCompany);
+    }
+  }, [companies, resolvedUser, existingUserData]);
+
+  useEffect(() => {
+    async function loadUserDetails() {
+      const identifier = existingUserData?.userName || existingUserData?.id;
+      if (!identifier || actionType === "add") {
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/users/${identifier}`);
+
+        if (!response.ok) {
+          return;
+        }
+
+        const json = await response.json();
+        applyUserToForm(json?.data ?? json);
+      } catch (error) {
+        console.error("Error loading user details:", error);
+      }
+    }
+
+    loadUserDetails();
+  }, [existingUserData?.userName, existingUserData?.id, actionType]);
+
+  useEffect(() => {
+    applyUserToForm(existingUserData);
+  }, [existingUserData]);
+
+  useEffect(() => {
+
+    async function loadUserPermissions() {
+      if (!existingUserData?.id || actionType === "add") {
+        return;
+      }
+
+      try {
+        const response = await fetch(
+          `/api/users/${existingUserData.id}/permissions`
+        );
+
+        if (!response.ok) {
+          return;
+        }
+
+        const json = await response.json();
+        const content = json?.data?.content ?? json?.data ?? [];
+        const permissionIds = Array.isArray(content)
+          ? content.map((item: { id?: string } | string) =>
+              typeof item === "string" ? item : item.id ?? ""
+            ).filter(Boolean)
+          : [];
+
+        if (permissionIds.length) {
+          setSelectedPermissions(permissionIds);
+        }
+      } catch (error) {
+        console.error("Error loading user permissions:", error);
+      }
+    }
+
+    loadUserPermissions();
+  }, [existingUserData?.userName, actionType]);
 
   const validateFirstLastName = (value: string): boolean => {
     const regex = /^[A-Za-z\s\-']*$/;
@@ -194,38 +254,152 @@ const AddEditUser = ({
     return regex.test(value);
   };
 
-  const handlePermissionChange = (permissionValues: string[]) => {
-    setSelectedPermissions((currentPermissions: string[]) =>
-      permissionValues.every((permissionValue) =>
-        currentPermissions.includes(permissionValue),
-      )
-        ? currentPermissions.filter(
-            (permission) => !permissionValues.includes(permission),
-          )
-        : Array.from(new Set([...currentPermissions, ...permissionValues])),
-    );
+  const handlePermissionChange = (permissionIds: string[]) => {
+    setSelectedPermissions(permissionIds);
+  };
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setSubmitError("");
+
+    // if (!selectedRoleIds.length) {
+    //   setSubmitError("Select at least one role.");
+    //   return;
+    // }
+
+    if (!selectedPermissions.length) {
+      setSubmitError("Select at least one permission.");
+      return;
+    }
+
+    if (!selectedCompany) {
+      setSubmitError("Select a company.");
+      return;
+    }
+
+    // if (!companyDepartments.length) {
+    //   setSubmitError("Select at least one department.");
+    //   return;
+    // }
+
+    setloadingSaveUpdateUser(true);
+
+    try {
+      const companyNames = [selectedCompany.name];
+      const primaryDepartment = resolvePrimaryDepartment(
+        companyNames,
+        companyDepartments,
+        departmentOptions
+      );
+      const departmentId =
+        primaryDepartment?.departmentId ??
+        resolvedUser?.departmentId ??
+        existingUserData?.departmentId;
+      const companyId =
+        selectedCompany.id ??
+        primaryDepartment?.companyId ??
+        resolvedUser?.companyId ??
+        existingUserData?.companyId;
+
+      // if (actionType === "add" && (!departmentId || !companyId)) {
+      //   setSubmitError(
+      //     "Could not resolve company and department IDs. Select matching company and department values."
+      //   );
+      //   return;
+      // }
+
+      const selectedRoleNames = roleOptions
+        .filter((role) => selectedRoleIds.includes(role.id))
+        .map((role) => role.name);
+
+      const departmentNames =
+        companyDepartments.length > 0 ? companyDepartments : ["Applications"];
+
+      const payload = buildUserApiPayload({
+        id: actionType === "edit" ? resolvedUser?.id ?? existingUserData?.id : undefined,
+        userName,
+        email,
+        firstName,
+        lastName,
+        phoneNumber,
+        roleIds: selectedRoleIds,
+        permissionIds: selectedPermissions,
+        companyNames,
+        departmentNames,
+        enabled,
+        ecode,
+        departmentId,
+        companyId,
+        managerId: resolvedUser?.managerId ?? existingUserData?.managerId,
+        companyBranchId:
+          primaryDepartment?.companyBranchId ??
+          resolvedUser?.companyBranchId ??
+          existingUserData?.companyBranchId,
+        managerName: manager || resolvedUser?.managerName || existingUserData?.managerName,
+        companyBranchName:
+          primaryDepartment?.companyBranchName ??
+          resolvedUser?.companyBranchName ??
+          existingUserData?.companyBranchName,
+        userRoles:
+          selectedRoleNames.length > 0
+            ? selectedRoleNames
+            : normalizeStringArray(
+                resolvedUser?.userRoles ?? existingUserData?.userRoles
+              ),
+        exists: false
+          
+      });
+
+      if (actionType === "edit") {
+        const userId = resolvedUser?.id ?? existingUserData?.id;
+
+        if (!userId) {
+          throw new Error("Missing user id for update.");
+        }
+
+        const response = await fetch(`/api/users/${userId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+          throw new Error(await parseApiError(response));
+        }
+
+        const json = await response.json();
+        callback?.(json?.data ?? payload);
+        onClose?.();
+        return;
+      }
+
+      const response = await fetch("/api/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        throw new Error(await parseApiError(response));
+      }
+
+      const json = await response.json();
+      callback?.(json?.data ?? payload);
+      onClose?.();
+    } catch (error) {
+      // const message = error instanceof Error ? error.message : "Failed to save user.";
+      const message = "Failed to save user details.";
+      setSubmitError(message);
+      console.error("Error saving user:", error);
+    } finally {
+      setloadingSaveUpdateUser(false);
+    }
   };
 
   return (
     <form
       className="w-full space-y-5"
-      onSubmit={(event) => {
-        event.preventDefault();
-        callback?.({
-          ...existingUserData,
-          firstName,
-          lastName,
-          userName,
-          email,
-          ecode,
-          phoneNumber,
-          roles: userRoles,
-          manager,
-          status: enabled ? "active" : "inactive",
-          permissions: selectedPermissions,
-        });
-        onClose?.();
-      }}
+      onSubmit={handleSubmit}
     >
       <div className="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2">
         <div className="space-y-1.5">
@@ -382,98 +556,89 @@ const AddEditUser = ({
           )}
         </div>
 
-        <div className="space-y-1.5">
+        <div className="space-y-1.5 sm:col-span-2">
           <Label>
             Role <span className="text-red-500">*</span>
           </Label>
           <ReactSelect
             name="role"
             classNamePrefix="react-select"
-            placeholder="Select Role"
+            placeholder={loadingRoles ? "Loading roles..." : "Select Role"}
             value={
-              roles?.find((role: any) => role.name === userRoles)
-                ? { label: userRoles, value: userRoles }
+              roleOptions.find((role) => selectedRoleIds.includes(role.id))
+                ? {
+                    label:
+                      roleOptions.find((role) =>
+                        selectedRoleIds.includes(role.id),
+                      )?.name || "",
+                    value: selectedRoleIds[0],
+                  }
                 : null
             }
             onChange={(selectedOption: any) => {
-              setUserRoles(selectedOption?.value || "");
-              const foundName = roles.find((r) => r == selectedOption?.value);
-              // foundName && getPermissionByRoleId(foundName?.id);
+              setSelectedRoleIds(
+                selectedOption?.value ? [selectedOption.value] : [],
+              );
             }}
-            isDisabled={actionType === "view"}
+            isDisabled={actionType === "view" || loadingRoles}
             options={
-              roles?.map((role: any) => ({
-                value: role.name,
+              roleOptions.map((role) => ({
+                value: role.id,
                 label: role.name,
               })) || []
             }
             isClearable
-            required
+            // required
           />
-          {/* <select
-            id="role"
-            value={userRoles}
-            onChange={(e) => setUserRoles(e.target.value)}
-            disabled={actionType === "view"}
-            className="h-10 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-50"
-          >
-            <option value="">Select a role</option>
-
-            {roles.map((role) => (
-              <option key={role} value={role}>
-                {role}
-              </option>
-            ))}
-          </select> */}
         </div>
 
-        <div className="space-y-1.5">
-          <Label>User Type</Label>
+        <div className="space-y-2 sm:col-span-2">
+          <Label>
+            Company <span className="text-red-500">*</span>
+          </Label>
           <ReactSelect
-            instanceId="device-assignment"
-            inputId="device-assignment"
-            isMulti
-            isClearable
-            closeMenuOnSelect={false}
-            options={userType}
-            value={assignUserType}
-            onChange={(selectedOptions) =>
-              setAssignUserType(selectedOptions ? [...selectedOptions] : [])
-            }
-            isDisabled={actionType === "view"}
-            placeholder="Select devices"
+            name="company"
             classNamePrefix="react-select"
-            styles={{
-              control: (base, state) => ({
-                ...base,
-                minHeight: "40px",
-                borderColor: state.isFocused ? "var(--ring)" : "var(--input)",
-                borderRadius: "0.5rem",
-                boxShadow: state.isFocused
-                  ? "0 0 0 3px color-mix(in oklch, var(--ring) 50%, transparent)"
-                  : "none",
-                fontSize: "0.875rem",
-              }),
-              placeholder: (base) => ({
-                ...base,
-                color: "var(--muted-foreground)",
-              }),
-              multiValue: (base) => ({
-                ...base,
-                borderRadius: "0.375rem",
-              }),
+            placeholder={
+              loadingCompanies ? "Loading companies..." : "Select Company"
+            }
+            value={
+              selectedCompany
+                ? { value: selectedCompany.id, label: selectedCompany.name }
+                : null
+            }
+            onChange={(selectedOption: { value: string; label: string } | null) => {
+              const nextCompany =
+                companies.find((company) => company.id === selectedOption?.value) ??
+                null;
+              setSelectedCompany(nextCompany);
+              setCompanyDepartments([]);
             }}
+            isDisabled={actionType === "view" || loadingCompanies}
+            options={companies.map((company) => ({
+              value: company.id,
+              label: company.name,
+            }))}
+            isClearable
           />
+          {companiesError ? (
+            <p className="text-xs text-red-500">{companiesError}</p>
+          ) : null}
         </div>
-
-        {/* <div className="space-y-1.5">
+        <div className="space-y-2 sm:col-span-2">
           <Label>
             Department <span className="text-red-500">*</span>
           </Label>
           <ReactSelect
             name="department"
             classNamePrefix="react-select"
-            placeholder="Select Department"
+            placeholder={
+              !selectedCompany
+                ? "Select a company first"
+                : loadingDepartments
+                  ? "Loading departments..."
+                  : "Select Department"
+            }
             isMulti
             value={companyDepartments.map((dept) => ({
               label: dept,
@@ -486,82 +651,20 @@ const AddEditUser = ({
                   : [],
               );
             }}
-            isDisabled={actionType === "view"}
+            isDisabled={
+              actionType === "view" || !selectedCompany || loadingDepartments
+            }
             options={
-              departments?.map((dept: any) => ({
-                value: dept.department,
-                label: dept.department,
+              departmentOptions.map((dept) => ({
+                value: dept.departmentName,
+                label: dept.departmentName,
               })) || []
             }
             isClearable
-            required
           />
-        </div> */}
-        <div className="space-y-1.5">
-          <Label>
-            Temporary Password <span className="text-red-500">*</span>
-          </Label>
-          <Input
-            type="text"
-            className="form-control"
-            value={"********"}
-            readOnly
-            //   disabled
-            placeholder="Temporary Password"
-          />
-        </div>
-
-        <div className="space-y-1.5">
-          <Label>
-            Confirm Password <span className="text-red-500">*</span>
-          </Label>
-          <Input
-            type="text"
-            className="form-control"
-            value={"********"}
-            readOnly
-            //   disabled
-            placeholder="Temporary Password"
-          />
-        </div>
-
-        <div className="space-y-1.5 sm:col-span-2">
-          <Label>Device Assignment</Label>
-          <ReactSelect
-            instanceId="device-assignment"
-            inputId="device-assignment"
-            isMulti
-            isClearable
-            closeMenuOnSelect={false}
-            options={deviceOptions}
-            value={assignedDevices}
-            onChange={(selectedOptions) =>
-              setAssignedDevices(selectedOptions ? [...selectedOptions] : [])
-            }
-            isDisabled={actionType === "view"}
-            placeholder="Select devices"
-            classNamePrefix="react-select"
-            styles={{
-              control: (base, state) => ({
-                ...base,
-                minHeight: "40px",
-                borderColor: state.isFocused ? "var(--ring)" : "var(--input)",
-                borderRadius: "0.5rem",
-                boxShadow: state.isFocused
-                  ? "0 0 0 3px color-mix(in oklch, var(--ring) 50%, transparent)"
-                  : "none",
-                fontSize: "0.875rem",
-              }),
-              placeholder: (base) => ({
-                ...base,
-                color: "var(--muted-foreground)",
-              }),
-              multiValue: (base) => ({
-                ...base,
-                borderRadius: "0.375rem",
-              }),
-            }}
-          />
+          {departmentsError ? (
+            <p className="text-xs text-red-500">{departmentsError}</p>
+          ) : null}
         </div>
 
         <div className="sm:col-span-2">
@@ -603,43 +706,17 @@ const AddEditUser = ({
           </div>
         </div> */}
 
-      <div className="space-y-3">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <Label>
-              Permissions <span className="text-red-500">*</span>
-            </Label>
-            <p className="mt-1 text-xs text-slate-500">
-              {selectedCount} of {totalPermissionCount} permissions selected
-            </p>
-          </div>
+      <PermissionPicker
+        selectedPermissionIds={selectedPermissions}
+        onChange={handlePermissionChange}
+        disabled={isView}
+      />
 
-          {!isView ? (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={handleSelectAll}
-            >
-              {selectedCount === totalPermissionCount
-                ? "Clear All"
-                : "Select All"}
-            </Button>
-          ) : null}
-        </div>
-
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          {navigationItems.map((item) => (
-            <PermissionGroup
-              key={item.href}
-              item={item}
-              disabled={isView}
-              selectedPermissions={selectedPermissions}
-              onToggle={handlePermissionChange}
-            />
-          ))}
-        </div>
-      </div>
+      {submitError ? (
+        <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          {submitError}
+        </p>
+      ) : null}
 
       {actionType !== "view" && (
         <div className="flex justify-end border-t pt-5">

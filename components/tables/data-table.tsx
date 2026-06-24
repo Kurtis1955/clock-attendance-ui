@@ -220,7 +220,7 @@ export function DataTable<TData, TValue>({
             <TableRow
               key={headerGroup.id}
               style={{
-                textAlign: "left",
+                textAlign: "center",
                 height: "auto",
                 verticalAlign: "top",
               }}
