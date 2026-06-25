@@ -65,7 +65,7 @@ const createDevice = (
   name: device.device_name,
   serialNumber: device.device_sn,
   model: device.device_type,
-  branch: locationLabels[device.alias_name] ?? device.alias_name,
+  branch: locationLabels[device.device_location] ?? device.device_location,
   ipAddress: device.ipaddress,
 });
 
@@ -74,7 +74,7 @@ const devices: DeviceItem[] = [
     id: "1",
     device_sn: "ZKT-HO-001",
     device_name: "Head Office Clock 01",
-    alias_name: "main-entrance",
+    device_location: "main-entrance",
     vendor: "ZKTeco",
     device_type: "SpeedFace V5L",
     ipaddress: "10.10.1.15",
@@ -98,7 +98,7 @@ const devices: DeviceItem[] = [
     id: "2",
     device_sn: "ZKT-HO-002",
     device_name: "Head Office Clock 02",
-    alias_name: "reception",
+    device_location: "reception",
     vendor: "ZKTeco",
     device_type: "MB560-VL",
     ipaddress: "10.10.1.16",
@@ -122,7 +122,7 @@ const devices: DeviceItem[] = [
     id: "3",
     device_sn: "ZKT-KSI-001",
     device_name: "Kumasi Branch Clock",
-    alias_name: "branch-office",
+    device_location: "branch-office",
     vendor: "ZKTeco",
     device_type: "SpeedFace V4L",
     ipaddress: "10.10.2.10",
@@ -146,7 +146,7 @@ const devices: DeviceItem[] = [
     id: "4",
     device_sn: "ZKT-TKD-001",
     device_name: "Takoradi Clock",
-    alias_name: "warehouse",
+    device_location: "warehouse",
     vendor: "ZKTeco",
     device_type: "MB360",
     ipaddress: "10.10.3.12",
@@ -170,7 +170,7 @@ const devices: DeviceItem[] = [
     id: "5",
     device_sn: "ZKT-CC-001",
     device_name: "Cape Coast Clock",
-    alias_name: "finance-office",
+    device_location: "finance-office",
     vendor: "ZKTeco",
     device_type: "SpeedFace V5L",
     ipaddress: "10.10.4.11",
@@ -194,7 +194,7 @@ const devices: DeviceItem[] = [
     id: "6",
     device_sn: "ZKT-TML-001",
     device_name: "Tamale Clock",
-    alias_name: "hr-office",
+    device_location: "hr-office",
     vendor: "ZKTeco",
     device_type: "MB560-VL",
     ipaddress: "10.10.5.14",
@@ -218,7 +218,7 @@ const devices: DeviceItem[] = [
     id: "7",
     device_sn: "ZKT-SNY-001",
     device_name: "Sunyani Clock",
-    alias_name: "server-room",
+    device_location: "server-room",
     vendor: "ZKTeco",
     device_type: "SpeedFace V4L",
     ipaddress: "10.10.6.18",
@@ -242,7 +242,7 @@ const devices: DeviceItem[] = [
     id: "8",
     device_sn: "ZKT-TMA-001",
     device_name: "Tema Clock",
-    alias_name: "branch-office",
+    device_location: "branch-office",
     vendor: "ZKTeco",
     device_type: "MB360",
     ipaddress: "10.10.7.21",
@@ -463,7 +463,7 @@ export default function DevicesPage() {
       if (
         !deviceData.device_sn ||
         !deviceData.device_name ||
-        !deviceData.alias_name
+        !deviceData.device_location
       ) {
         console.error(
           "Missing required fields: Serial Number, Device Name, or Location",
@@ -475,7 +475,7 @@ export default function DevicesPage() {
       const payload = {
         device_sn: deviceData.device_sn,
         device_name: deviceData.device_name,
-        alias_name: deviceData.alias_name,
+        device_location: deviceData.device_location,
         device_type: deviceData.device_type,
       };
 

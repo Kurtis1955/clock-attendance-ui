@@ -60,7 +60,7 @@ export default function UsersPage() {
         setLoadingUserDetails(!loadingUserDetails);
       }
     }
-  }, [userSearch?.content?.length, inputValue, pageCount,pageSize]);
+  }, [userSearch?.content?.length, inputValue, pageCount, pageSize]);
 
   const initiateModal = (modalType: any) => {
     console.log("Setting modal content type to:", modalType);
@@ -210,7 +210,7 @@ export default function UsersPage() {
     }
   };
 
-  console.log("stored search data>>", storeRetrievedData)
+  console.log("stored search data>>", storeRetrievedData);
 
   return (
     <div className="px-2 lg:px-8 pt-2 flex flex-col gap-4">
@@ -337,7 +337,9 @@ export default function UsersPage() {
           pageCount={pageCount}
           onPageChange={handlePageChange}
           pageSize={pageSize}
-          totalItems={totalItems}
+          totalItems={
+            inputValue == "" ? totalItems : userSearch?.content?.length
+          }
           type="users"
           defaultColumns={["Drag", "Actions", "User Number"]}
         />

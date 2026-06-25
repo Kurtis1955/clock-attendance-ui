@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   RiAddLine,
   RiArrowDownLine,
@@ -36,6 +36,9 @@ import { regrexForSpecialDashChars } from "@/lib/helpers";
 import { cn } from "@/lib/utils";
 import { DataTable } from "@/components/tables/data-table";
 import { enrollmentTableColumns } from "@/components/tables/enrollmentTable/enrollmentTable";
+import useSearchBiometricUser from "@/hooks/useSearchBiometricUser";
+import _debounce from "lodash/debounce";
+import { totalmem } from "os";
 
 const biometricUsersSeed = [
   {
@@ -133,16 +136,24 @@ const biometricUsersSeed = [
 export default function EnrollmentPage() {
   const [storeRetrievedData, setStoreRetrievedData] =
     useState<any[]>(biometricUsersSeed);
-  const [selectedUser, setSelectedUser] = useState<any[]>(
-    [],
-  );
+  const [selectedUser, setSelectedUser] = useState<any[]>([]);
   const [modalAction, setModalAction] = useState<"add" | "edit" | "view">(
     "add",
   );
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [pageCount, setPageCount] = useState(0);
   const [pageSize, setPageSize] = useState(10);
+  const [loadingRoleDetails, setLoadingUserDetails] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterData, setFilterData] = useState("");
+  const [totalItems, setTotalItems] = useState(storeRetrievedData.length);
 
+  const openModal = (action: "add" | "edit" | "view") => {
+    setModalAction(action);
+    setSelectedUser([]);
+    setIsModalOpen(true);
+  };
   const statCards = [
     {
       title: "Total Device Users",
@@ -182,12 +193,45 @@ export default function EnrollmentPage() {
     // },
   ];
 
-  const openModal = (
-    action: "add" | "edit" | "view",
-  ) => {
-    setModalAction(action);
-    setSelectedUser([]);
-    setIsModalOpen(true);
+  const {
+    inputValue,
+    handleInputRoleChange,
+    deviceSearch,
+    error: roleSearchError,
+    loading: loadingRole,
+  } = useSearchBiometricUser({ pageCount, pageSize, filterData });
+
+  useEffect(() => {
+    if (inputValue == "") {
+      fetchUsers();
+    } else {
+      if (deviceSearch?.content?.length) {
+        console.log("deviceSearch>>>", deviceSearch);
+        setStoreRetrievedData(deviceSearch?.content);
+        setLoadingUserDetails(!loadingRoleDetails);
+      } else {
+        setStoreRetrievedData([]);
+        setLoadingUserDetails(!loadingRoleDetails);
+      }
+    }
+  }, [deviceSearch?.content?.length, inputValue, pageCount, pageSize]);
+
+  const fetchUsers = async () => {
+    try {
+      const res = await fetch(
+        `/api/users?paginate=true&page=${pageCount}&size=${pageSize}`,
+      );
+
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+
+      const data = await res.json();
+      setStoreRetrievedData(data.data.content);
+      setTotalItems(data.data.totalElements);
+    } catch (error) {
+      console.error("Error Fecthing users:", error);
+    }
   };
 
   const handleRowAction = (actionType: any, rowData: any) => {
@@ -212,8 +256,57 @@ export default function EnrollmentPage() {
       // setisLDAP(false);
       console.log("isGeneralModalOpen:", true);
     } else if (actionType == "switch") {
-      // getChangeRowStatus(rowData);
+      getChangeUserStatus(rowData);
     }
+  };
+
+  const getChangeUserStatus = async (rowData: any) => {
+    setLoading(true);
+    const payload = {
+      id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+      name: rowData.name,
+      description: rowData.description,
+      enabled: rowData.statusCheck,
+    };
+    try {
+      const userReq = await fetch(`/api/user/${rowData.id}`, {
+        method: "PUT",
+        body: JSON.stringify(payload),
+      });
+      if (userReq.ok) {
+        // toast({
+        //   title: "Success!",
+        //   description: "User updated successfully",
+        //   status: "success", // 'info', 'warning', 'error', 'success'
+        //   duration: 3000, // Duration in milliseconds
+        //   isClosable: true, // Allows closing the toast
+        // });
+
+        setStoreRetrievedData((prevData) => {
+          if (!prevData) return prevData;
+          return prevData.map((item: any) => {
+            console.log("item", item, "equals", item.id === rowData.id);
+            return item.id === rowData.id
+              ? { ...item, enabled: rowData.statusCheck }
+              : item;
+          });
+        });
+      } else {
+        console.log("error changing role status");
+      }
+    } catch (error) {
+      console.error("Error updating role status:", error);
+      // toast({
+      //   title: "Error!",
+      //   description: "Failed to update role status",
+      //   status: "error", // 'info', 'warning', 'error', 'success'
+      //   duration: 3000, // Duration in milliseconds
+      //   isClosable: true, // Allows closing the toast
+      // });
+    }
+    setTimeout(() => {
+      setLoading(false);
+    }, 200);
   };
 
   const handlePageChange = (pageIndex: number, pageSize: number) => {
@@ -223,7 +316,12 @@ export default function EnrollmentPage() {
     setPageSize(pageSize);
   };
 
-  
+  const handleChangeTextSearch = (e: any) => {
+    const dataToSearch = regrexForSpecialDashChars(e.target.value);
+    setSearchQuery(dataToSearch);
+    debouncedSearch(dataToSearch);
+  };
+  const debouncedSearch = _debounce(handleInputRoleChange, 500);
 
   return (
     <div className="flex flex-col gap-5 px-2 pt-2 lg:px-8">
@@ -244,16 +342,16 @@ export default function EnrollmentPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <Button variant="outline" className="h-10 border-slate-200 bg-white">
+          {/* <Button variant="outline" className="h-10 border-slate-200 bg-white">
             <RiTeamLine className="size-4" />
             Bulk Assignment
-          </Button>
+          </Button> */}
           {/* <Button variant="outline" className="h-10 border-slate-200 bg-white">
             <RiRefreshLine className="size-4" />
             Sync Devices
           </Button> */}
           <Button
-          variant="outline"
+            variant="outline"
             className="h-10 "
             onClick={() => openModal("add")}
           >
@@ -263,7 +361,7 @@ export default function EnrollmentPage() {
         </div>
       </div>
 
-      <div className="grid gap-16 sm:grid-cols-2 xl:grid-cols-3">
+      <div className="grid gap-6 lg:gap-8 sm:grid-cols-2 xl:grid-cols-3">
         {statCards.map((stat) => {
           const Icon = stat.icon;
           const TrendIcon =
@@ -308,13 +406,30 @@ export default function EnrollmentPage() {
       </div>
 
       <div className="w-full">
+        <div className="w-full md:w-1/2 xl:w-1/3 relative min-w-0 flex-1">
+          <Input
+            type="search"
+            placeholder="Search user by name or description..."
+            value={searchQuery}
+            onChange={(e) => {
+              handleChangeTextSearch(e);
+              setFilterData("");
+            }}
+            className="h-10 pr-10"
+          />
+          <RiSearchLine className="absolute right-3 top-1/2 size-5 -translate-y-1/2 text-slate-500" />
+        </div>
+      </div>
+      <div className="w-full">
         <DataTable
           columns={enrollmentTableColumns(handleRowAction) as any}
           data={storeRetrievedData as any}
           pageCount={pageCount}
           onPageChange={handlePageChange}
           pageSize={pageSize}
-          totalItems={storeRetrievedData.length}
+          totalItems={
+            inputValue == "" ? totalItems : deviceSearch?.content?.length
+          }
           type="roles"
           defaultColumns={["Drag", "Actions", "User Number"]}
         />
@@ -341,9 +456,7 @@ export default function EnrollmentPage() {
           <AddEditBiometricUser
             actionType={modalAction}
             existingUserData={selectedUser}
-            callback={()=>{
-
-            }}
+            callback={() => {}}
             onClose={() => setIsModalOpen(false)}
           />
         </DialogContent>
@@ -351,4 +464,3 @@ export default function EnrollmentPage() {
     </div>
   );
 }
-

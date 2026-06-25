@@ -229,6 +229,7 @@ export default function RolesPage() {
   useEffect(() => {
     if (inputValue == "") {
       fetchRoles();
+      console.log("totalItems>>>>", totalItems);
     } else {
       if (roleSearch?.content?.length) {
         console.log("roleSearch>>>", roleSearch);
@@ -302,11 +303,16 @@ export default function RolesPage() {
 
   const getChangeRowStatus = async (rowData: any) => {
     setLoading(true);
-
+    const payload = {
+      id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+      name: rowData.name,
+      description: rowData.description,
+      enabled: rowData.statusCheck,
+    };
     try {
-      const userReq = await fetch(`/api/roles/?id=${rowData.id}`, {
+      const userReq = await fetch(`/api/roles/${rowData.id}`, {
         method: "PUT",
-        body: JSON.stringify({ enabled: rowData.statusCheck }),
+        body: JSON.stringify(payload),
       });
       if (userReq.ok) {
         // toast({
@@ -494,7 +500,9 @@ export default function RolesPage() {
               pageCount={pageCount}
               onPageChange={handlePageChange}
               pageSize={pageSize}
-              totalItems={storeRetrievedData.length}
+              totalItems={
+                inputValue == "" ? totalItems : roleSearch?.content?.length
+              }
               type="roles"
               defaultColumns={["Drag", "Actions", "User Number"]}
             />
@@ -571,14 +579,11 @@ export default function RolesPage() {
           <AddEditRole
             actionType={roleModalAction}
             existingRoleData={selectedRole}
-            callback={()=>{
-              handleRoleSave
-              fetchRoles()
+            callback={() => {
+              handleRoleSave;
+              fetchRoles();
             }}
-            onClose={() => 
-              setIsRoleModalOpen(false) 
-              
-            }
+            onClose={() => setIsRoleModalOpen(false)}
           />
         </DialogContent>
       </Dialog>
