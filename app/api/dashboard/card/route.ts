@@ -7,7 +7,7 @@ export const GET = async ( request:any) => {
 	const queryParamsObject = Object.fromEntries(urlData.searchParams.entries());
 	const queryParams = new URLSearchParams(queryParamsObject).toString();
 
-	const url=`/activity-service/dashboard/cards?${decodeURIComponent(queryParams)}`
+	const url=`/dashboard/cards?${decodeURIComponent(queryParams)}`
 
 	const res = await queryService(url);
 	return res;
