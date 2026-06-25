@@ -97,23 +97,23 @@ export const navigationItems: NavigationItem[] = [
     //   },
     // ],
   },
-  {
-    label: "Reports",
-    href: "/reports",
-    icon: RiBarChartBoxLine,
-    children: [
-      {
-        label: "View Reports",
-        href: "/reports/view",
-        icon: RiBarChartBoxLine,
-      },
-      {
-        label: "Export Reports",
-        href: "/reports/export",
-        icon: RiBarChartBoxLine,
-      },
-    ],
-  },
+  // {
+  //   label: "Reports",
+  //   href: "/reports",
+  //   icon: RiBarChartBoxLine,
+  //   children: [
+  //     {
+  //       label: "View Reports",
+  //       href: "/reports/view",
+  //       icon: RiBarChartBoxLine,
+  //     },
+  //     {
+  //       label: "Export Reports",
+  //       href: "/reports/export",
+  //       icon: RiBarChartBoxLine,
+  //     },
+  //   ],
+  // },
 ]
 
 export function getNavigationItemPermissionValues(
