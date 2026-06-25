@@ -11,7 +11,7 @@ import Select from "react-select";
 export interface DeviceRecord {
   device_sn: string;
   device_name: string;
-  alias_name: string;
+  device_location: string;
   vendor: string;
   device_type: string;
   ipaddress: string;
@@ -38,7 +38,7 @@ interface AddEditDeviceProps {
 const emptyDevice: DeviceRecord = {
   device_sn: "",
   device_name: "",
-  alias_name: "",
+  device_location: "",
   vendor: "ZKTeco",
   device_type: "",
   ipaddress: "",
@@ -71,9 +71,10 @@ export default function AddEditDevice({
   callback,
   onClose,
 }: AddEditDeviceProps) {
-  const [formData, setFormData] = useState<DeviceRecord>(
-    { ...emptyDevice, ...existingDeviceData },
-  );
+  const [formData, setFormData] = useState<DeviceRecord>({
+    ...emptyDevice,
+    ...existingDeviceData,
+  });
 
   const isViewMode = actionType === "view";
 
@@ -93,7 +94,7 @@ export default function AddEditDevice({
 
   const handleEditDevice = async () => {
     try {
-      const deviceId = (existingDeviceData as Partial<{ id: string }> )?.id;
+      const deviceId = (existingDeviceData as Partial<{ id: string }>)?.id;
 
       if (!deviceId) {
         throw new Error("Missing device id for update.");
@@ -102,7 +103,7 @@ export default function AddEditDevice({
       const payload = {
         device_sn: formData.device_sn,
         device_name: formData.device_name,
-        alias_name: formData.alias_name,
+        device_location: formData.device_location,
         vendor: formData.vendor,
         device_type: formData.device_type,
         ipaddress: formData.ipaddress,
@@ -119,11 +120,14 @@ export default function AddEditDevice({
         real_time: formData.real_time,
       };
 
-      const response = await fetch(`/api/device?id=${encodeURIComponent(deviceId)}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      const response = await fetch(
+        `/api/device?id=${encodeURIComponent(deviceId)}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        },
+      );
 
       if (!response.ok) {
         throw new Error("Failed to update device");
@@ -180,18 +184,23 @@ export default function AddEditDevice({
           <div className="space-y-1.5">
             <Label>Device Location</Label>
 
-            <Select
+            <Input
+              value={formData.device_location}
+              disabled={isViewMode}
+              onChange={(e) => updateField("device_location", e.target.value)}
+            />
+            {/* <Select
               isDisabled={isViewMode}
               options={locationOptions}
               value={locationOptions.find(
-                (option) => option.value === formData.alias_name,
+                (option) => option.value === formData.device_location,
               )}
               onChange={(selectedOption) =>
-                updateField("alias_name", selectedOption?.value ?? "")
+                updateField("device_location", selectedOption?.value ?? "")
               }
               placeholder="Select device location"
               className="text-sm"
-            />
+            /> */}
           </div>
 
           <div className="flex flex-col gap-2">
@@ -211,7 +220,6 @@ export default function AddEditDevice({
               onChange={(e) => updateField("device_type", e.target.value)}
             />
           </div>
-
         </div>
       </div>
 
@@ -226,7 +234,7 @@ export default function AddEditDevice({
             <Label>IP Address</Label>
             <Input
               value={formData.ipaddress}
-              disabled={isViewMode}
+              disabled={true}
               onChange={(e) => updateField("ipaddress", e.target.value)}
             />
           </div>
@@ -236,7 +244,7 @@ export default function AddEditDevice({
             <Input
               type="password"
               value={formData.push_comm_key}
-              disabled={isViewMode}
+              disabled={true}
               onChange={(e) => updateField("push_comm_key", e.target.value)}
             />
           </div>
@@ -245,7 +253,7 @@ export default function AddEditDevice({
             <Label>Time Zone</Label>
             <Input
               value={formData.time_zone}
-              disabled={isViewMode}
+              disabled={true}
               onChange={(e) => updateField("time_zone", e.target.value)}
             />
           </div>
@@ -253,7 +261,7 @@ export default function AddEditDevice({
       </div>
 
       {/* Synchronization */}
-      <div className=" pt-6">
+      {/* <div className=" pt-6">
         <h3 className="mb-4 text-lg text-gray-500 font-semibold">
           Synchronization Settings
         </h3>
@@ -293,10 +301,10 @@ export default function AddEditDevice({
             />
           </div>
         </div>
-      </div>
+      </div> */}
 
       {/* Features */}
-      <div className=" pt-6">
+      {/* <div className=" pt-6">
         <h3 className="mb-4 text-lg text-gray-500 font-semibold">
           Device Features
         </h3>
@@ -344,7 +352,7 @@ export default function AddEditDevice({
             onChange={(checked) => updateField("real_time", checked)}
           />
         </div>
-      </div>
+      </div> */}
 
       <div className="flex justify-end  pt-6">
         {isViewMode ? (

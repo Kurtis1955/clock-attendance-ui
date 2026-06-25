@@ -396,7 +396,7 @@ export function DataTable<TData, TValue>({
             onChange={handlePageSizeChange}
             className="ml-4 border rounded p-2 "
           >
-            {[10, 20, 50].map((size) => (
+            {[2,5,10, 20, 50].map((size) => (
               <option key={size} value={size}>
                 {size} per page
               </option>

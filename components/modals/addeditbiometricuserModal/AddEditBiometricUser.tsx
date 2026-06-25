@@ -290,6 +290,11 @@ const AddEditBiometricUser = ({
       return;
     }
 
+    if (!assignedDevices.length) {
+      setSubmitError("Assign at least one biometric device.");
+      return;
+    }
+
     // if (!companyDepartments.length) {
     //   setSubmitError("Select at least one department.");
     //   return;
@@ -298,34 +303,7 @@ const AddEditBiometricUser = ({
     setloadingSaveUpdateUser(true);
 
     try {
-      const companyNames = [selectedCompany.name];
-      const primaryDepartment = resolvePrimaryDepartment(
-        companyNames,
-        companyDepartments,
-        departmentOptions,
-      );
-      const departmentId =
-        primaryDepartment?.departmentId ??
-        resolvedUser?.departmentId ??
-        existingUserData?.departmentId;
-      const companyId =
-        selectedCompany.id ??
-        primaryDepartment?.companyId ??
-        resolvedUser?.companyId ??
-        existingUserData?.companyId;
-
-      // if (actionType === "add" && (!departmentId || !companyId)) {
-      //   setSubmitError(
-      //     "Could not resolve company and department IDs. Select matching company and department values."
-      //   );
-      //   return;
-      // }
-
-      const selectedRoleNames = roleOptions
-        .filter((role) => selectedRoleIds.includes(role.id))
-        .map((role) => role.name);
-
-      const payload = buildUserApiPayload({
+      const payload =({
         id:
           actionType === "edit"
             ? (resolvedUser?.id ?? existingUserData?.id)
@@ -335,32 +313,10 @@ const AddEditBiometricUser = ({
         firstName,
         lastName,
         phoneNumber,
-        roleIds: selectedRoleIds,
-        permissionIds: selectedPermissions,
-        companyNames,
-        departmentNames: companyDepartments,
         enabled,
         ecode,
-        departmentId,
-        companyId,
-        managerId: resolvedUser?.managerId ?? existingUserData?.managerId,
-        companyBranchId:
-          primaryDepartment?.companyBranchId ??
-          resolvedUser?.companyBranchId ??
-          existingUserData?.companyBranchId,
-        managerName:
-          manager || resolvedUser?.managerName || existingUserData?.managerName,
-        companyBranchName:
-          primaryDepartment?.companyBranchName ??
-          resolvedUser?.companyBranchName ??
-          existingUserData?.companyBranchName,
-        userRoles:
-          selectedRoleNames.length > 0
-            ? selectedRoleNames
-            : normalizeStringArray(
-                resolvedUser?.userRoles ?? existingUserData?.userRoles,
-              ),
         exists: false,
+        assignedDevices: assignedDevices.map((device) => device.value),
       });
 
       if (actionType === "edit") {
@@ -566,7 +522,7 @@ const AddEditBiometricUser = ({
           )}
         </div>
 
-        <div className="space-y-1.5 sm:col-span-2">
+        {/* <div className="space-y-1.5 sm:col-span-2">
           <Label>
             Role <span className="text-red-500">*</span>
           </Label>
@@ -600,9 +556,9 @@ const AddEditBiometricUser = ({
             isClearable
             // required
           />
-        </div>
+        </div> */}
 
-        <div className="space-y-2 sm:col-span-2">
+        {/* <div className="space-y-2 sm:col-span-2">
           <Label>
             Company <span className="text-red-500">*</span>
           </Label>
@@ -678,7 +634,7 @@ const AddEditBiometricUser = ({
           {departmentsError ? (
             <p className="text-xs text-red-500">{departmentsError}</p>
           ) : null}
-        </div>
+        </div> */}
 
         <div className="space-y-2 sm:col-span-2">
           <Label>

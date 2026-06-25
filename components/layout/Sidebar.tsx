@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -37,6 +38,8 @@ import { isNavigationActive, navigationItems } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
 
 import { useLayout } from "./layout-context";
+import federatedLogout from "@/utils/federatedLogout";
+import { useSession } from "next-auth/react";
 
 interface SidebarContentProps {
   collapsed: boolean;
@@ -46,9 +49,19 @@ interface SidebarContentProps {
 function SidebarContent({ collapsed, onNavigate }: SidebarContentProps) {
   const pathname = usePathname();
   const { toggleCollapsed } = useLayout();
-  const [expandedItems, setExpandedItems] = React.useState<string[]>([]);
+  const [expandedItems, setExpandedItems] = useState<string[]>([]);
+  const [userName, setUserName] = useState("");
+  const [userEmail, setUserEmail] = useState("");
+  const [userData, setUserData] = useState<any>({});
+  const { data: session } = useSession();
 
-  React.useEffect(() => {
+  useEffect(() => {
+    console.log("session>>", session);
+    if (session?.user?.name) {
+      setUserName(session.user.name as string);
+      setUserEmail((session.user.email as string) ?? "");
+    }
+    fetchUserData();
     const activeParentHrefs = navigationItems
       .filter((item) =>
         item.children?.some((child) =>
@@ -60,7 +73,19 @@ function SidebarContent({ collapsed, onNavigate }: SidebarContentProps) {
     setExpandedItems((currentItems) =>
       Array.from(new Set([...currentItems, ...activeParentHrefs])),
     );
-  }, [pathname]);
+  }, [pathname, session]);
+
+  const fetchUserData = async () => {
+    try {
+      console.log(userName)
+      const id = "catalystta"
+      const res = await fetch(`/api/users/${id}/byusername`);
+      if (res.ok) {
+        const data = await res.json();
+        setUserData(data.data);
+      }
+    } catch (error) {}
+  };
 
   const toggleExpandedItem = (href: string) => {
     setExpandedItems((currentItems) =>
@@ -340,10 +365,10 @@ function SidebarContent({ collapsed, onNavigate }: SidebarContentProps) {
               {!collapsed && (
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-semibold text-white">
-                    {currentUser.name}
+                    {userName}
                   </p>
                   <p className="truncate text-xs text-slate-400">
-                    {currentUser.role}
+                    {userData.roleNames?.toUpperCase()} USER
                   </p>
                 </div>
               )}
@@ -356,9 +381,9 @@ function SidebarContent({ collapsed, onNavigate }: SidebarContentProps) {
           >
             <DropdownMenuLabel>
               <div className="flex flex-col">
-                <span>{currentUser.name}</span>
+                <span>{userName}</span>
                 <span className="text-xs font-normal text-muted-foreground">
-                  {currentUser.email}
+                  {userEmail}
                 </span>
               </div>
             </DropdownMenuLabel>
@@ -368,7 +393,10 @@ function SidebarContent({ collapsed, onNavigate }: SidebarContentProps) {
               Profile
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem variant="destructive">
+            <DropdownMenuItem
+              variant="destructive"
+              onClick={() => federatedLogout()}
+            >
               <RiLogoutBoxRLine className="size-4" />
               Logout
             </DropdownMenuItem>
