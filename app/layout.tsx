@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
 import "./globals.css";
+import { Providers } from "@/hoc/providers";
+import SessionGuard from "@/hoc/SessionGuard";
 
 const poppins = Poppins({
   variable: "--font-poppins",
@@ -21,11 +23,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="en"
-      className={`${poppins.variable} h-full font-sans antialiased`}
-    >
-      <body className="min-h-full flex flex-col font-sans">{children}</body>
+    <html lang="en">
+      <body
+        className={`${poppins.variable} h-full font-sans antialiased`}
+      >
+        <Providers>
+          <SessionGuard>{children}</SessionGuard>
+        </Providers>
+      </body>
     </html>
   );
 }

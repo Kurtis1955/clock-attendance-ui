@@ -26,8 +26,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { branchOptions, currentUser } from "@/lib/constants";
+import { useSession } from "next-auth/react";
 
 import { useLayout } from "./layout-context";
+import federatedLogout from "@/utils/federatedLogout";
 
 const NOTIFICATION_COUNT = 8;
 
@@ -35,10 +37,21 @@ export function Header() {
   const { toggleMobile } = useLayout();
   const [selectedBranch, setSelectedBranch] = React.useState("all");
   const [searchQuery, setSearchQuery] = React.useState("");
+  const { data: session } = useSession();
 
   const selectedBranchLabel =
     branchOptions.find((b) => b.value === selectedBranch)?.label ??
     "All Branches";
+
+  const userName =
+    (session?.user?.name as string) ?? currentUser.name;
+  const userEmail =
+    (session?.user?.email as string) ?? currentUser.email;
+  const userInitials = userName
+    .split(" ")
+    .map((part) => part[0])
+    .slice(0, 2)
+    .join("");
 
   return (
     <header
@@ -141,14 +154,14 @@ export function Header() {
             >
               <Avatar className="size-9 border border-slate-200">
                 <AvatarFallback className="bg-[#0f172a] text-xs font-semibold text-[#eab308]">
-                  {currentUser.initials}
+                  {userInitials}
                 </AvatarFallback>
               </Avatar>
               <div className="hidden text-left md:block">
                 <p className="text-sm font-semibold text-[#0f172a]">
-                  {currentUser.name}
+                  {userName}
                 </p>
-                <p className="text-xs text-[#64748b]">{currentUser.role}</p>
+                {/* <p className="text-xs text-[#64748b]">{userEmail}</p> */}
               </div>
               <RiArrowDownSLine className="hidden size-4 text-slate-400 md:block" />
             </button>
@@ -156,19 +169,21 @@ export function Header() {
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel>
               <div className="flex flex-col">
-                <span>{currentUser.name}</span>
+                <span>{userName}</span>
                 <span className="text-xs font-normal text-muted-foreground">
-                  {currentUser.email}
+                  {userEmail}
                 </span>
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            {/* <DropdownMenuItem>
               <RiUser3Line className="size-4" />
               Profile
             </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem variant="destructive">
+            <DropdownMenuSeparator /> */}
+            <DropdownMenuItem 
+            onClick={() => federatedLogout()}
+            variant="destructive">
               <RiLogoutBoxRLine className="size-4" />
               Logout
             </DropdownMenuItem>
