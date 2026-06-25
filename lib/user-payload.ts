@@ -26,6 +26,8 @@ export interface UserApiPayload {
   managerName?: string
   companyBranchName?: string
   userRoles?: string[]
+  assignedDevices?: string[]
+  userType?: string[]
   exists?: boolean
 }
 
@@ -49,6 +51,8 @@ export interface BuildUserPayloadInput {
   managerName?: string
   companyBranchName?: string
   userRoles?: string[]
+  assignedDevices?: string[]
+  userType?: string[]
   exists?: boolean
 }
 
@@ -139,6 +143,8 @@ export function buildUserApiPayload(input: BuildUserPayloadInput): UserApiPayloa
   if (input.managerName) payload.managerName = input.managerName
   if (input.companyBranchName) payload.companyBranchName = input.companyBranchName
   if (input.userRoles?.length) payload.userRoles = input.userRoles
+  if (input.assignedDevices?.length) payload.assignedDevices = input.assignedDevices
+  if (input.userType?.length) payload.userType = input.userType
   if (typeof input.exists === "boolean") payload.exists = input.exists
 
   return payload
