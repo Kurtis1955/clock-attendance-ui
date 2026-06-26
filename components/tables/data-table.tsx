@@ -404,7 +404,7 @@ export function DataTable<TData, TValue>({
           </select>
         </div>
 
-        <div className="flex items-center px-4">
+        <div className="flex items-center space-x-2 px-4">
           <ReactPaginate className="pagination flex items-center justify-center gap-2"
             previousLabel={"Previous"}
             nextLabel={"Next"}
