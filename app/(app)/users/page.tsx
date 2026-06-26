@@ -38,7 +38,10 @@ export default function UsersPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(false);
   const [loadingUserDetails, setLoadingUserDetails] = useState(false);
-
+  const [totalUsers, setTotalUsers] = useState(0);
+  const [activeUser, setActiveUser] = useState(0);
+  const [inActiveUser, setInActiveUser] = useState(0);
+  const [adminUser, setAdminUser] = useState(0);
   const {
     inputValue,
     handleInputUserChange,
@@ -154,6 +157,24 @@ export default function UsersPage() {
       const data = await res.json();
       setStoreRetrievedData(data.data.content);
       setTotalItems(data.data.totalElements);
+      setTotalUsers(data.data.totalElements);
+
+      const active = data.data.content.filter(
+        (u: any) => u.enabled == true,
+      ).length;
+      const inActive = data.data.content.filter(
+        (u: any) => u.enabled == false,
+      ).length;
+      const admins = data.data.content.filter((u: any) =>
+        String(u.roles || "")
+          .toLowerCase()
+          .includes("admin"),
+      ).length;
+
+      setActiveUser(active)
+      setInActiveUser(inActive)
+      setAdminUser(admins)
+
     } catch (error) {
       console.error("Error Fecthing users:", error);
     }
@@ -277,7 +298,12 @@ export default function UsersPage() {
         </div>
       </div>
 
-      <UserStatsCards />
+      <UserStatsCards
+        totalUsers={totalUsers}
+        activeUser={activeUser}
+        inActiveUsers={inActiveUser}
+        adminUsers={adminUser}
+      />
 
       <div className="w-full flex items-center justify-between mt-2">
         <div className="sm:w-1/3 flex items-center max-w-sm">
