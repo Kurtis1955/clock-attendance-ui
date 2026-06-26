@@ -1,5 +1,6 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/utils/security";
+import { signIn, signOut } from "next-auth/react";
 
 type Options = {
   data?: unknown;
@@ -37,7 +38,9 @@ export const queryService = async (endpoint: string, options?: Options) => {
   try {
     let body: BodyInit | null | undefined;
     if (options?.data) {
-      body = isFormData ? (options.data as FormData) : JSON.stringify(options.data);
+      body = isFormData
+        ? (options.data as FormData)
+        : JSON.stringify(options.data);
     } else {
       body = undefined;
     }
@@ -49,6 +52,11 @@ export const queryService = async (endpoint: string, options?: Options) => {
       next: options?.next,
     });
 
+    if (response.status === 401) {
+      await signOut({ redirect: false });
+      signIn("keycloak");
+    }
+
     return response;
   } catch (error) {
     console.error(`Fetch Error at ${endpoint}:`, error);
@@ -57,4 +65,3 @@ export const queryService = async (endpoint: string, options?: Options) => {
 };
 
 export default queryService;
-
