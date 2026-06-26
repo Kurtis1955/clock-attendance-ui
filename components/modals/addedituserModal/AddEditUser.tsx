@@ -387,8 +387,8 @@ const AddEditUser = ({
       callback?.(json?.data ?? payload);
       onClose?.();
     } catch (error) {
-      // const message = error instanceof Error ? error.message : "Failed to save user.";
-      const message = "Failed to save user details.";
+       const message = error instanceof Error ? error.message : "Failed to save user.";
+      // const message = "Failed to save user details.";
       setSubmitError(message);
       console.error("Error saving user:", error);
     } finally {
