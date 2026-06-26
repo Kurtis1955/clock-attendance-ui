@@ -629,7 +629,7 @@ export default function DevicesPage() {
               />
               <RiSearchLine className="absolute right-3 top-1/2 size-5 -translate-y-1/2 text-slate-500" />
             </div>
-            <div className="w-full sm:w-2/3 flex items-center justify-between sm:justify-end gap-2">
+            <div className="w-full sm:w-2/3 flex items-center justify-start sm:justify-start gap-2">
               <select
                 value={statusFilter}
                 onChange={(event) => setStatusFilter(event.target.value)}
@@ -648,13 +648,13 @@ export default function DevicesPage() {
                 <option value="system">System</option>
                 <option value="custom">Custom</option>
               </select> */}
-              <Button
+              {/* <Button
                 variant="outline"
                 className="h-10 border-slate-200 bg-black text-white hover:bg-[#141313] hover:text-white"
               >
                 <RiFilter3Line className="size-4 text-yellow-500" />
                 Filters
-              </Button>
+              </Button> */}
             </div>
           </div>
 
