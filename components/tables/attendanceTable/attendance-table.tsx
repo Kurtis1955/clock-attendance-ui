@@ -1,118 +1,109 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Tooltip } from "@chakra-ui/react";
-
-import { RxDragHandleDots2 } from "react-icons/rx";
-import { TfiExchangeVertical } from "react-icons/tfi";
-import { RiShieldCheckLine } from "react-icons/ri";
-import { RiUserLine } from "react-icons/ri";
-import { RiMore2Fill } from "react-icons/ri";
-import { RiEdit2Fill } from "react-icons/ri";
 import { FaEye } from "react-icons/fa";
+import { RiEdit2Fill } from "react-icons/ri";
 
 export const attendanceTableColumns = (rowCallback: any) => [
   {
-    accessorKey: "name",
+    accessorKey: "userName",
     header: "Employee",
     cell: ({ row }: { row: any }) => (
-      <div className="flex items-center gap-3">
-        {/* <Avatar>
-          <AvatarImage src={row.original.avatar} />
-          <AvatarFallback>
-            {row.original.employee
-              ?.split(" ")
-              .map((x: string) => x[0])
-              .join("")}
-          </AvatarFallback>
-        </Avatar> */}
+      <div>
+        <p className="font-medium text-slate-800">
+          {row.original.userName || row.original.userEmail}
+        </p>
 
-        <div>
-          <p className="font-medium text-gray-600">{row.original.name}</p>
+        <p className="text-xs text-slate-500">
+          {row.original.departmentName || "No Department"}
+        </p>
+      </div>
+    ),
+  },
 
-          <p className="text-xs text-slate-500">
-            {row.original.team ?? row.original.department}
-          </p>
-        </div>
+  // {
+  //   accessorKey: "userPin",
+  //   header: "User Pin",
+  // },
+
+  {
+    accessorKey: "deviceName",
+    header: "Device",
+    cell: ({ row }: { row: any }) => (
+      <div>
+        <Badge variant="outline">{row.original.deviceName}</Badge>
+
+        <p className="mt-1 text-xs text-slate-500">
+          {row.original.deviceSn}
+        </p>
       </div>
     ),
   },
 
   {
-    accessorKey: "employeeId",
-    header: "Employee Code",
+    accessorKey: "deviceLocation",
+    header: "Location",
   },
 
   {
-    accessorKey: "branch",
-    header: "Company",
+    accessorKey: "verifyTime",
+    header: "Verification Time",
   },
 
   {
-    accessorKey: "device",
-    header: "Device",
+    accessorKey: "source",
+    header: "Source",
     cell: ({ row }: { row: any }) => (
-      <Badge variant="outline">{row.original.device}</Badge>
+      <Badge className="bg-blue-50 text-blue-700">
+        {row.original.source}
+      </Badge>
     ),
   },
 
   {
-    accessorKey: "method",
-    header: "Clocking Method",
+    accessorKey: "statusDirection",
+    header: "Direction",
     cell: ({ row }: { row: any }) => (
-      <div className="flex items-center gap-2">{row.original.method}</div>
+      <Badge
+        className={
+          row.original.statusDirection === "IN"
+            ? "bg-green-100 text-green-700"
+            : "bg-orange-100 text-orange-700"
+        }
+      >
+        {row.original.statusDirection}
+      </Badge>
     ),
   },
 
   {
-    accessorKey: "clockIn",
-    header: "Clock In",
-  },
-
-  {
-    accessorKey: "clockOut",
-    header: "Clock Out",
-    cell: ({ row }: { row: any }) => (
-      <span>{row.original.clockOut || "--"}</span>
-    ),
-  },
-
-  {
-    accessorKey: "status",
+    accessorKey: "statusName",
     header: "Status",
-    cell: ({ row }: { row: any }) => {
-      const status = row.original.status;
-
-      return (
-        <Badge
-          className={
-            status === "Present"
-              ? "bg-green-100 text-green-700"
-              : status === "Late"
-                ? "bg-yellow-100 text-yellow-700"
-                : status === "Absent"
-                  ? "bg-red-100 text-red-700"
-                  : "bg-blue-100 text-blue-700"
-          }
-        >
-          {status}
-        </Badge>
-      );
-    },
+    cell: ({ row }: { row: any }) => (
+      <Badge
+        className={
+          row.original.statusName === "Check-in"
+            ? "bg-green-100 text-green-700"
+            : row.original.statusName === "Check-out"
+              ? "bg-red-100 text-red-700"
+              : row.original.statusName === "Break-out"
+                ? "bg-amber-100 text-amber-700"
+                : row.original.statusName === "Break-in"
+                  ? "bg-blue-100 text-blue-700"
+                  : "bg-slate-100 text-slate-700"
+        }
+      >
+        {row.original.statusName}
+      </Badge>
+    ),
   },
 
   {
     accessorKey: "actions",
     header: "Actions",
-
     cell: ({ row }: { row: any }) => (
       <div className="flex justify-center gap-2">
-        <Tooltip label={"View"} hasArrow placement="bottom">
+        <Tooltip label="View" hasArrow placement="bottom">
           <Button
             variant="outline"
             size="icon-sm"
@@ -122,7 +113,7 @@ export const attendanceTableColumns = (rowCallback: any) => [
           </Button>
         </Tooltip>
 
-        <Tooltip label={"Edit"} hasArrow placement="bottom">
+        <Tooltip label="Edit" hasArrow placement="bottom">
           <Button
             variant="outline"
             size="icon-sm"
@@ -131,34 +122,6 @@ export const attendanceTableColumns = (rowCallback: any) => [
             <RiEdit2Fill />
           </Button>
         </Tooltip>
-
-        {/* <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="icon-sm">
-              <RiMore2Fill />
-            </Button>
-          </DropdownMenuTrigger>
-
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem
-              onClick={() => rowCallback("attendance-details", row.original)}
-            >
-              View Details
-            </DropdownMenuItem>
-
-            <DropdownMenuItem
-              onClick={() => rowCallback("attendance-history", row.original)}
-            >
-              Attendance History
-            </DropdownMenuItem>
-
-            <DropdownMenuItem
-              onClick={() => rowCallback("device-log", row.original)}
-            >
-              Device Logs
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu> */}
       </div>
     ),
   },

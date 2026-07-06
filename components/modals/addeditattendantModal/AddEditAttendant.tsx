@@ -6,253 +6,137 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-type AttendanceStatus = "Present" | "Absent" | "On Duty" | "Remote";
-
-export interface AttendantRecord {
-  employeeId: string;
-  name: string;
-  team: string;
-  branch: string;
-  device: string;
-  clockIn: string;
-  clockOut: string;
-  hours: string;
-  status: AttendanceStatus;
-  method: string;
-}
-
-interface AddEditAttendantProps {
-  actionType: "add" | "view" | "edit";
-  existingAttendantData?: Partial<AttendantRecord> | null;
-  callback?: (record: AttendantRecord) => void;
-  onClose?: () => void;
-}
-
-const emptyRecord: AttendantRecord = {
-  employeeId: "",
-  name: "",
-  team: "",
-  branch: "",
-  device: "",
-  clockIn: "",
-  clockOut: "",
-  hours: "",
-  status: "Present",
-  method: "",
-};
-
-const statusOptions: AttendanceStatus[] = [
-  "Present",
-  "Absent",
-  "On Duty",
-  "Remote",
-];
-
 export default function AddEditAttendant({
   actionType,
   existingAttendantData,
   callback,
   onClose,
-}: AddEditAttendantProps) {
-  const [formData, setFormData] = useState<AttendantRecord>({
-    ...emptyRecord,
-    ...existingAttendantData,
-  });
-
+}: any) {
+  const [userId, setUserId] = useState(existingAttendantData?.userId || "");
+  const [firstName, setFirstName] = useState(
+    existingAttendantData?.firstName || "",
+  );
+  const [lastName, setLastName] = useState(
+    existingAttendantData?.lastName || "",
+  );
+  const [userEmail, setUserEmail] = useState(
+    existingAttendantData?.email || "",
+  );
+  const [userEcode, setUserEcode] = useState(
+    existingAttendantData?.e_code || "",
+  );
+  const [verifyTime, setVerifyTime] = useState(
+    existingAttendantData?.verifyTime || "",
+  );
+  const [statusId, setStatusId] = useState(
+    existingAttendantData?.statusId || "",
+  );
+  const [attendanceStatusOptions, setAttendanceStatusOptions] = useState<any[]>([]);
   const isViewMode = actionType === "view";
 
   useEffect(() => {
-    setFormData({ ...emptyRecord, ...existingAttendantData });
+    setUserId(existingAttendantData?.userId || "");
+    setFirstName(existingAttendantData?.firstName || "");
+    setLastName(existingAttendantData?.lastName || "");
+    setUserEmail(existingAttendantData?.email || "");
+    setUserEcode(existingAttendantData?.e_code || "");
+    setVerifyTime(existingAttendantData?.verifyTime || "");
+    setStatusId(existingAttendantData?.statusId || "");
   }, [existingAttendantData]);
 
-  const updateField = <K extends keyof AttendantRecord>(
-    field: K,
-    value: AttendantRecord[K],
-  ) => {
-    setFormData((current) => ({
-      ...current,
-      [field]: value,
-    }));
+  useEffect(() => {
+    fetchAttendanceStatus();
+  }, []);
+
+  const fetchAttendanceStatus = async () => {
+    try {
+      const response = await fetch(`/api/attendance/attendance-status`);
+      if (!response.ok) {
+        throw new Error("Failed to fetch attendance status");
+      }
+      const data = await response.json();
+      const options = data?.map((device: any) => ({
+        label: device.name,
+        value: device.id,
+      }));
+      console.log("attendanceStatusOptions>>", options);
+      setAttendanceStatusOptions(options || [] );
+    } catch (error) {
+      console.error("Error fetching attendance status:", error);
+    }
   };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    callback?.(formData);
+    callback?.();
     onClose?.();
-  };
-
-  /**
-   * Handles the submission of attendance record data to the API.
-   * Supports both creating new records (add) and updating existing ones (edit).
-   * 
-   * - For edit: sends a PUT request to `/api/attendance/{employeeId}`
-   * - For add: sends a POST request to `/api/attendance`
-   * 
-   * On success, triggers the callback with the response data and closes the modal.
-   * On error, logs the error to the console.
-   */
-  const handleAddEditSubmit = async () => {
-    try {
-      // Build the payload from form data
-      const payload = {
-        employeeId: formData.employeeId,
-        name: formData.name,
-        team: formData.team,
-        branch: formData.branch,
-        device: formData.device,
-        clockIn: formData.clockIn,
-        clockOut: formData.clockOut,
-        hours: formData.hours,
-        status: formData.status,
-        method: formData.method,
-      };
-
-      // Handle edit action - update existing record
-      if (actionType === "edit") {
-        const response = await fetch(`/api/attendance/${formData.employeeId}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-
-        if (!response.ok) {
-          throw new Error("Failed to update attendance record");
-        }
-
-        // Return the API response or fallback to sent payload
-        const json = await response.json();
-        callback?.(json?.data ?? payload);
-        onClose?.();
-        return;
-      }
-
-      // Handle add action - create new record
-      const response = await fetch("/api/attendance", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to create attendance record");
-      }
-
-      // Return the API response or fallback to sent payload
-      const json = await response.json();
-      callback?.(json?.data ?? payload);
-      onClose?.();
-    } catch (error) {
-      // Log any errors that occur during the API request
-      console.error("Error saving attendance record:", error);
-    }
   };
 
   return (
     <form className="space-y-5" onSubmit={handleSubmit}>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
-          <Label>Employee Name</Label>
+          <Label>First Name</Label>
           <Input
-            value={formData.name}
+            value={firstName}
             disabled={isViewMode}
-            onChange={(event) => updateField("name", event.target.value)}
-            placeholder="Employee name"
+            onChange={(event) => setFirstName(event.target.value)}
+            placeholder="First Name"
           />
         </div>
 
         <div className="space-y-1.5">
-          <Label>Employee ID</Label>
+          <Label>Last Name</Label>
           <Input
-            value={formData.employeeId}
-            disabled={isViewMode || actionType === "edit"}
-            onChange={(event) => updateField("employeeId", event.target.value)}
-            placeholder="Employee ID"
-          />
-        </div>
-
-        <div className="space-y-1.5">
-          <Label>Team</Label>
-          <Input
-            value={formData.team}
+            value={lastName}
             disabled={isViewMode}
-            onChange={(event) => updateField("team", event.target.value)}
-            placeholder="Team"
+            onChange={(event) => setLastName(event.target.value)}
+            placeholder="Last Name"
           />
         </div>
 
         <div className="space-y-1.5">
-          <Label>Branch</Label>
+          <Label>User Email</Label>
           <Input
-            value={formData.branch}
+            value={userEmail}
             disabled={isViewMode}
-            onChange={(event) => updateField("branch", event.target.value)}
-            placeholder="Branch"
+            onChange={(event) => setUserEmail(event.target.value)}
+            placeholder="User Email"
           />
         </div>
 
         <div className="space-y-1.5">
-          <Label>Device</Label>
+          <Label>Employee Code</Label>
           <Input
-            value={formData.device}
+            value={userEcode}
             disabled={isViewMode}
-            onChange={(event) => updateField("device", event.target.value)}
-            placeholder="Device"
+            onChange={(event) => setUserEcode(event.target.value)}
+            placeholder="Employee Code"
           />
         </div>
 
         <div className="space-y-1.5">
-          <Label>Method</Label>
+          <Label>Verify Time</Label>
           <Input
-            value={formData.method}
+            value={verifyTime}
             disabled={isViewMode}
-            onChange={(event) => updateField("method", event.target.value)}
-            placeholder="Clocking method"
+            onChange={(event) => setVerifyTime(event.target.value)}
+            placeholder="Verify Time"
           />
         </div>
 
         <div className="space-y-1.5">
-          <Label>Clock In</Label>
-          <Input
-            value={formData.clockIn}
-            disabled={isViewMode}
-            onChange={(event) => updateField("clockIn", event.target.value)}
-            placeholder="Clock in time"
-          />
-        </div>
-
-        <div className="space-y-1.5">
-          <Label>Clock Out</Label>
-          <Input
-            value={formData.clockOut}
-            disabled={isViewMode}
-            onChange={(event) => updateField("clockOut", event.target.value)}
-            placeholder="Clock out time"
-          />
-        </div>
-
-        <div className="space-y-1.5">
-          <Label>Hours</Label>
-          <Input
-            value={formData.hours}
-            disabled={isViewMode}
-            onChange={(event) => updateField("hours", event.target.value)}
-            placeholder="Total hours"
-          />
-        </div>
-
-        <div className="space-y-1.5">
-          <Label>Status</Label>
+          <Label>Attendance Status</Label>
           <select
-            value={formData.status}
+            value={statusId}
             disabled={isViewMode}
-            onChange={(event) =>
-              updateField("status", event.target.value as AttendanceStatus)
-            }
-            className="h-10 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-50"
+            onChange={(event) => setStatusId(event.target.value)}
+            className="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring focus:ring-blue-200"
           >
-            {statusOptions.map((status) => (
-              <option key={status} value={status}>
-                {status}
+            {/* <option value="">Select Status</option> */}
+            {attendanceStatusOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
               </option>
             ))}
           </select>

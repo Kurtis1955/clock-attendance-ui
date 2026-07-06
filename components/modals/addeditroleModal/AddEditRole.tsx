@@ -177,7 +177,7 @@ export default function AddEditRole({
             },
           );
           if (permission.ok) {
-            console.log("role created successfully");
+            console.log("role updated successfully");
             onClose?.();
           } else console.log("an error occurred");
         }
@@ -185,7 +185,7 @@ export default function AddEditRole({
           console.log("role updated successfully");
           toast({
             title: "Success!",
-            description: "User updated successfully",
+            description: "Role updated successfully",
             status: "success", // 'info', 'warning', 'error', 'success'
             duration: 3000, // Duration in milliseconds
             isClosable: true, // Allows closing the toast

@@ -9,13 +9,13 @@ import { MdDeleteForever } from "react-icons/md";
 
 export const enrollmentTableColumns = (rowCallback: any) => [
   {
-    accessorKey: "userName",
+    accessorKey: "First Name",
     header: ({ column }: { column: any }) => (
       <Button
         variant="ghost"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
       >
-        User
+        First Name
         <TfiExchangeVertical />
       </Button>
     ),
@@ -23,23 +23,10 @@ export const enrollmentTableColumns = (rowCallback: any) => [
     cell: ({ row }: { row: any }) => {
       const user = row.original;
 
-      const initials = user.userName
-        ?.split(" ")
-        .map((x: string) => x[0])
-        .join("");
-
       return (
         <div className="flex items-center gap-3">
-          <Avatar className="size-9">
-            <AvatarFallback className="bg-slate-200 text-xs text-slate-700">
-              {initials}
-            </AvatarFallback>
-          </Avatar>
-
           <div>
-            <p className="font-semibold text-slate-900">{user.userName}</p>
-
-            <p className="text-xs text-slate-500">{user.email}</p>
+            <p className=" ml-3">{user.firstName}</p>
           </div>
         </div>
       );
@@ -47,9 +34,51 @@ export const enrollmentTableColumns = (rowCallback: any) => [
 
     size: 250,
   },
-
   {
-    accessorKey: "employeeId",
+    accessorKey: "Last Name",
+    header: ({ column }: { column: any }) => (
+      <Button
+        variant="ghost"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+      >
+        Last Name
+        <TfiExchangeVertical />
+      </Button>
+    ),
+
+    cell: ({ row }: { row: any }) => {
+      const user = row.original;
+
+      return (
+        <div className="flex items-center gap-3">
+          <div>
+            <p className=" ml-3">{user.lastName}</p>
+          </div>
+        </div>
+      );
+    },
+
+    size: 250,
+  },
+  {
+    accessorKey: "email",
+
+    header: ({ column }: { column: any }) => (
+      <Button
+        variant="ghost"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+      >
+        Email
+        <TfiExchangeVertical />
+      </Button>
+    ),
+
+    cell: ({ row }: { row: any }) => (
+      <span className="flex items-center ml-3">{row.original.email}</span>
+    ),
+  },
+  {
+    accessorKey: "e_code",
 
     header: ({ column }: { column: any }) => (
       <Button
@@ -62,27 +91,9 @@ export const enrollmentTableColumns = (rowCallback: any) => [
     ),
 
     cell: ({ row }: { row: any }) => (
-      <span className="font-mono text-xs text-slate-700">
-        {row.original.employeeId}
+      <span className="font-mono text-sm text-slate-700 ml-3">
+        {row.original.e_code}
       </span>
-    ),
-  },
-
-  {
-    accessorKey: "department",
-
-    header: ({ column }: { column: any }) => (
-      <Button
-        variant="ghost"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-      >
-        Department
-        <TfiExchangeVertical />
-      </Button>
-    ),
-
-    cell: ({ row }: { row: any }) => (
-      <span className="flex items-center">{row.original.department}</span>
     ),
   },
 
@@ -92,7 +103,7 @@ export const enrollmentTableColumns = (rowCallback: any) => [
     header: "Assigned Devices",
 
     cell: ({ row }: { row: any }) => (
-      <span className="ml-12">{row.original.assignedDevices}</span>
+      <span className="ml-3">{row.original.assignedDevices?.length}</span>
     ),
   },
 
@@ -177,24 +188,6 @@ export const enrollmentTableColumns = (rowCallback: any) => [
         // return <span className="text-red-500">Inactive</span>;
       }
     },
-  },
-
-  {
-    accessorKey: "dateAdded",
-
-    header: ({ column }: { column: any }) => (
-      <Button
-        variant="ghost"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-      >
-        Date Added
-        <TfiExchangeVertical />
-      </Button>
-    ),
-
-    cell: ({ row }: { row: any }) => (
-      <span className="text-xs text-slate-700">{row.original.dateAdded}</span>
-    ),
   },
 
   {

@@ -17,80 +17,14 @@ import {
 } from "@/lib/user-payload";
 import type { DepartmentOption } from "@/hooks/useDepartments";
 
-const deviceOptions = [
-  { value: "zk-speedface-v5l-main", label: "SpeedFace V5L - Main Entrance" },
-  { value: "zk-k40-hr", label: "K40 - HR Office" },
-  { value: "zk-u300-finance", label: "U300 - Finance" },
-  { value: "zk-mb360-warehouse", label: "MB360 - Warehouse" },
-  { value: "zk-speedface-mini-admin", label: "SpeedFace Mini - Admin Block" },
-];
-
-function resolvePrimaryDepartment(
-  companyNames: string[],
-  departmentNames: string[],
-  options: DepartmentOption[],
-): DepartmentOption | undefined {
-  if (!options.length) {
-    return undefined;
-  }
-
-  for (const companyName of companyNames) {
-    for (const departmentName of departmentNames) {
-      const match = options.find(
-        (option) =>
-          option.companyName === companyName &&
-          option.departmentName === departmentName,
-      );
-      if (match) {
-        return match;
-      }
-    }
-  }
-
-  if (departmentNames.length) {
-    return options.find(
-      (option) => option.departmentName === departmentNames[0],
-    );
-  }
-
-  if (companyNames.length) {
-    return options.find((option) => option.companyName === companyNames[0]);
-  }
-
-  return undefined;
-}
 
 const AddEditBiometricUser = ({
   actionType,
   existingUserData,
   userPermissions,
-  permissionCategories,
   callback,
   onClose,
 }: any) => {
-  const { roles: roleOptions, loading: loadingRoles } = useRoles();
-  const {
-    companies,
-    loading: loadingCompanies,
-    error: companiesError,
-  } = useCompanies();
-  const [selectedCompany, setSelectedCompany] = useState<CompanyOption | null>(
-    null,
-  );
-  const {
-    departments: departmentOptions,
-    loading: loadingDepartments,
-    error: departmentsError,
-  } = useDepartments(
-    selectedCompany?.name ?? null,
-    selectedCompany?.id ?? null,
-  );
-
-  const userType = [
-    { value: "12Fes226Dkjsdfj45", label: "System User" },
-    { value: "13fs37s226Dkjsdfj", label: "Device User" },
-  ];
-
   const [loadingSaveUpdateUser, setloadingSaveUpdateUser] =
     useState<boolean>(false);
   const [firstName, setFirstName] = useState<string>(
@@ -99,153 +33,53 @@ const AddEditBiometricUser = ({
   const [lastName, setLastName] = useState<string>(
     existingUserData?.lastName || "",
   );
-  const [userName, setUserName] = useState<string>(
-    existingUserData?.userName || "",
-  );
   const [email, setEmail] = useState<string>(existingUserData?.email || "");
   const [ecode, setEcode] = useState<string>(
-    existingUserData?.eCode || existingUserData?.ecode || "",
+    existingUserData?.e_code || existingUserData?.e_code || "",
   );
   const [phoneNumber, setPhoneNumber] = useState<string>(
     existingUserData?.phoneNumber || "",
   );
-  const [selectedRoleIds, setSelectedRoleIds] = useState<string[]>(
-    normalizeRoleIds(existingUserData?.roles),
-  );
-  const [manager, setManager] = useState<string>(
-    existingUserData?.managerName || existingUserData?.manager || "",
-  );
   const [enabled, setEnabled] = useState<boolean>(
     existingUserData?.enabled ?? existingUserData?.status === "active",
   );
-  const [isLDAP, setisLDAP] = useState<boolean>(
-    existingUserData?.isLDAP || false,
-  );
+  const [deviceOptions, setDeviceOptions] = useState<any[]>([]);
   const [errorFirstName, setErrorFirstName] = useState<string>("");
   const [errorLastName, setErrorLastName] = useState<string>("");
   const [errorUsername, setErrorUsername] = useState<string>("");
   const [errorEmail, setErrorEmail] = useState<string>("");
   const [errorEcode, setErrorEcode] = useState<string>("");
   const [errorPhone, setErrorPhone] = useState<string>("");
-  const [companyDepartments, setCompanyDepartments] = useState<string[]>(
-    normalizeStringArray(existingUserData?.departmentName),
-  );
   const [submitError, setSubmitError] = useState<string>("");
   const [resolvedUser, setResolvedUser] = useState<any>(
     existingUserData ?? null,
   );
-  const [selectedPermissions, setSelectedPermissions] = useState<string[]>(
-    normalizeIdList(existingUserData?.permissions || userPermissions),
-  );
   const [assignedDevices, setAssignedDevices] = useState<any[]>([]);
-  const [assignUserType, setAssignUserType] = useState<any[]>([]);
   const isView = actionType === "view";
 
-  function applyUserToForm(user: any) {
-    if (!user) {
-      return;
-    }
-
-    setResolvedUser(user);
-    setFirstName(user?.firstName || "");
-    setLastName(user?.lastName || "");
-    setUserName(user?.userName || "");
-    setEmail(user?.email || "");
-    setEcode(user?.eCode || user?.ecode || "");
-    setPhoneNumber(user?.phoneNumber || "");
-    setSelectedRoleIds(normalizeRoleIds(user?.roles));
-    setManager(user?.managerName || user?.manager || "");
-    setEnabled(Boolean(user?.enabled));
-    setisLDAP(user?.isLDAP || false);
-    setCompanyDepartments(normalizeStringArray(user?.departmentName));
-    setSelectedPermissions(normalizeIdList(user?.permissions));
-    // Load assigned devices
-    if (user?.assignedDevices && Array.isArray(user.assignedDevices)) {
-      setAssignedDevices(user.assignedDevices);
-    }
-  }
-
   useEffect(() => {
-    if (!companies.length) {
-      return;
-    }
-
-    const companyNames = normalizeStringArray(
-      resolvedUser?.companyName ?? existingUserData?.companyName,
+    setFirstName(existingUserData?.firstName || "");
+    setLastName(existingUserData?.lastName || "");
+    setEmail(existingUserData?.email || "");
+    setEcode(existingUserData?.e_code || existingUserData?.e_code || "");
+    setPhoneNumber(existingUserData?.phoneNumber || "");
+    setEnabled(
+      existingUserData?.enabled ?? existingUserData?.status === "active",
     );
-    const companyId = resolvedUser?.companyId ?? existingUserData?.companyId;
-    const matchedCompany =
-      companies.find((company) => company.id === companyId) ??
-      companies.find((company) => companyNames.includes(company.name));
-
-    if (matchedCompany) {
-      setSelectedCompany(matchedCompany);
-    }
-  }, [companies, resolvedUser, existingUserData]);
-
-  useEffect(() => {
-    async function loadUserDetails() {
-      const identifier = existingUserData?.userName || existingUserData?.id;
-      if (!identifier || actionType === "add") {
-        return;
-      }
-
-      try {
-        const response = await fetch(`/api/users/${identifier}`);
-
-        if (!response.ok) {
-          return;
-        }
-
-        const json = await response.json();
-        applyUserToForm(json?.data ?? json);
-      } catch (error) {
-        console.error("Error loading user details:", error);
-      }
-    }
-
-    loadUserDetails();
-  }, [existingUserData?.userName, existingUserData?.id, actionType]);
-
-  useEffect(() => {
-    applyUserToForm(existingUserData);
-  }, [existingUserData]);
-
-  useEffect(() => {
-    async function loadUserPermissions() {
-      if (!existingUserData?.userName || actionType === "add") {
-        return;
-      }
-
-      try {
-        const response = await fetch(
-          `/api/users/${existingUserData.userName}/permissions`,
-        );
-
-        if (!response.ok) {
-          return;
-        }
-
-        const json = await response.json();
-        const content = json?.data?.content ?? json?.data ?? [];
-        const permissionIds = Array.isArray(content)
-          ? content
-              .map((item: { id?: string } | string) =>
-                typeof item === "string" ? item : (item.id ?? ""),
-              )
-              .filter(Boolean)
-          : [];
-
-        if (permissionIds.length) {
-          setSelectedPermissions(permissionIds);
-        }
-      } catch (error) {
-        console.error("Error loading user permissions:", error);
-      }
-    }
-
-    loadUserPermissions();
-  }, [existingUserData?.userName, actionType]);
+    setErrorFirstName("");
+    setErrorLastName("");
+    setErrorUsername("");
+    setErrorEmail("");
+    setErrorEcode("");
+    setErrorPhone("");
+    setSubmitError("");
+    setAssignedDevices(
+      (existingUserData?.assignedDevices || []).map((device: any) => ({
+        label: device.deviceName,
+        value: device.deviceId,
+      })),
+    );
+  }, [existingUserData, userPermissions]);
 
   const validateFirstLastName = (value: string): boolean => {
     const regex = /^[A-Za-z\s\-']*$/;
@@ -267,38 +101,30 @@ const AddEditBiometricUser = ({
     return regex.test(value);
   };
 
-  const handlePermissionChange = (permissionIds: string[]) => {
-    setSelectedPermissions(permissionIds);
+  const fetchDeviceOptions = async () => {
+    try {
+      const response = await fetch("/api/device");
+      if (!response.ok) {
+        throw new Error("Failed to fetch devices");
+      }
+      const data = await response.json();
+      const options = data?.content?.map((device: any) => ({
+        label: device.name,
+        value: device.serialNumber,
+      }));
+      setDeviceOptions(options || []);
+    } catch (error) {
+      console.error("Error fetching devices:", error);
+    }
   };
+
+  useEffect(() => {
+    fetchDeviceOptions();
+  }, []);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setSubmitError("");
-
-    // if (!selectedRoleIds.length) {
-    //   setSubmitError("Select at least one role.");
-    //   return;
-    // }
-
-    if (!selectedPermissions.length) {
-      setSubmitError("Select at least one permission.");
-      return;
-    }
-
-    if (!selectedCompany) {
-      setSubmitError("Select a company.");
-      return;
-    }
-
-    if (!assignedDevices.length) {
-      setSubmitError("Assign at least one biometric device.");
-      return;
-    }
-
-    // if (!companyDepartments.length) {
-    //   setSubmitError("Select at least one department.");
-    //   return;
-    // }
+    setSubmitError("")
 
     setloadingSaveUpdateUser(true);
 
@@ -308,15 +134,13 @@ const AddEditBiometricUser = ({
           actionType === "edit"
             ? (resolvedUser?.id ?? existingUserData?.id)
             : undefined,
-        userName,
         email,
         firstName,
         lastName,
         phoneNumber,
         enabled,
-        ecode,
-        exists: false,
-        assignedDevices: assignedDevices.map((device) => device.value),
+        e_code: ecode,
+        devices: assignedDevices.map((device) => device.value),
       });
 
       if (actionType === "edit") {
@@ -326,7 +150,7 @@ const AddEditBiometricUser = ({
           throw new Error("Missing user id for update.");
         }
 
-        const response = await fetch(`/api/users/${userId}`, {
+        const response = await fetch(`/api/enrollment/${userId}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
@@ -342,7 +166,7 @@ const AddEditBiometricUser = ({
         return;
       }
 
-      const response = await fetch("/api/users", {
+      const response = await fetch("/api/enrollment", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -365,6 +189,7 @@ const AddEditBiometricUser = ({
     }
   };
 
+  console.log("deviceOption>>", deviceOptions);
   return (
     <form className="w-full space-y-5 text-gray-600" onSubmit={handleSubmit}>
       <div className="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2">
@@ -422,7 +247,7 @@ const AddEditBiometricUser = ({
           )}
         </div>
 
-        <div className="space-y-1.5">
+        {/* <div className="space-y-1.5">
           <Label>
             UserName <span className="text-red-500">*</span>
           </Label>
@@ -447,7 +272,7 @@ const AddEditBiometricUser = ({
           {errorUsername && (
             <span className="text-red-500 text-[12px]">{errorUsername}</span>
           )}
-        </div>
+        </div> */}
 
         <div className="space-y-1.5">
           <Label>
@@ -636,7 +461,7 @@ const AddEditBiometricUser = ({
           ) : null}
         </div> */}
 
-        <div className="space-y-2 sm:col-span-2">
+        <div className="space-y-2 ">
           <Label>
             Assign Devices <span className="text-red-500">*</span>
           </Label>
