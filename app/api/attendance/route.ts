@@ -1,4 +1,4 @@
-import { queryService} from "@/services/ApiBaseService";
+import { queryDeviceAttendanceService} from "@/services/ApiBaseService";
 
 
 
@@ -7,7 +7,7 @@ export async function POST(
 ) {
 
 	const body = await request.json();
-	const res = await queryService(
+	const res = await queryDeviceAttendanceService(
 		`/roles`, {
 		method: "POST",
 		data: { ...body },
@@ -28,7 +28,7 @@ export async function PUT(
 	const body = await request.json();
 
 	// console.log("body@@role edit",body)
-	const res = await queryService(
+	const res = await queryDeviceAttendanceService(
 		`/roles/${roleId}`, {
 		method: "PUT",
 		data: { ...body },
@@ -54,6 +54,6 @@ export const GET = async (	request: Request) => {
 	
     const url=  `/attendance?${decodeURIComponent(queryParams)}`
   
-	const res = await queryService(url);
+	const res = await queryDeviceAttendanceService(url);
 	return res
 };
