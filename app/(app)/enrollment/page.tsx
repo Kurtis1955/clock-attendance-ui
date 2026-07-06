@@ -219,7 +219,7 @@ export default function EnrollmentPage() {
   const fetchUsers = async () => {
     try {
       const res = await fetch(
-        `/api/users?paginate=true&page=${pageCount}&size=${pageSize}`,
+        `/api/enrollment?paginate=true&page=${pageCount}&size=${pageSize}`,
       );
 
       if (!res.ok) {
@@ -227,8 +227,8 @@ export default function EnrollmentPage() {
       }
 
       const data = await res.json();
-      setStoreRetrievedData(data.data.content);
-      setTotalItems(data.data.totalElements);
+      setStoreRetrievedData(data.content);
+      setTotalItems(data.totalElements);
     } catch (error) {
       console.error("Error Fecthing users:", error);
     }
