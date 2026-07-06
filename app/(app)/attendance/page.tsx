@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   RiBarChartBoxLine,
   RiDownloadLine,
@@ -23,6 +23,7 @@ import { regrexForSpecialDashChars } from "@/lib/helpers";
 import AddEditAttendant from "@/components/modals/addeditattendantModal/AddEditAttendant";
 import useSearchAttendance from "@/hooks/useSearchAttendance";
 import _debounce from "lodash/debounce";
+import AsyncSelect from "react-select/async";
 
 type AttendanceStatus = "Present" | "Absent" | "On Duty" | "Remote";
 
@@ -142,7 +143,7 @@ export default function AttendancePage() {
   const [selectedAttendant, setSelectedAttendant] =
     useState<AttendanceRecord | null>(null);
   const [attendantModalAction, setAttendantModalAction] = useState<
-    "add" | "view" | "edit"
+    "add" | "view" | "edit" | "search"
   >("view");
   const [isAttendantModalOpen, setIsAttendantModalOpen] = useState(false);
   const [pageCount, setPageCount] = useState(0);
@@ -184,8 +185,8 @@ export default function AttendancePage() {
 
       if (res.ok) {
         const data = await res.json();
-        setAttendanceRecords(data.data.content);
-        setTotalItems(data.data.totalElements);
+        setAttendanceRecords(data.content);
+        setTotalItems(data.totalElements);
       } else {
         throw new Error(`HTTP error! status: ${res.status}`);
       }
@@ -193,24 +194,6 @@ export default function AttendancePage() {
       console.error("Error Fecthing Attendance:", error);
     }
   };
-
-  const filteredRecords = useMemo(() => {
-    return attendanceRecords.filter((record) => {
-      const matchesSearch =
-        record.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        record.employeeId.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        record.device.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesBranch =
-        branchFilter === "all" || record.branch === branchFilter;
-      const matchesStatus =
-        statusFilter === "all" ||
-        record.status.toLowerCase().replace(" ", "-") === statusFilter;
-      return matchesSearch && matchesBranch && matchesStatus;
-    });
-  }, [attendanceRecords, branchFilter, searchQuery, statusFilter]);
-
-  const totalPages = Math.max(1, Math.ceil(filteredRecords.length / pageSize));
-  // setAttendanceRecords(filteredRecords);
 
   const handleRowAction = (actionType: any, rowData: any) => {
     console.log("actionType", actionType, "rowData>>", rowData);
@@ -271,6 +254,87 @@ export default function AttendancePage() {
     });
   };
 
+  const fetchOptions = async (inputValue: string): Promise<any[]> => {
+    if (!inputValue) return [];
+
+    try {
+      //http://192.168.251.152:8021/api/v1/admin-service/users/active-directory?search=kwaku&first=0&max=5
+      const url = `/api/enrollment/?search=${inputValue}&first=0&max=5`;
+      // console.log("url>>", url);
+      const response = await fetch(`${url}`);
+      const data = await response.json();
+      // console.log("data search>>", data);
+
+      // Transform the API data to match the react-select option format
+      const searchedInfo = data.content.map((item: any) => {
+        if (item.firstName || item.lastName) {
+          return {
+            value: item.id,
+            label: item.firstName + " - " + item.email,
+            ...item,
+          };
+        }
+      });
+      //console.log("searchedData", searchedInfo);
+      return searchedInfo.filter((r: any) => r !== undefined);
+    } catch (error) {
+      /// console.error("Error fetching options:", error);
+      return [];
+    }
+  };
+
+  const handleChange = (selectedOption: any | null) => {
+    setSelectedAttendant(selectedOption);
+    setAttendantModalAction("add");
+    setIsAttendantModalOpen(true);
+  };
+
+  const debouncedFetchOptions = useCallback(
+    _debounce((inputValue: string, callback: (options: any[]) => void) => {
+      fetchOptions(inputValue).then(callback);
+    }, 300), // Adjust debounce delay (300ms in this case)
+    [],
+  );
+
+  const searchSelectStyles = {
+    control: (base: any) => ({
+      ...base,
+      minHeight: 44,
+      borderRadius: 12,
+      borderColor: "#d1d5db",
+      boxShadow: "none",
+      transition: "border-color 150ms ease",
+      "&:hover": {
+        borderColor: "#cbd5e1",
+      },
+    }),
+    menu: (base: any) => ({
+      ...base,
+      zIndex: 9999,
+      borderRadius: 12,
+      overflow: "hidden",
+      boxShadow: "0 10px 30px rgba(15, 23, 42, 0.15)",
+    }),
+    menuPortal: (base: any) => ({
+      ...base,
+      zIndex: 9999,
+    }),
+    option: (base: any, state: any) => ({
+      ...base,
+      backgroundColor: state.isFocused ? "#f8fafc" : "white",
+      color: "#0f172a",
+      cursor: "pointer",
+    }),
+    placeholder: (base: any) => ({
+      ...base,
+      color: "#64748b",
+    }),
+    singleValue: (base: any) => ({
+      ...base,
+      color: "#0f172a",
+    }),
+  };
+
   return (
     <div className="flex flex-col gap-5 px-2 pt-2 lg:px-8">
       <PageHeader
@@ -290,7 +354,7 @@ export default function AttendancePage() {
               className="h-10 border-slate-200 bg-white"
               onClick={() => {
                 setSelectedAttendant(null);
-                setAttendantModalAction("add");
+                setAttendantModalAction("search");
                 setIsAttendantModalOpen(true);
               }}
             >
@@ -351,27 +415,31 @@ export default function AttendancePage() {
 
       <DataTable
         columns={attendanceTableColumns(handleRowAction)}
-        data={filteredRecords}
-        pageCount={totalPages}
+        data={attendanceRecords}
+        pageCount={pageCount}
         pageSize={pageSize}
         onPageChange={handlePageChange}
         type="users"
         defaultColumns={["Drag", "Actions", "User Number"]}
-        totalItems={filteredRecords.length}
+        totalItems={totalItems ? totalItems : attendanceSearch?.totalElements}
       />
 
       <Dialog
         open={isAttendantModalOpen}
         onOpenChange={setIsAttendantModalOpen}
       >
-        <DialogContent className="sm:max-w-3xl">
+        <DialogContent
+          className={`sm:max-w-3xl ${attendantModalAction === "search" ? "sm:h-auto" : ""}`}
+        >
           <DialogHeader>
             <DialogTitle>
               {attendantModalAction === "add"
                 ? "Add Attendance"
                 : attendantModalAction === "edit"
                   ? "Edit Attendant"
-                  : "View Attendant"}
+                  : attendantModalAction === "view"
+                    ? "View Attendant"
+                    : "Search Attendant"}
             </DialogTitle>
             <DialogDescription>
               {attendantModalAction === "add"
@@ -381,12 +449,32 @@ export default function AttendancePage() {
                   : "Review the selected attendance record."}
             </DialogDescription>
           </DialogHeader>
-          <AddEditAttendant
-            actionType={attendantModalAction}
-            existingAttendantData={selectedAttendant}
-            callback={handleAttendantSave}
-            onClose={() => setIsAttendantModalOpen(false)}
-          />
+          {attendantModalAction === "search" ? (
+            <div>
+              <AsyncSelect
+                cacheOptions
+                defaultOptions
+                loadOptions={debouncedFetchOptions}
+                onChange={handleChange}
+                placeholder="Search for active directory user..."
+                styles={searchSelectStyles}
+                menuPosition="absolute"
+                menuPlacement="auto"
+                menuShouldScrollIntoView={false}
+                closeMenuOnScroll
+                closeMenuOnSelect
+                className="react-select-container"
+                classNamePrefix="react-select"
+              />
+            </div>
+          ) : (
+            <AddEditAttendant
+              actionType={attendantModalAction}
+              existingAttendantData={selectedAttendant}
+              callback={handleAttendantSave}
+              onClose={() => setIsAttendantModalOpen(false)}
+            />
+          )}
         </DialogContent>
       </Dialog>
     </div>
