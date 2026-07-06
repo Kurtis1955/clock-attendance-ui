@@ -1,4 +1,4 @@
-import { queryService} from "@/services/ApiBaseService";
+import { queryDeviceAttendanceService} from "@/services/ApiBaseService";
 
 
 
@@ -7,16 +7,13 @@ export async function POST(
 ) {
 
 	const body = await request.json();
-	const res = await queryService(
-		`/roles`, {
+	const res = await queryDeviceAttendanceService(
+		`/devices`, {
 		method: "POST",
 		data: { ...body },
 	}
-
 	);
     return res
-
-
 }
 
 export async function PUT(
@@ -28,8 +25,8 @@ export async function PUT(
 	const body = await request.json();
 
 	// console.log("body@@role edit",body)
-	const res = await queryService(
-		`/roles/${roleId}`, {
+	const res = await queryDeviceAttendanceService(
+		`/devices/${roleId}`, {
 		method: "PUT",
 		data: { ...body },
 	}
@@ -50,28 +47,10 @@ export const GET = async (	request: Request) => {
 	// Convert the query parameters object into a string
 	const queryParams = new URLSearchParams(queryParamsObject).toString();
 	
-    const url=  `/roles?${decodeURIComponent(queryParams)}`
+    const url=  `/devices?${decodeURIComponent(queryParams)}`
   
-	const res = await queryService(url);
+	const res = await queryDeviceAttendanceService(url);
 	return res
 };
 
 
-
-
-// export async function POST(
-// 	request: Request,
-// ) {
-
-// 	const body = await request.json();
-// 	const res = await queryAdminService(
-// 		`/roles`, {
-// 		method: "POST",
-// 		data: { ...body },
-// 	}
-
-// 	);
-//     return res
-
-
-// }
