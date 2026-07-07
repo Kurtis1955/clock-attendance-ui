@@ -185,11 +185,11 @@ export function DataTable<TData, TValue>({
         <IoEllipsisVertical />
       </MenuButton>
       <Portal>
-        <MenuList zIndex={999}>
+        <MenuList zIndex={999} className="bg-white shadow-md">
           {filteredColumnArray.map((column: any, index) => {
             return (
               <MenuItem key={index}>
-                <div className="px-1">
+                <div className="px-1 w-full bg-white shadow-md">
                   <label>
                     <input
                       {...{
@@ -404,7 +404,7 @@ export function DataTable<TData, TValue>({
           </select>
         </div>
 
-        <div className="flex items-center space-x-2 px-4">
+        <div className="flex items-center space-x-2 px-4 cursor-pointer">
           <ReactPaginate className="pagination flex items-center justify-center gap-2"
             previousLabel={"Previous"}
             nextLabel={"Next"}

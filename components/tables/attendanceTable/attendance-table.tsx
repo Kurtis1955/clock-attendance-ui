@@ -8,14 +8,13 @@ export const attendanceTableColumns = (rowCallback: any) => [
   {
     accessorKey: "userName",
     header: "Employee",
+    headerLabel: "Employee",
     cell: ({ row }: { row: any }) => (
       <div>
-        <p className="font-medium text-slate-800">
-          {row.original.userName || row.original.userEmail}
-        </p>
+        <p className="font-medium text-slate-800">{row.original.userName}</p>
 
         <p className="text-xs text-slate-500">
-          {row.original.departmentName || "No Department"}
+          {row.original.userEmail || "No Department"}
         </p>
       </div>
     ),
@@ -29,13 +28,12 @@ export const attendanceTableColumns = (rowCallback: any) => [
   {
     accessorKey: "deviceName",
     header: "Device",
+    headerLabel: "Device",
     cell: ({ row }: { row: any }) => (
       <div>
         <Badge variant="outline">{row.original.deviceName}</Badge>
 
-        <p className="mt-1 text-xs text-slate-500">
-          {row.original.deviceSn}
-        </p>
+        <p className="mt-1 text-xs text-slate-500">{row.original.deviceSn}</p>
       </div>
     ),
   },
@@ -43,32 +41,37 @@ export const attendanceTableColumns = (rowCallback: any) => [
   {
     accessorKey: "deviceLocation",
     header: "Location",
+    headerLabel: "Location",
   },
 
   {
     accessorKey: "verifyTime",
     header: "Verification Time",
+    headerLabel: "Verification Time",
+    cell: ({ row }: { row: any }) => (
+      <div className="text-gray-600">{row.original.verifyTime}</div>
+    ),
   },
 
   {
     accessorKey: "source",
     header: "Source",
+    headerLabel: "Source",
     cell: ({ row }: { row: any }) => (
-      <Badge className="bg-blue-50 text-blue-700">
-        {row.original.source}
-      </Badge>
+      <div className=" text-gray-600">{row.original.source}</div>
     ),
   },
 
   {
     accessorKey: "statusDirection",
     header: "Direction",
+    headerLabel: "Status Direction",
     cell: ({ row }: { row: any }) => (
       <Badge
         className={
           row.original.statusDirection === "IN"
-            ? "bg-green-100 text-green-700"
-            : "bg-orange-100 text-orange-700"
+            ? "bg-green-100 text-green-700 w-1/3"
+            : "bg-orange-100 text-orange-700 w-1/3"
         }
       >
         {row.original.statusDirection}
@@ -79,18 +82,19 @@ export const attendanceTableColumns = (rowCallback: any) => [
   {
     accessorKey: "statusName",
     header: "Status",
+    headerLabel: "Status",
     cell: ({ row }: { row: any }) => (
       <Badge
         className={
           row.original.statusName === "Check-in"
-            ? "bg-green-100 text-green-700"
+            ? "bg-green-100 text-green-700 w-2/3"
             : row.original.statusName === "Check-out"
-              ? "bg-red-100 text-red-700"
+              ? "bg-red-100 text-red-700 w-2/3"
               : row.original.statusName === "Break-out"
-                ? "bg-amber-100 text-amber-700"
+                ? "bg-amber-100 text-amber-700 w-2/3"
                 : row.original.statusName === "Break-in"
-                  ? "bg-blue-100 text-blue-700"
-                  : "bg-slate-100 text-slate-700"
+                  ? "bg-blue-100 text-blue-700 w-2/3"
+                  : "bg-slate-100 text-slate-700 w-2/3"
         }
       >
         {row.original.statusName}
@@ -101,6 +105,7 @@ export const attendanceTableColumns = (rowCallback: any) => [
   {
     accessorKey: "actions",
     header: "Actions",
+    headerLabel: "Actions",
     cell: ({ row }: { row: any }) => (
       <div className="flex justify-center gap-2">
         <Tooltip label="View" hasArrow placement="bottom">
@@ -115,6 +120,7 @@ export const attendanceTableColumns = (rowCallback: any) => [
 
         <Tooltip label="Edit" hasArrow placement="bottom">
           <Button
+            disabled={row.original.source?.toLowerCase() === "sdk"}
             variant="outline"
             size="icon-sm"
             onClick={() => rowCallback("edit", row.original)}
