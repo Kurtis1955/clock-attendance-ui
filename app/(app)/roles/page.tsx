@@ -33,6 +33,7 @@ import AddEditRole from "@/components/modals/addeditroleModal/AddEditRole";
 import { regrexForSpecialDashChars } from "@/lib/helpers";
 import useSearchRoles from "@/hooks/useSearchRoles";
 import _debounce from "lodash/debounce";
+import { Spinner } from "@chakra-ui/react";
 
 type RoleType = "System" | "Custom";
 type RoleStatus = "Active" | "Inactive";
@@ -285,6 +286,7 @@ export default function RolesPage() {
 
   const fetchRoles = async () => {
     try {
+      setLoading(true);
       const res = await fetch(
         `/api/roles?paginate=true&page=${pageCount}&size=${pageSize}`,
       );
@@ -298,6 +300,8 @@ export default function RolesPage() {
       setTotalItems(data.data.totalElements);
     } catch (error) {
       console.error("Error Fecthing users:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -493,21 +497,27 @@ export default function RolesPage() {
             </div>
           </div>
 
-          <div className="w-full flex flex-row gap-4">
-            <DataTable
-              columns={roleTableColumns(handleRowAction) as any}
-              data={storeRetrievedData as any}
-              pageCount={pageCount}
-              onPageChange={handlePageChange}
-              pageSize={pageSize}
-              totalItems={
-                inputValue == "" ? totalItems : roleSearch?.content?.length
-              }
-              type="roles"
-              defaultColumns={["Drag", "Actions", "User Number"]}
-            />
+          <div className="relative">
+            {loading && (
+              <div className="absolute inset-0 bg-white bg-opacity-50 flex justify-center items-center z-10">
+                <Spinner size="xl" />
+              </div>
+            )}
+            <div className="w-full flex flex-row gap-4">
+              <DataTable
+                columns={roleTableColumns(handleRowAction) as any}
+                data={storeRetrievedData as any}
+                pageCount={pageCount}
+                onPageChange={handlePageChange}
+                pageSize={pageSize}
+                totalItems={
+                  inputValue == "" ? totalItems : roleSearch?.content?.length
+                }
+                type="roles"
+                defaultColumns={["Drag", "Actions", "User Number"]}
+              />
 
-            {/* <aside className="space-y-5 h-full lg:h-auto">
+              {/* <aside className="space-y-5 h-full lg:h-auto">
               <Card className="border-slate-200 shadow-sm">
                 <CardHeader className="border-b">
                   <CardTitle>Role Summary</CardTitle>
@@ -560,6 +570,7 @@ export default function RolesPage() {
                 </CardContent>
               </Card>
             </aside> */}
+            </div>
           </div>
         </div>
       </div>

@@ -2,7 +2,7 @@
 import { ChartLineLabel } from "@/components/attendance-chart";
 import { AttendanceTrendCard } from "@/components/dashboard/AttendanceTrendCard";
 import { DeviceHealthCard } from "@/components/dashboard/DeviceHealthCard";
-import { RecentAttendanceTable } from "@/components/dashboard/RecentAttendanceTable";
+// import { RecentAttendanceTable } from "@/components/dashboard/RecentAttendanceTable";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { useToast } from "@chakra-ui/react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,6 +31,7 @@ import {
   type AttendanceStatus,
   type RecentAttendanceRecord,
 } from "@/lib/dashboard-data";
+import Link from "next/link";
 
 const stats = [
   {
@@ -178,21 +179,19 @@ export default function DashboardPage() {
     try {
       const startDate = format(startOfToday(), "yyyy-MM-dd");
       const endDate = format(endOfToday(), "yyyy-MM-dd");
-      const response = await fetch(
-        `/api/attendance?startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}&page=0&size=5`,
+      const res = await fetch(
+        `/api/attendance?paginate=true&pageNo=${0}&pageSize=${7}`,
       );
 
-      if (!response.ok) {
-        throw new Error(
-          `Failed to fetch recent attendance: ${response.status}`,
-        );
+      if (!res.ok) {
+        throw new Error(`Failed to fetch recent attendance: ${res.status}`);
       }
 
-      const data = await response.json();
-      const records = data?.data?.content ?? data?.data ?? data;
+      const data = await res.json();
+      const records = data?.content;
 
       if (records.length) {
-        setRecentAttendance(records.slice(0, 5));
+        setRecentAttendance(records.slice(0, 7));
       } else {
         setRecentAttendance(recentAttendanceRecords);
       }
@@ -268,20 +267,112 @@ export default function DashboardPage() {
       <div className="mt-6 h-full grid gap-4 lg:grid-cols-3">
         <div className="lg:col-span-2 h-full">
           {/* <AttendanceTrendCard /> */}
-          <ChartLineLabel />
+          {/* <ChartLineLabel /> */}
+          <div className="h-full overflow-hidden rounded-lg border bg-white shadow-sm">
+            <div className="flex justify-between border-b px-4 py-3">
+              <div>
+                <h2 className="text-sm font-semibold text-slate-900">
+                  Recent Attendance
+                </h2>
+                <p className="mt-1 text-xs text-slate-500">
+                  Showing the latest attendance payload fields from the API.
+                </p>
+              </div>
+              <Link href="/attendance" className="text-sm text-blue-600 hover:underline">
+                View All Attendance Records
+              </Link>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-sm text-slate-700">
+                <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+                  <tr>
+                    <th className="px-4 py-3">Time</th>
+                    <th className="px-4 py-3">Employee</th>
+                    <th className="px-4 py-3">Email</th>
+                    <th className="px-4 py-3">Ecode</th>
+                    <th className="px-4 py-3">Status</th>
+                    <th className="px-4 py-3">Direction</th>
+                    <th className="px-4 py-3">Device</th>
+                    <th className="px-4 py-3">Location</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200">
+                  {loadingAttendance ? (
+                    <tr>
+                      <td
+                        colSpan={8}
+                        className="px-4 py-5 text-center text-slate-500"
+                      >
+                        Loading attendance...
+                      </td>
+                    </tr>
+                  ) : attendanceError ? (
+                    <tr>
+                      <td
+                        colSpan={8}
+                        className="px-4 py-5 text-center text-red-500"
+                      >
+                        {attendanceError}
+                      </td>
+                    </tr>
+                  ) : recentAttendance.length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan={8}
+                        className="px-4 py-5 text-center text-slate-500"
+                      >
+                        No recent attendance records found.
+                      </td>
+                    </tr>
+                  ) : (
+                    recentAttendance.map((record) => (
+                      <tr
+                        key={record.attId ?? record.userId ?? record.verifyTime}
+                      >
+                        <td className="px-4 py-4 whitespace-nowrap">
+                          {record.verifyTime}
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap">
+                          {record.userName || "—"}
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap">
+                          {record.userEmail || "—"}
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap">
+                          {record.userEcode || "—"}
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap">
+                          {record.statusName || record.status || "—"}
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap">
+                          {record.statusDirection || "—"}
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap">
+                          {record.deviceName || record.deviceSn || "—"}
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap">
+                          {record.deviceLocation || record.source || "—"}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
         <div className="lg:col-span-1 h-full">
           <DeviceHealthCard />
         </div>
       </div>
 
-      <div className="mt-6">
+      {/* <div className="mt-6">
         <RecentAttendanceTable
           records={recentAttendance}
           loading={loadingAttendance}
           error={attendanceError}
         />
-      </div>
+      </div> */}
     </div>
   );
 }

@@ -24,96 +24,10 @@ import AddEditAttendant from "@/components/modals/addeditattendantModal/AddEditA
 import useSearchAttendance from "@/hooks/useSearchAttendance";
 import _debounce from "lodash/debounce";
 import AsyncSelect from "react-select/async";
+import { Spinner, useToast } from "@chakra-ui/react";
 
 type AttendanceStatus = "Present" | "Absent" | "On Duty" | "Remote";
 
-interface AttendanceRecord {
-  employeeId: string;
-  name: string;
-  team: string;
-  branch: string;
-  device: string;
-  clockIn: string;
-  clockOut: string;
-  hours: string;
-  status: AttendanceStatus;
-  method: string;
-}
-
-const records: AttendanceRecord[] = [
-  {
-    employeeId: "EMP-1001",
-    name: "John Doe",
-    team: "Operations",
-    branch: "Head Office",
-    device: "SpeedFace V5L",
-    clockIn: "08:01 AM",
-    clockOut: "05:01 PM",
-    hours: "9h 00m",
-    status: "Present",
-    method: "Face",
-  },
-  {
-    employeeId: "EMP-1002",
-    name: "Mary Smith",
-    team: "HR",
-    branch: "Kumasi Branch",
-    device: "K40 Terminal",
-    clockIn: "08:05 AM",
-    clockOut: "05:10 PM",
-    hours: "9h 05m",
-    status: "Present",
-    method: "Fingerprint",
-  },
-  {
-    employeeId: "EMP-1003",
-    name: "Daniel Mensah",
-    team: "Security",
-    branch: "Head Office",
-    device: "SpeedFace V5L",
-    clockIn: "-",
-    clockOut: "-",
-    hours: "0h 00m",
-    status: "Absent",
-    method: "-",
-  },
-  {
-    employeeId: "EMP-1004",
-    name: "Kwame Asare",
-    team: "Field Team",
-    branch: "Takoradi Branch",
-    device: "MB360",
-    clockIn: "08:07 AM",
-    clockOut: "-",
-    hours: "6h 42m",
-    status: "Present",
-    method: "Face",
-  },
-  {
-    employeeId: "EMP-1005",
-    name: "Sarah Owusu",
-    team: "Finance",
-    branch: "Head Office",
-    device: "U300",
-    clockIn: "08:09 AM",
-    clockOut: "05:02 PM",
-    hours: "8h 53m",
-    status: "Present",
-    method: "Fingerprint",
-  },
-  {
-    employeeId: "EMP-1006",
-    name: "Ama Boateng",
-    team: "Admin",
-    branch: "Tema Branch",
-    device: "Mobile App",
-    clockIn: "08:14 AM",
-    clockOut: "-",
-    hours: "6h 35m",
-    status: "Present",
-    method: "Fingerprint",
-  },
-];
 
 const branchCoverage = [
   { branch: "Head Office", present: 612, expected: 650, color: "bg-blue-600" },
@@ -132,16 +46,53 @@ const branchCoverage = [
   },
 ];
 
+const searchSelectStyles = {
+  control: (base: any) => ({
+    ...base,
+    minHeight: 44,
+    borderRadius: 12,
+    borderColor: "#d1d5db",
+    boxShadow: "none",
+    transition: "border-color 150ms ease",
+    "&:hover": {
+      borderColor: "#cbd5e1",
+    },
+  }),
+  menu: (base: any) => ({
+    ...base,
+    zIndex: 9999,
+    borderRadius: 12,
+    overflow: "hidden",
+    boxShadow: "0 10px 30px rgba(15, 23, 42, 0.15)",
+  }),
+  menuPortal: (base: any) => ({
+    ...base,
+    zIndex: 9999,
+  }),
+  option: (base: any, state: any) => ({
+    ...base,
+    backgroundColor: state.isFocused ? "#f8fafc" : "white",
+    color: "#0f172a",
+    cursor: "pointer",
+  }),
+  placeholder: (base: any) => ({
+    ...base,
+    color: "#64748b",
+  }),
+  singleValue: (base: any) => ({
+    ...base,
+    color: "#0f172a",
+  }),
+};
+
 export default function AttendancePage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [branchFilter, setBranchFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [attendanceRecords, setAttendanceRecords] =
-    useState<AttendanceRecord[]>(records);
+  const [attendanceRecords, setAttendanceRecords] = useState<any[]>([]);
   const [pageSize, setPageSize] = useState(10);
   const [totalItems, setTotalItems] = useState();
-  const [selectedAttendant, setSelectedAttendant] =
-    useState<AttendanceRecord | null>(null);
+  const [selectedAttendant, setSelectedAttendant] = useState<any | null>(null);
   const [attendantModalAction, setAttendantModalAction] = useState<
     "add" | "view" | "edit" | "search"
   >("view");
@@ -149,7 +100,7 @@ export default function AttendancePage() {
   const [pageCount, setPageCount] = useState(0);
   const [filterData, setFilterData] = useState("");
   const [loadingRoleDetails, setLoadingUserDetails] = useState(false);
-
+  const [loading, setLoading] = useState(false);
   const {
     inputValue,
     handleInputRoleChange,
@@ -181,7 +132,11 @@ export default function AttendancePage() {
   // state which is used for the listing in the table
   const fetchAttendance = async () => {
     try {
-      const res = await fetch("/api/attendance");
+      setLoading(true);
+
+      const res = await fetch(
+        `/api/attendance?paginate=true&pageNo=${pageCount}&pageSize=${pageSize}`,
+      );
 
       if (res.ok) {
         const data = await res.json();
@@ -192,6 +147,8 @@ export default function AttendancePage() {
       }
     } catch (error) {
       console.error("Error Fecthing Attendance:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -236,29 +193,10 @@ export default function AttendancePage() {
 
   const debouncedSearch = _debounce(handleInputRoleChange, 500);
 
-  const handleAttendantSave = (updatedAttendant: AttendanceRecord) => {
-    setAttendanceRecords((currentRecords) => {
-      const recordExists = currentRecords.some(
-        (record) => record.employeeId === updatedAttendant.employeeId,
-      );
-
-      if (!recordExists) {
-        return [updatedAttendant, ...currentRecords];
-      }
-
-      return currentRecords.map((record) =>
-        record.employeeId === updatedAttendant.employeeId
-          ? updatedAttendant
-          : record,
-      );
-    });
-  };
-
   const fetchOptions = async (inputValue: string): Promise<any[]> => {
     if (!inputValue) return [];
 
     try {
-      //http://192.168.251.152:8021/api/v1/admin-service/users/active-directory?search=kwaku&first=0&max=5
       const url = `/api/enrollment/?search=${inputValue}&first=0&max=5`;
       // console.log("url>>", url);
       const response = await fetch(`${url}`);
@@ -296,45 +234,6 @@ export default function AttendancePage() {
     [],
   );
 
-  const searchSelectStyles = {
-    control: (base: any) => ({
-      ...base,
-      minHeight: 44,
-      borderRadius: 12,
-      borderColor: "#d1d5db",
-      boxShadow: "none",
-      transition: "border-color 150ms ease",
-      "&:hover": {
-        borderColor: "#cbd5e1",
-      },
-    }),
-    menu: (base: any) => ({
-      ...base,
-      zIndex: 9999,
-      borderRadius: 12,
-      overflow: "hidden",
-      boxShadow: "0 10px 30px rgba(15, 23, 42, 0.15)",
-    }),
-    menuPortal: (base: any) => ({
-      ...base,
-      zIndex: 9999,
-    }),
-    option: (base: any, state: any) => ({
-      ...base,
-      backgroundColor: state.isFocused ? "#f8fafc" : "white",
-      color: "#0f172a",
-      cursor: "pointer",
-    }),
-    placeholder: (base: any) => ({
-      ...base,
-      color: "#64748b",
-    }),
-    singleValue: (base: any) => ({
-      ...base,
-      color: "#0f172a",
-    }),
-  };
-
   return (
     <div className="flex flex-col gap-5 px-2 pt-2 lg:px-8">
       <PageHeader
@@ -346,7 +245,7 @@ export default function AttendancePage() {
               variant="outline"
               className="h-10 border-slate-200 bg-white"
             >
-              <RiDownloadLine className="size-4 text-blue-700" />
+              <RiDownloadLine className="size-4 text-gray-700" />
               Export
             </Button>
             <Button
@@ -358,7 +257,7 @@ export default function AttendancePage() {
                 setIsAttendantModalOpen(true);
               }}
             >
-              <RiBarChartBoxLine className="size-4 text-blue-700" />
+              <RiBarChartBoxLine className="size-4 text-gray-700" />
               Add Attendance
             </Button>
             {/* <Button className="bg-blue-700 text-white hover:bg-blue-800">
@@ -382,7 +281,7 @@ export default function AttendancePage() {
           />
           <RiSearchLine className="absolute right-3 top-1/2 size-5 -translate-y-1/2 text-slate-500" />
         </div>
-        <div className="w-2/3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
+        {/* <div className="w-2/3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
           <select
             value={branchFilter}
             onChange={(event) => setBranchFilter(event.target.value)}
@@ -406,23 +305,26 @@ export default function AttendancePage() {
             <option value="on-duty">On Duty</option>
             <option value="remote">Remote</option>
           </select>
-          {/* <Button variant="outline" className="border-slate-200 bg-white ">
-            <RiFilter3Line className="size-4 text-blue-700" />
-            Filters
-          </Button> */}
-        </div>
+        </div> */}
       </div>
 
-      <DataTable
-        columns={attendanceTableColumns(handleRowAction)}
-        data={attendanceRecords}
-        pageCount={pageCount}
-        pageSize={pageSize}
-        onPageChange={handlePageChange}
-        type="users"
-        defaultColumns={["Drag", "Actions", "User Number"]}
-        totalItems={totalItems ? totalItems : attendanceSearch?.totalElements}
-      />
+      <div className="relative">
+        {loading && (
+          <div className="absolute inset-0 bg-white bg-opacity-50 flex justify-center items-center z-10">
+            <Spinner size="xl" />
+          </div>
+        )}
+        <DataTable
+          columns={attendanceTableColumns(handleRowAction)}
+          data={attendanceRecords}
+          pageCount={pageCount}
+          pageSize={pageSize}
+          onPageChange={handlePageChange}
+          type="users"
+          defaultColumns={["Drag", "Actions", "User Number"]}
+          totalItems={totalItems ? totalItems : attendanceSearch?.totalElements}
+        />
+      </div>
 
       <Dialog
         open={isAttendantModalOpen}
@@ -471,7 +373,7 @@ export default function AttendancePage() {
             <AddEditAttendant
               actionType={attendantModalAction}
               existingAttendantData={selectedAttendant}
-              callback={handleAttendantSave}
+              callback={fetchAttendance}
               onClose={() => setIsAttendantModalOpen(false)}
             />
           )}
