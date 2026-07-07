@@ -38,7 +38,7 @@ const AddEditBiometricUser = ({
     existingUserData?.e_code || existingUserData?.e_code || "",
   );
   const [phoneNumber, setPhoneNumber] = useState<string>(
-    existingUserData?.phoneNumber || "",
+    existingUserData?.phone || "",
   );
   const [enabled, setEnabled] = useState<boolean>(
     existingUserData?.enabled ?? existingUserData?.status === "active",
@@ -62,7 +62,7 @@ const AddEditBiometricUser = ({
     setLastName(existingUserData?.lastName || "");
     setEmail(existingUserData?.email || "");
     setEcode(existingUserData?.e_code || existingUserData?.e_code || "");
-    setPhoneNumber(existingUserData?.phoneNumber || "");
+    setPhoneNumber(existingUserData?.phone || "");
     setEnabled(
       existingUserData?.enabled ?? existingUserData?.status === "active",
     );
@@ -98,6 +98,15 @@ const AddEditBiometricUser = ({
 
   const validateEmail = (value: string): boolean => {
     const regex = /^[a-zA-Z0-9._+-]+@[a-zA-Z0-9-]+\.[a-zA-Z]{2,}$/;
+    return regex.test(value);
+  };
+
+  const validatePhoneNumberCharacters = (value: string): boolean => {
+    return /^[0-9+]*$/.test(value);
+  };
+
+  const validatePhoneNumber = (value: string): boolean => {
+    const regex = /^(?:\+233|233|0)(20|23|24|25|26|27|28|50|53|54|55|56|57|59)\d{7}$/;
     return regex.test(value);
   };
 
@@ -137,10 +146,11 @@ const AddEditBiometricUser = ({
         email,
         firstName,
         lastName,
-        phoneNumber,
+        phone:phoneNumber,
         enabled,
         e_code: ecode,
         devices: assignedDevices.map((device) => device.value),
+        userInfos: []
       });
 
       if (actionType === "edit") {
@@ -315,6 +325,7 @@ const AddEditBiometricUser = ({
               } else {
                 setErrorEcode("Only letters and numbers allowed");
               }
+              // setPhoneNumber(e.target.value)
             }}
             maxLength={8}
             required
@@ -331,15 +342,24 @@ const AddEditBiometricUser = ({
             Phone Number <span className="text-red-500">*</span>
           </Label>
           <Input
-            type="tel"
+            type="text"
             placeholder="Enter phone number"
             value={phoneNumber}
-            onChange={(e) => setPhoneNumber(e.target.value)}
+            onChange={(e) => {
+              const value = e.target.value;
+              if (validatePhoneNumberCharacters(value)) {
+                setPhoneNumber(value);
+                setErrorPhone("");
+              } else {
+                setErrorPhone("Only numbers and + are allowed");
+              }
+            }}
+            onBlur={() => {
+              if (phoneNumber && !validatePhoneNumber(phoneNumber)) {
+                setErrorPhone("Please enter a valid phone number");
+              }
+            }}
             disabled={actionType === "view"}
-            //   limitMaxLength={true}
-            //   onChange={handleChangePhoneNumber}
-            //   defaultCountry="GH"
-            //   international
           />
 
           {errorPhone && (

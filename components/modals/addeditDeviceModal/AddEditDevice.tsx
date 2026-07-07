@@ -19,11 +19,11 @@ interface AddEditDeviceProps {
 
 const deviceTypeOptions = [
   { label: "ZKTeco ADMS", value: "ZKTeco ADMS" },
-  { label: "ZKTeco Pull SDK", value: "ZKTeco Pull SDK" },
-  { label: "ZKTeco Push SDK", value: "ZKTeco Push SDK" },
-  { label: "Hikvision MinMoe", value: "Hikvision MinMoe" },
-  { label: "Suprema BioStar", value: "Suprema BioStar" },
-  { label: "Anviz CrossChex", value: "Anviz CrossChex" },
+  // { label: "ZKTeco Pull SDK", value: "ZKTeco Pull SDK" },
+  // { label: "ZKTeco Push SDK", value: "ZKTeco Push SDK" },
+  // { label: "Hikvision MinMoe", value: "Hikvision MinMoe" },
+  // { label: "Suprema BioStar", value: "Suprema BioStar" },
+  // { label: "Anviz CrossChex", value: "Anviz CrossChex" },
 ];
 
 export default function AddEditDevice({
@@ -77,22 +77,22 @@ export default function AddEditDevice({
     event.preventDefault();
     try {
       const payload = {
-        id: id ? id : "",
-        uuid: uuid ? uuid : "",
-        deviceInfoId: deviceInfoId ? deviceInfoId : "",
-        device_sn: serialNumber,
-        device_name: deviceName,
+        // id: id ? id.toString() : "",
+        // uuid: uuid ? uuid : "",
+        // deviceInfoId: deviceInfoId ? deviceInfoId : "",
+        serialNumber: serialNumber,
+        name: deviceName,
         description,
-        device_location: deviceLocation,
+        location: deviceLocation,
         status,
         enabled,
-        device_type: deviceTypeCode,
-        deviceTypeName,
+        // device_type: deviceTypeCode,
+        // deviceTypeName,
       };
 
       console.log("device payload", payload);
       if (actionType === "edit") {
-        const response = await fetch(`/api/device?id=${id}`, {
+        const response = await fetch(`/api/device?id=${uuid}`, {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
@@ -112,7 +112,14 @@ export default function AddEditDevice({
             isClosable: true, // Allows closing the toast
           });
         }
-      } else{
+        const data = await response.json();
+        if (callback) {
+          callback(data);
+        }
+        if (onClose) {
+          onClose();
+        }
+      } else {
         const response = await fetch(`/api/device`, {
           method: "POST",
           headers: {
@@ -133,15 +140,14 @@ export default function AddEditDevice({
             isClosable: true, // Allows closing the toast
           });
         }
+        const data = await response.json();
+        if (callback) {
+          callback(data);
+        }
+        if (onClose) {
+          onClose();
+        }
       }
-
-      // if (callback) {
-      //   callback(payload);
-      // }
-
-      // if (onClose) {
-      //   onClose();
-      // }
     } catch (error) {
       console.error("Error editing device:", error);
     }
