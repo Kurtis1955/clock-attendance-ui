@@ -41,7 +41,7 @@ const useSearchBiometricUser = ({
 
         if (filterData != "") {
           const res = await fetch(
-            `/api/device/filter?${filterData}&page=${pageCount}&size=${pageSize}`
+            `/api/enrollment/filter?${filterData}&page=${pageCount}&size=${pageSize}`
           );
 
           if (res.ok) {
@@ -64,15 +64,15 @@ const useSearchBiometricUser = ({
           const res =
             inputValue.trim() != ""
               ? await fetch(
-                  `/api/device?search=${inputValue.trim()}&page=${pageCount}&size=${pageSize}`
+                  `/api/enrollment?search=${inputValue.trim()}&page=${pageCount}&size=${pageSize}`
                 )
-              : await fetch(`/api/device?page=${pageCount}&size=${pageSize}`);
+              : await fetch(`/api/devenrollmentice?page=${pageCount}&size=${pageSize}`);
 
           if (res.ok) {
             const dataFound = await res.json();
             console.log("dataFound from search>>", dataFound);
             setDeviceSearch({
-              content: dataFound.data,
+              content: dataFound.content,
               totalElements: dataFound.totalElements,
             });
             setError(null);
