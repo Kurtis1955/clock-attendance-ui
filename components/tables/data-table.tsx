@@ -34,9 +34,10 @@ interface DataTableProps<TData, TValue> {
   auxilliaryData?: any;
   type?: string;
   defaultColumns?: any;
+  onSelectedRowsChange?: (selectedRows: any) => void;
 }
 
-export function DataTable<TData, TValue>({    
+export function DataTable<TData, TValue>({
   columns,
   data,
   pageCount,
@@ -46,11 +47,12 @@ export function DataTable<TData, TValue>({
   auxilliaryData = [],
   type = "",
   defaultColumns = [],
+  onSelectedRowsChange,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    []
+    [],
   );
   const containerRefSearchFilter = React.useRef<HTMLTableCellElement>(null);
 
@@ -58,7 +60,7 @@ export function DataTable<TData, TValue>({
   //   React.useState<VisibilityState>({});
 
   const [visibleColumns, setVisibleColumns] = React.useState(
-    columns.map((col: any) => col.accessor)
+    columns.map((col: any) => col.accessor),
   );
 
   const [pagination, setPagination] = React.useState({
@@ -70,7 +72,7 @@ export function DataTable<TData, TValue>({
     setVisibleColumns((prev) =>
       prev.includes(accessor)
         ? prev.filter((col) => col !== accessor)
-        : [...prev, accessor]
+        : [...prev, accessor],
     );
   };
 
@@ -81,7 +83,6 @@ export function DataTable<TData, TValue>({
       setRows(data);
     }
   }, [data]);
-
 
   const table = useReactTable({
     data: rows,
@@ -109,6 +110,19 @@ export function DataTable<TData, TValue>({
       // columnVisibility,
     },
   });
+
+  const handleSelectionChange = () => {
+    const selectedRows = table
+      .getSelectedRowModel()
+      .rows.map((row) => row.original);
+    if (onSelectedRowsChange) {
+      onSelectedRowsChange(selectedRows); // Send selected rows to parent
+    }
+  };
+
+  React.useEffect(() => {
+    handleSelectionChange();
+  }, [table.getSelectedRowModel()]);
 
   const handlePageSizeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newPageSize = parseInt(e.target.value, 10);
@@ -148,7 +162,7 @@ export function DataTable<TData, TValue>({
 
   const handleDragStart = (
     e: React.DragEvent<HTMLTableRowElement> | any,
-    index: number
+    index: number,
   ) => {
     e.dataTransfer.setData("rowIndex", index.toString());
   };
@@ -159,7 +173,7 @@ export function DataTable<TData, TValue>({
 
   const handleDrop = (
     e: React.DragEvent<HTMLTableRowElement>,
-    targetIndex: number
+    targetIndex: number,
   ) => {
     const draggedRowIndex = Number(e.dataTransfer.getData("rowIndex"));
     if (draggedRowIndex !== targetIndex) {
@@ -235,7 +249,6 @@ export function DataTable<TData, TValue>({
                     boxShadow: "-2px 0 5px rgba(0, 0, 0, 0.1)",
                     paddingRight: "8px",
                     border: "0px",
-                    
                   }) ||
                   (header.id === "selector" && {
                     position: "sticky",
@@ -265,14 +278,14 @@ export function DataTable<TData, TValue>({
                             {" "}
                             {flexRender(
                               header.column.columnDef.header,
-                              header.getContext()
+                              header.getContext(),
                             )}
                             {TableMenus}
                           </div>
                         ) : (
                           flexRender(
                             header.column.columnDef.header,
-                            header.getContext()
+                            header.getContext(),
                           )
                         )}
                       </>
@@ -369,7 +382,7 @@ export function DataTable<TData, TValue>({
                     <TableCell key={cell.id} style={{ ...stickAction }}>
                       {flexRender(
                         cell.column.columnDef.cell,
-                        cell.getContext()
+                        cell.getContext(),
                       )}
                     </TableCell>
                   );
@@ -396,7 +409,7 @@ export function DataTable<TData, TValue>({
             onChange={handlePageSizeChange}
             className="ml-4 border rounded p-2 "
           >
-            {[2,5,10, 20, 50].map((size) => (
+            {[2, 5, 10, 20, 50].map((size) => (
               <option key={size} value={size}>
                 {size} per page
               </option>
@@ -405,7 +418,8 @@ export function DataTable<TData, TValue>({
         </div>
 
         <div className="flex items-center space-x-2 px-4 cursor-pointer">
-          <ReactPaginate className="pagination flex items-center justify-center gap-2"
+          <ReactPaginate
+            className="pagination flex items-center justify-center gap-2"
             previousLabel={"Previous"}
             nextLabel={"Next"}
             breakLabel={"..."}
