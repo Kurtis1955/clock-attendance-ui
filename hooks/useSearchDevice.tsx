@@ -72,7 +72,7 @@ const useSearchDevice = ({
             const dataFound = await res.json();
             console.log("dataFound from search>>", dataFound);
             setDeviceSearch({
-              content: dataFound.data,
+              content: dataFound.content,
               totalElements: dataFound.totalElements,
             });
             setError(null);
