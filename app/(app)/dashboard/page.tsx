@@ -275,7 +275,7 @@ export default function DashboardPage() {
                   Recent Attendance
                 </h2>
                 <p className="mt-1 text-xs text-slate-500">
-                  Showing the latest attendance payload fields from the API.
+                  Showing the latest attendance records.
                 </p>
               </div>
               <Link href="/attendance" className="text-sm text-blue-600 hover:underline">
