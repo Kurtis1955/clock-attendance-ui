@@ -384,7 +384,7 @@ export default function RolesPage() {
   const debouncedSearch = _debounce(handleInputRoleChange, 500);
 
   return (
-    <div className="w-full flex flex-col gap-5 px-2 lg:px-8 pt-2">
+    <div className="w-full flex flex-col gap-5 px-2 xl:px-8 pt-2">
       <PageHeader
         title="Roles"
         // description="Create, manage, and configure roles and permissions for system access control."
@@ -454,8 +454,8 @@ export default function RolesPage() {
 
       <div className="space-y-4 mt-2 flex flex-col gap-4 lg:mt-0">
         <div className="w-full space-y-4 mt-4 flex flex-col gap-4 lg:mt-0">
-          <div className="w-ull flex flex-col gap-3 sm:flex-row lg:items-center">
-            <div className="w-full sm:w-1/3 relative min-w-0 flex-1">
+          <div className="w-full flex flex-col gap-3 sm:flex-row lg:items-center">
+            <div className="w-full sm:w-1/2 lg:w-1/3 relative min-w-0">
               <Input
                 type="search"
                 placeholder="Search roles by name or description..."
@@ -468,7 +468,7 @@ export default function RolesPage() {
               />
               <RiSearchLine className="absolute right-3 top-1/2 size-5 -translate-y-1/2 text-slate-500" />
             </div>
-            <div className="w-full sm:w-2/3 flex items-center justify-between sm:justify-end gap-2">
+            {/* <div className="w-full sm:w-2/3 flex items-center justify-between sm:justify-end gap-2">
               <select
                 value={statusFilter}
                 onChange={(event) => setStatusFilter(event.target.value)}
@@ -487,14 +487,7 @@ export default function RolesPage() {
                 <option value="system">System</option>
                 <option value="custom">Custom</option>
               </select>
-              {/* <Button
-                variant="outline"
-                className="h-10 border-slate-200 bg-black text-white hover:bg-[#141313] hover:text-white"
-              >
-                <RiFilter3Line className="size-4 text-yellow-500" />
-                Filters
-              </Button> */}
-            </div>
+            </div> */}
           </div>
 
           <div className="relative">
