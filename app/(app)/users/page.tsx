@@ -234,7 +234,7 @@ export default function UsersPage() {
   console.log("stored search data>>", storeRetrievedData);
 
   return (
-    <div className="px-2 lg:px-8 pt-2 flex flex-col gap-4">
+    <div className="px-2 xl:px-8 pt-2 flex flex-col gap-4">
       <div className="w-full space-y-4">
         <div className="flex gap-4 flex-row lg:items-center lg:justify-between">
           <h1 className="w-1/2 text-2xl font-bold tracking-tight text-[#0f172a] sm:text-3xl">
