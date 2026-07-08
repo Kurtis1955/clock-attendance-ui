@@ -13,8 +13,8 @@ export const attendanceTrend30Days = {
 }
 
 export const deviceHealth = {
-  healthy: 38,
-  warning: 3,
+  // healthy: 38,
+  online: 3,
   offline: 1,
 }
 
