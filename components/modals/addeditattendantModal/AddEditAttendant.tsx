@@ -19,6 +19,9 @@ export default function AddEditAttendant({
   callback,
   onClose,
 }: any) {
+  const [attendantId, setAttendantId] = useState(
+    existingAttendantData?.attId || "",
+  );
   const [userId, setUserId] = useState(
     existingAttendantData?.id || existingAttendantData?.userId || "",
   );
@@ -76,6 +79,7 @@ export default function AddEditAttendant({
 
   useEffect(() => {
     console.log("existingAttendantData >>", existingAttendantData);
+    setAttendantId(existingAttendantData?.attId || "");
     setUserId(existingAttendantData?.id || "");
     setFirstName(existingAttendantData?.firstName || "");
     setLastName(existingAttendantData?.lastName || "");
@@ -176,7 +180,7 @@ export default function AddEditAttendant({
       console.log("payload>>", payload);
 
       if (actionType === "edit") {
-        const res = await fetch(`/api/attendance/manual-attendance/${userId}`, {
+        const res = await fetch(`/api/attendance/manual-attendance/${attendantId}`, {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
