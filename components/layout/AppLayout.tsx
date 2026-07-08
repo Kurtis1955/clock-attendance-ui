@@ -23,7 +23,7 @@ function AppLayoutContent({ children }: AppLayoutProps) {
       <div
         className={cn(
           "flex min-h-screen flex-col transition-[margin] duration-300 ease-in-out",
-          collapsed ? "lg:ml-20" : "lg:ml-[280px]"
+          collapsed ? "lg:ml-20" : "lg:ml-[200px] xl:ml-[280px]"
         )}
       >
         <Header />
