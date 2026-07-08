@@ -40,6 +40,47 @@ import useSearchBiometricUser from "@/hooks/useSearchBiometricUser";
 import _debounce from "lodash/debounce";
 import { totalmem } from "os";
 import { useToast } from "@chakra-ui/react";
+import { Label } from "@/components/ui/label";
+import ReactSelect from "react-select";
+
+const searchSelectStyles = {
+  control: (base: any) => ({
+    ...base,
+    minHeight: 44,
+    // borderRadius: 12,
+    borderColor: "#d1d5db",
+    boxShadow: "none",
+    transition: "border-color 150ms ease",
+    "&:hover": {
+      borderColor: "#cbd5e1",
+    },
+  }),
+  menu: (base: any) => ({
+    ...base,
+    zIndex: 9999,
+    borderRadius: 12,
+    overflow: "hidden",
+    boxShadow: "0 10px 30px rgba(15, 23, 42, 0.15)",
+  }),
+  menuPortal: (base: any) => ({
+    ...base,
+    zIndex: 9999,
+  }),
+  option: (base: any, state: any) => ({
+    ...base,
+    backgroundColor: state.isFocused ? "#f8fafc" : "white",
+    color: "#0f172a",
+    cursor: "pointer",
+  }),
+  placeholder: (base: any) => ({
+    ...base,
+    color: "#64748b",
+  }),
+  singleValue: (base: any) => ({
+    ...base,
+    color: "#0f172a",
+  }),
+};
 
 export default function EnrollmentPage() {
   const [storeRetrievedData, setStoreRetrievedData] = useState<any[]>([]);
@@ -55,6 +96,14 @@ export default function EnrollmentPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterData, setFilterData] = useState("");
   const [totalItems, setTotalItems] = useState(storeRetrievedData.length);
+  const [batchUserDeviceData, setBatchUserDeviceData] = useState<any[]>([]);
+  const [isenableAssign, setisenableAssign] = useState(true);
+  const [isBatchModalOpen, setIsBatchModalOpen] = useState(false);
+  const [batchModalAction, setBatchModalAction] = useState<
+    "assign" | "unassign"
+  >("assign");
+  const [deviceOptions, setDeviceOptions] = useState<any[]>([]);
+  const [assignedDevices, setAssignedDevices] = useState<any[]>([]);
   const toast = useToast();
 
   const openModal = (action: "add" | "edit" | "view") => {
@@ -90,15 +139,6 @@ export default function EnrollmentPage() {
       icon: RiUserUnfollowLine,
       color: "bg-orange-50 text-orange-700",
     },
-    // {
-    //   title: "Pending Sync",
-    //   value: pendingUsers.toLocaleString(),
-    //   caption: "Awaiting device sync",
-    //   trend: "12.5%",
-    //   trendDirection: "down",
-    //   icon: RiUploadCloud2Line,
-    //   color: "bg-violet-50 text-violet-700",
-    // },
   ];
 
   const {
@@ -112,6 +152,7 @@ export default function EnrollmentPage() {
   useEffect(() => {
     if (inputValue == "") {
       fetchUsers();
+      fetchDeviceOptions();
     } else {
       if (deviceSearch?.content?.length) {
         console.log("deviceSearch>>>", deviceSearch);
@@ -187,6 +228,20 @@ export default function EnrollmentPage() {
     }
   };
 
+  const handleSelectedRows = (data: any) => {
+    console.log(
+      "Selected Data>>>",
+      data.map((item: any) => item.id),
+    );
+    if (data.length) {
+      setisenableAssign(false);
+      setBatchUserDeviceData(data.map((item: any) => item.id));
+    } else {
+      setisenableAssign(true);
+      setBatchUserDeviceData([]);
+    }
+  };
+
   const getChangeUserStatus = async (rowData: any) => {
     setLoading(true);
     const payload = {
@@ -248,10 +303,107 @@ export default function EnrollmentPage() {
     setSearchQuery(dataToSearch);
     debouncedSearch(dataToSearch);
   };
-  const debouncedSearch = _debounce(handleInputRoleChange, 500);
 
+  const fetchDeviceOptions = async () => {
+    try {
+      const response = await fetch("/api/device");
+      if (!response.ok) {
+        throw new Error("Failed to fetch devices");
+      }
+      const data = await response.json();
+      const options = data?.content?.map((device: any) => ({
+        label: device.name,
+        value: device.serialNumber,
+      }));
+      setDeviceOptions(options || []);
+    } catch (error) {
+      console.error("Error fetching devices:", error);
+    }
+  };
+
+  const handleBulkAssign = async () => {
+    try {
+      setLoading(true);
+
+      const serialNumbers = assignedDevices.map((item: any) => item.value);
+      const payload = {
+        userIds: batchUserDeviceData,
+        serialNumbers,
+      };
+
+      console.log("payLoad", payload);
+      // return;
+      const bulkassign =
+        batchModalAction === "assign"
+          ? await fetch(`/api/enrollment/bulkassign`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(payload),
+            })
+          : await fetch(`/api/enrollment/bulkunassign`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(payload),
+            });
+
+      if (bulkassign.ok) {
+        if (batchModalAction === "assign") {
+          toast({
+            title: "Success",
+            description: "Users assigned successfully",
+            status: "success", // 'info', 'warning', 'error', 'success'
+            duration: 3000, // Duration in milliseconds
+            isClosable: true, // Allows closing the toast
+          });
+        } else if (batchModalAction === "unassign") {
+          toast({
+            title: "Success",
+            description: "Users unassigned successfully",
+            status: "success", // 'info', 'warning', 'error', 'success'
+            duration: 3000, // Duration in milliseconds
+            isClosable: true, // Allows closing the toast
+          });
+        }
+      } else {
+        if (batchModalAction === "assign") {
+          toast({
+            title: "error",
+            description: "Failed to assign Users",
+            status: "success", // 'info', 'warning', 'error', 'success'
+            duration: 3000, // Duration in milliseconds
+            isClosable: true, // Allows closing the toast
+          });
+        } else {
+          toast({
+            title: "error",
+            description: "Failed to unassign Users",
+            status: "success", // 'info', 'warning', 'error', 'success'
+            duration: 3000, // Duration in milliseconds
+            isClosable: true, // Allows closing the toast
+          });
+        }
+      }
+    } catch (error) {
+    } finally {
+      setLoading(false);
+      fetchUsers;
+      setIsBatchModalOpen(false)
+    }
+  };
+
+  const debouncedSearch = _debounce(handleInputRoleChange, 500);
+  console.log(
+    "batchUserDeviceData>>",
+    batchUserDeviceData,
+    "assignedDevices>>",
+    assignedDevices,
+  );
   return (
-    <div className="flex flex-col gap-5 px-2 pt-2 lg:px-8">
+    <div className="flex flex-col gap-5 px-2 xl:px-8 pt-2">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <div className="flex items-center gap-2">
@@ -332,8 +484,8 @@ export default function EnrollmentPage() {
         })}
       </div>
 
-      <div className="w-full">
-        <div className="w-full md:w-1/2 xl:w-1/3 relative min-w-0 flex-1">
+      <div className="w-full flex flex-col items-center justify-between gap-2 sm:flex-row">
+        <div className="w-full md:w-1/2 xl:w-1/3 relative">
           <Input
             type="search"
             placeholder="Search user by name or description..."
@@ -345,6 +497,31 @@ export default function EnrollmentPage() {
             className="h-10 pr-10"
           />
           <RiSearchLine className="absolute right-3 top-1/2 size-5 -translate-y-1/2 text-slate-500" />
+        </div>
+
+        <div>
+          <Button
+            variant="outline"
+            className="ml-2 h-10"
+            onClick={() => {
+              setIsBatchModalOpen(true);
+              setBatchModalAction("assign");
+            }}
+            disabled={isenableAssign}
+          >
+            Bulk Device Assignment
+          </Button>
+          <Button
+            variant="outline"
+            className="ml-2 h-10"
+            onClick={() => {
+              setIsBatchModalOpen(true);
+              setBatchModalAction("unassign");
+            }}
+            disabled={isenableAssign}
+          >
+            Bulk Device Unassignment
+          </Button>
         </div>
       </div>
       <div className="w-full">
@@ -359,8 +536,73 @@ export default function EnrollmentPage() {
           }
           type="roles"
           defaultColumns={["Drag", "Actions", "User Number"]}
+          onSelectedRowsChange={handleSelectedRows}
         />
       </div>
+
+      <Dialog open={isBatchModalOpen} onOpenChange={setIsBatchModalOpen}>
+        <DialogContent className="sm:max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>
+              {batchModalAction === "assign"
+                ? "Assign Device to Users"
+                : "Unassign Device from Users"}
+            </DialogTitle>
+            <DialogDescription>
+              {batchModalAction === "assign"
+                ? "Assign selected users to a biometric device."
+                : "Unassign selected users from a biometric device."}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-6">
+            <div className="space-y-2 ">
+              <ReactSelect
+                name="devices"
+                classNamePrefix="react-select"
+                placeholder="Select Devices"
+                styles={searchSelectStyles}
+                // menuPosition="absolute"
+                // menuPlacement="auto"
+                isMulti
+                value={assignedDevices.map((device) => ({
+                  label: device.label,
+                  value: device.value,
+                }))}
+                onChange={(selectedOption: any) => {
+                  setAssignedDevices(
+                    selectedOption
+                      ? [...selectedOption].map((option) => ({
+                          label: option.label,
+                          value: option.value,
+                        }))
+                      : [],
+                  );
+                }}
+                options={deviceOptions}
+                isClearable
+              />
+            </div>
+            <div className="w-full flex justify-end">
+              {batchModalAction == "assign" && (
+                <Button
+                  onClick={handleBulkAssign}
+                  className="w-28 bg-amber-400"
+                >
+                  Assign
+                </Button>
+              )}
+              {batchModalAction === "unassign" && (
+                <Button
+                  onClick={handleBulkAssign}
+                  className="w-28 bg-amber-400"
+                >
+                  Unassign
+                </Button>
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent className="sm:max-w-3xl">
