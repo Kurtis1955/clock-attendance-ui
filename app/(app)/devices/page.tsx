@@ -135,11 +135,11 @@ export default function DevicesPage() {
       // setisLDAP(false);
       console.log("isGeneralModalOpen:", true);
     } else if (actionType == "delete") {
-      getChangeUserStatus(rowData, actionType);
+      getDeviceSyncStatus(rowData, actionType);
     } else if (actionType == "sync-device") {
-      getChangeUserStatus(rowData, actionType);
+      getDeviceSyncStatus(rowData, actionType);
     } else if (actionType == "switch") {
-      getChangeUserStatus(rowData , actionType);
+      getDeviceSyncStatus(rowData, actionType);
     }
   };
 
@@ -155,10 +155,10 @@ export default function DevicesPage() {
     setPageSize(pageSize);
   };
 
-  const getChangeUserStatus = async (rowData: any, actionType: any) => {
+  const getDeviceSyncStatus = async (rowData: any, actionType: any) => {
     try {
       if (actionType.toLowerCase() === "delete") {
-        const deviceRemoval = await fetch(`/api/device/?id=${rowData.id}`, {
+        const deviceRemoval = await fetch(`/api/device/?id=${rowData.uuid}`, {
           method: "PUT",
           body: JSON.stringify({ enabled: rowData.statusCheck }),
         });
@@ -168,7 +168,7 @@ export default function DevicesPage() {
         }
         console.log("Device removed");
       } else if (actionType.toLowerCase() === "sync-device") {
-        const deviceResync = await fetch(`/api/device/?id=${rowData.id}`, {
+        const deviceResync = await fetch(`/api/device/?id=${rowData.uuid}`, {
           method: "POST",
           body: JSON.stringify({ status: "ACTIVE" }),
         });
@@ -178,7 +178,7 @@ export default function DevicesPage() {
         }
         console.log("Device synced");
       } else {
-        const deviceResync = await fetch(`/api/device/?id=${rowData.id}`, {
+        const deviceResync = await fetch(`/api/device/?id=${rowData.uuid}`, {
           method: "PATCH",
           body: JSON.stringify({ status: rowData.statusCheck }),
         });
@@ -204,6 +204,12 @@ export default function DevicesPage() {
       return matchesSearchQuery && matchesStatusFilter;
     });
   }, [storeRetrievedData, searchQuery, statusFilter]);
+
+  const handleDeviceSave = async () => {
+    await fetchDevices();
+    setIsAddDeviceModalOpen(false);
+    // setIsAddDeviceModalOpen(false);
+  };
 
   return (
     <div className="w-full flex flex-col gap-5 px-2 lg:px-8 pt-2">
@@ -333,7 +339,7 @@ export default function DevicesPage() {
           <AddEditDevice
             existingDeviceData={selectedDevice}
             actionType={actionType}
-            callback={fetchDevices}
+            callback={handleDeviceSave}
             onClose={() => setIsAddDeviceModalOpen(false)}
           />
         </DialogContent>
