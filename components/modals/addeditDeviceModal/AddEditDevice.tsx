@@ -111,13 +111,8 @@ export default function AddEditDevice({
             duration: 3000, // Duration in milliseconds
             isClosable: true, // Allows closing the toast
           });
-        }
-        const data = await response.json();
-        if (callback) {
-          callback(data);
-        }
-        if (onClose) {
-          onClose();
+          callback && callback(data);
+          onClose && onClose();
         }
       } else {
         const response = await fetch(`/api/device`, {
@@ -139,13 +134,8 @@ export default function AddEditDevice({
             duration: 3000, // Duration in milliseconds
             isClosable: true, // Allows closing the toast
           });
-        }
-        const data = await response.json();
-        if (callback) {
-          callback(data);
-        }
-        if (onClose) {
-          onClose();
+          callback && callback(data);
+          onClose && onClose();
         }
       }
     } catch (error) {
