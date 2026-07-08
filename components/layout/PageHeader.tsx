@@ -9,8 +9,8 @@ interface PageHeaderProps {
 export function PageHeader({ title, description, actions }: PageHeaderProps) {
   return (
     <div className="w-full mb-6 flex flex-col gap-4 sm:mb-2 sm:flex-row sm:items-start sm:justify-between">
-      <div className="w-full flex flex-col gap-1 sm:w-1/2">
-        <h1 className="w-full text-2xl font-bold tracking-tight text-[#0f172a] sm:text-3xl">
+      <div className="w-full flex flex-col gap-1 sm:w-full">
+        <h1 className="w-full text-2xl font-bold tracking-tight text-[#0f172a]">
           {title}
         </h1>
         {description && (
