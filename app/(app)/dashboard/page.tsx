@@ -69,6 +69,7 @@ export default function DashboardPage() {
   const [loadingAttendance, setLoadingAttendance] = useState(false);
   const [attendanceError, setAttendanceError] = useState<string | null>(null);
   const [loadingStats, setloadingStats] = useState(true);
+  const [cardsValue, setCardsValue] = useState<any>([]);
   const toast = useToast();
 
   useEffect(() => {
@@ -78,9 +79,9 @@ export default function DashboardPage() {
 
     Promise.all([
       getDashboardCards(startDateD, endOfMonthD),
-      getDashboardGraph(startDateD, endOfMonthD),
+      // getDashboardGraph(startDateD, endOfMonthD),
     ]);
-  });
+  }, []);
 
   const handleDashboardFilterGraph = async (filterData: any) => {
     console.log("filterData>>", filterData);
@@ -109,11 +110,11 @@ export default function DashboardPage() {
       console.log("query to fetch dashboard data", query);
       // return;
 
-      const res = await fetch(`/api/dashboard/card?${query}`);
+      const res = await fetch(`/api/dashboard`);
       if (res.ok) {
         const result = await res.json();
         console.log("result>>Cards", result);
-
+        setCardsValue(result);
         setloadingStats(false);
       } else {
         toast({
@@ -137,40 +138,40 @@ export default function DashboardPage() {
     }
   };
 
-  const getDashboardGraph = async (startDate: any, endDate: any) => {
-    setloadingStats(true);
-    try {
-      let query;
-      query = `startDate=${startDate}&endDate=${endDate}`;
+  // const getDashboardGraph = async (startDate: any, endDate: any) => {
+  //   setloadingStats(true);
+  //   try {
+  //     let query;
+  //     query = `startDate=${startDate}&endDate=${endDate}`;
 
-      console.log("query to fetch dashboard data", query);
-      // return;
-      const res = await fetch(`/api/dashboard/graph?${query}`);
-      if (res.ok) {
-        const result = await res.json();
-        //console.log("result graph", result);
+  //     console.log("query to fetch dashboard data", query);
+  //     // return;
+  //     const res = await fetch(`/api/dashboard?${query}`);
+  //     if (res.ok) {
+  //       const result = await res.json();
+  //       //console.log("result graph", result);
 
-        // setGraphMetrics({
-        //   ...graphMetrics,
-        //   ...result,
-        //   timePeriods: result.timePeriods.map((r) => {
-        //     return format(r, "dd-MM-yyyy");
-        //   }),
-        // });
-      }
-    } catch (error) {
-      //  console.log("error>>", error);
-      setloadingStats(false);
-      toast({
-        title: "Error!",
-        description: "Failed to load stats",
-        status: "error", // 'info', 'warning', 'error', 'success'
-        duration: 3000, // Duration in milliseconds
-        isClosable: true, // Allows closing the toast
-      });
-      setloadingStats(false);
-    }
-  };
+  //       // setGraphMetrics({
+  //       //   ...graphMetrics,
+  //       //   ...result,
+  //       //   timePeriods: result.timePeriods.map((r) => {
+  //       //     return format(r, "dd-MM-yyyy");
+  //       //   }),
+  //       // });
+  //     }
+  //   } catch (error) {
+  //     //  console.log("error>>", error);
+  //     setloadingStats(false);
+  //     toast({
+  //       title: "Error!",
+  //       description: "Failed to load stats",
+  //       status: "error", // 'info', 'warning', 'error', 'success'
+  //       duration: 3000, // Duration in milliseconds
+  //       isClosable: true, // Allows closing the toast
+  //     });
+  //     setloadingStats(false);
+  //   }
+  // };
 
   const fetchRecentAttendance = async () => {
     setLoadingAttendance(true);
@@ -207,12 +208,43 @@ export default function DashboardPage() {
     }
   };
 
+  const stats = [
+    {
+      title: "Total Application Users",
+      value: cardsValue.userStats?.totalUsers,
+      change: "+15.2% from last month",
+      icon: FaUserFriends,
+      iconColor: "text-purple-600 bg-purple-50",
+    },
+    {
+      title: "Total Device Users ",
+      value: cardsValue.userStats?.linkedToDeviceCount,
+      change: "-3.2% from last week",
+      icon: FaUser,
+      iconColor: "text-blue-600 bg-blue-50",
+    },
+    {
+      title: "Total Devices",
+      value: cardsValue.deviceStats?.totalDevices,
+      change: "+8.1% from last month",
+      icon: MdOutlineOnDeviceTraining,
+      iconColor: "text-green-600 bg-green-50",
+    },
+    {
+      title: "Active Devices",
+      value: cardsValue.deviceStats?.activeDevices,
+      change: "+12.4% from yesterday",
+      icon: RiCalendarCheckLine,
+      iconColor: "text-[#eab308] bg-yellow-50",
+    },
+  ];
+
   useEffect(() => {
     void fetchRecentAttendance();
   }, []);
 
   return (
-    <div className="px-2 lg:px-8 pt-2">
+    <div className="px-2 xl:px-8 pt-2">
       <PageHeader
         title="Dashboard"
         // description="Welcome back! Here's what's happening across your biometric network today."
@@ -227,23 +259,23 @@ export default function DashboardPage() {
               Register Device
             </Button>
             <Button variant="outline">View Attendance</Button> */}
-            <DashboardFilter
+            {/* <DashboardFilter
               defaultValue={"thisMonth"}
               custom={null}
               // onFilterChange={0}
               // custom={contextState.incidentReportCacheName}
               onFilterChange={handleDashboardFilterGraph}
-            />
+            /> */}
           </div>
         }
       />
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => {
           const Icon = stat.icon;
           return (
             <Card key={stat.title} className="border-slate-200 shadow-sm">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardHeader className="flex flex-row items-center justify-between pb-0">
                 <CardTitle className="text-sm font-medium text-[#64748b]">
                   {stat.title}
                 </CardTitle>
@@ -264,12 +296,12 @@ export default function DashboardPage() {
         })}
       </div>
 
-      <div className="mt-6 h-full grid gap-4 lg:grid-cols-3">
-        <div className="lg:col-span-2 h-full">
+      <div className="mt-6 h-120 w-full flex flex-col lg:flex-row gap-4">
+        <div className="w-full lg:w-3/4 h-full">
           {/* <AttendanceTrendCard /> */}
           {/* <ChartLineLabel /> */}
-          <div className="h-full overflow-hidden rounded-lg border bg-white shadow-sm">
-            <div className="flex justify-between border-b px-4 py-3">
+          <div className="w-full h-full overflow-hidden rounded-lg border bg-white shadow-sm">
+            <div className="w-full flex justify-between border-b px-4 py-3">
               <div>
                 <h2 className="text-sm font-semibold text-slate-900">
                   Recent Attendance
@@ -278,8 +310,11 @@ export default function DashboardPage() {
                   Showing the latest attendance records.
                 </p>
               </div>
-              <Link href="/attendance" className="text-sm text-blue-600 hover:underline">
-                View All Attendance Records
+              <Link
+                href="/attendance"
+                className="text-sm text-blue-600 hover:underline"
+              >
+                View All Attendance
               </Link>
             </div>
             <div className="overflow-x-auto">
@@ -361,8 +396,8 @@ export default function DashboardPage() {
             </div>
           </div>
         </div>
-        <div className="lg:col-span-1 h-full">
-          <DeviceHealthCard />
+        <div className="w-full lg:w-1/4 h-full">
+          <DeviceHealthCard onLineDevice = {cardsValue.deviceStats?.onlineDevices} offLineDevice = {cardsValue.deviceStats?.offlineDevices}/>
         </div>
       </div>
 
