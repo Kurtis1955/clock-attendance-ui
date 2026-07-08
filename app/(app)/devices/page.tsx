@@ -29,6 +29,8 @@ import {
   RiWifiOffLine,
 } from "react-icons/ri";
 import ReactSelect from "react-select";
+import _debounce from "lodash/debounce";
+
 
 type DeviceStatus = "Online" | "Offline" | "Warning" | "offline";
 
@@ -77,9 +79,7 @@ export default function DevicesPage() {
   const [pageSize, setPageSize] = useState(10);
   const [totalItems, setTotalItems] = useState(10);
   const [filterData, setFilterData] = useState("");
-  const [deviceName, setDeviceName] = useState("");
-  const [deviceLocation, setDeviceLocation] = useState("");
-  const [description, setDescription] = useState("");
+  const [loadingRoleDetails, setLoadingUserDetails] = useState(false);
 
   const {
     inputValue,
@@ -91,9 +91,23 @@ export default function DevicesPage() {
 
   const statCards = useMemo(() => getDeviceStatCards(), [storeRetrievedData]);
 
+  // useEffect(() => {
+  //   fetchDevices();
+  // }, [pageCount, pageSize]);
   useEffect(() => {
-    fetchDevices();
-  }, [pageCount, pageSize]);
+    if (inputValue == "") {
+      fetchDevices();
+    } else {
+      if (deviceSearch?.content?.length) {
+        console.log("deviceSearch>>>", deviceSearch);
+        setStoreRetrievedData(deviceSearch?.content);
+        setLoadingUserDetails(!loadingRoleDetails);
+      } else {
+        setStoreRetrievedData([]);
+        setLoadingUserDetails(!loadingRoleDetails);
+      }
+    }
+  }, [deviceSearch?.content?.length, inputValue, pageCount, pageSize]);
 
   const fetchDevices = async () => {
     try {
@@ -146,7 +160,9 @@ export default function DevicesPage() {
   const handleChangeTextSearch = (e: any) => {
     const dataToSearch = regrexForSpecialDashChars(e.target.value);
     setSearchQuery(dataToSearch);
+    debouncedSearch(dataToSearch);
   };
+  const debouncedSearch = _debounce(handleInputRoleChange, 500);
 
   const handlePageChange = (pageIndex: number, pageSize: number) => {
     //fetchPageData(pageIndex, pageSize);
@@ -212,7 +228,7 @@ export default function DevicesPage() {
   };
 
   return (
-    <div className="w-full flex flex-col gap-5 px-2 lg:px-8 pt-2">
+    <div className="w-full flex flex-col gap-5 px-2 xl:px-8 pt-2">
       <div className="w-full flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold tracking-tight text-[#0f172a]">
           Device Management
