@@ -96,16 +96,16 @@ function SidebarContent({ collapsed, onNavigate }: SidebarContentProps) {
   };
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full flex-col text-xs">
       {/* Logo */}
       <div
         className={cn(
-          "flex items-center gap-3 border-b border-slate-800 px-4 py-5",
+          "flex items-center gap-3 border-b border-slate-800 px-2 py-5",
           collapsed && "justify-center px-2",
         )}
       >
         <div
-          className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#eab308] text-[#0f172a] shadow-md"
+          className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-[#eab308] text-[#0f172a] shadow-md"
           aria-hidden="true"
         >
           <RiShieldCheckLine className="size-5" />
@@ -113,10 +113,10 @@ function SidebarContent({ collapsed, onNavigate }: SidebarContentProps) {
         {!collapsed ? (
           <div className="min-w-0 w-full flex items-center justify-between gap-4">
             <div className="w-3/4">
-              <p className="truncate text-base font-bold text-white">
+              <p className="truncate text-sm font-bold text-white">
                 Biometric Hub
               </p>
-              <p className="truncate text-[11px] font-medium tracking-wide text-slate-400 uppercase">
+              <p className="truncate text-sm font-medium tracking-wide text-slate-400 uppercase">
                 Management Platform
               </p>
             </div>
@@ -178,13 +178,13 @@ function SidebarContent({ collapsed, onNavigate }: SidebarContentProps) {
                 onClick={onNavigate}
                 aria-current={isExactActive ? "page" : undefined}
                 className={cn(
-                  "group flex min-h-10 items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-[#eab308]/50",
+                  "group flex min-h-10 items-center gap-3 rounded-lg px-3 py-2.5 text-xs font-medium transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-[#eab308]/50",
                   collapsed && "justify-center px-2",
                 )}
               >
                 <Icon
                   className={cn(
-                    "size-5 shrink-0",
+                    "size-4 shrink-0",
                     isExactActive
                       ? "text-[#0f172a]"
                       : childIsActive
@@ -193,7 +193,7 @@ function SidebarContent({ collapsed, onNavigate }: SidebarContentProps) {
                   )}
                   aria-hidden="true"
                 />
-                {!collapsed && <span className="truncate">{item.label}</span>}
+                {!collapsed && <span className="truncate text-xs xl:text-sm">{item.label}</span>}
               </Link>
             );
 
@@ -203,7 +203,7 @@ function SidebarContent({ collapsed, onNavigate }: SidebarContentProps) {
                   <TooltipTrigger asChild>{linkContent}</TooltipTrigger>
                   <TooltipContent
                     side="right"
-                    className="bg-[#0f172a] text-white"
+                    className="bg-[#0f172a] text-white text-sm"
                   >
                     {item.label}
                   </TooltipContent>
@@ -212,7 +212,7 @@ function SidebarContent({ collapsed, onNavigate }: SidebarContentProps) {
             }
 
             return (
-              <div key={item.href} className="space-y-1">
+              <div key={item.href} className="space-y-1 text-xs">
                 <div
                   onClick={() => toggleExpandedItem(item.href)}
                   className={`rounded-sm px-1 flex items-center gap-1 ${
@@ -232,7 +232,7 @@ function SidebarContent({ collapsed, onNavigate }: SidebarContentProps) {
                       size="icon-sm"
                       onClick={() => toggleExpandedItem(item.href)}
                       className={cn(
-                        "shrink-0 text-slate-400 hover:bg-slate-800 hover:text-[#eab308]",
+                        "text-sm shrink-0 text-slate-400 hover:bg-slate-800 hover:text-[#eab308]",
                         isExpanded && "text-[#eab308]",
                       )}
                       aria-label={
@@ -252,7 +252,7 @@ function SidebarContent({ collapsed, onNavigate }: SidebarContentProps) {
                 </div>
 
                 {isExpanded ? (
-                  <div className="ml-5 space-y-1 border-l border-slate-700 pl-3">
+                  <div className="text-xs ml-5 space-y-1 border-l border-slate-700 pl-3">
                     {item.children?.map((child) => {
                       const ChildIcon = child.icon;
                       const isChildActive = isNavigationActive(
@@ -416,7 +416,7 @@ export function Sidebar() {
       <aside
         className={cn(
           "fixed inset-y-0 left-0 z-40 hidden flex-col border-r border-slate-800 bg-[#0f172a] transition-[width] duration-300 ease-in-out lg:flex",
-          collapsed ? "w-20" : "w-[280px]",
+          collapsed ? "w-20" : "w-50 xl:w-70",
         )}
         aria-label="Application sidebar"
       >
@@ -478,7 +478,7 @@ export function MobileSidebar() {
 
       {/* Drawer */}
       <aside
-        className="fixed inset-y-0 left-0 z-50 flex w-[280px] flex-col border-r border-slate-800 bg-[#0f172a] shadow-xl animate-in slide-in-from-left duration-300 lg:hidden"
+        className="fixed inset-y-0 left-0 z-50 flex lg:w-[200px] xl:w-[280px] flex-col border-r border-slate-800 bg-[#0f172a] shadow-xl animate-in slide-in-from-left duration-300 lg:hidden"
         aria-label="Mobile navigation drawer"
         role="dialog"
         aria-modal="true"
