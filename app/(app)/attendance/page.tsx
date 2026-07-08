@@ -91,7 +91,7 @@ export default function AttendancePage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [attendanceRecords, setAttendanceRecords] = useState<any[]>([]);
   const [pageSize, setPageSize] = useState(10);
-  const [totalItems, setTotalItems] = useState();
+  const [totalItems, setTotalItems] = useState(0);
   const [selectedAttendant, setSelectedAttendant] = useState<any | null>(null);
   const [attendantModalAction, setAttendantModalAction] = useState<
     "add" | "view" | "edit" | "search"
@@ -118,6 +118,7 @@ export default function AttendancePage() {
       if (attendanceSearch?.content?.length) {
         console.log("roleSearch>>>", attendanceSearch);
         setAttendanceRecords(attendanceSearch?.content);
+        setTotalItems(attendanceSearch?.totalElements);
         setLoadingUserDetails(!loadingRoleDetails);
       } else {
         setAttendanceRecords([]);
@@ -235,7 +236,7 @@ export default function AttendancePage() {
   );
 
   return (
-    <div className="flex flex-col gap-5 px-2 pt-2 lg:px-8">
+    <div className="flex flex-col gap-5 px-2 xl:px-8 pt-2">
       <PageHeader
         title="Attendance Command Center"
         // description="Monitor workforce coverage, device sync health, and verified clocking activity across branches."
@@ -341,14 +342,14 @@ export default function AttendancePage() {
                   ? "Edit Attendant"
                   : attendantModalAction === "view"
                     ? "View Attendant"
-                    : "Search Attendant"}
+                    : "Search for user"}
             </DialogTitle>
             <DialogDescription>
               {attendantModalAction === "add"
                 ? "Create a new attendance record."
                 : attendantModalAction === "edit"
                   ? "Update the selected attendance record."
-                  : "Review the selected attendance record."}
+                  : "Select a user to manually submit his/her attendant record."}
             </DialogDescription>
           </DialogHeader>
           {attendantModalAction === "search" ? (
@@ -358,7 +359,7 @@ export default function AttendancePage() {
                 defaultOptions
                 loadOptions={debouncedFetchOptions}
                 onChange={handleChange}
-                placeholder="Search for active directory user..."
+                placeholder="Search for a device user..."
                 styles={searchSelectStyles}
                 menuPosition="absolute"
                 menuPlacement="auto"
