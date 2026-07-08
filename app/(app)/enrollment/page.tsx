@@ -39,11 +39,10 @@ import { enrollmentTableColumns } from "@/components/tables/enrollmentTable/enro
 import useSearchBiometricUser from "@/hooks/useSearchBiometricUser";
 import _debounce from "lodash/debounce";
 import { totalmem } from "os";
-
+import { useToast } from "@chakra-ui/react";
 
 export default function EnrollmentPage() {
-  const [storeRetrievedData, setStoreRetrievedData] =
-    useState<any[]>([]);
+  const [storeRetrievedData, setStoreRetrievedData] = useState<any[]>([]);
   const [selectedUser, setSelectedUser] = useState<any[]>([]);
   const [modalAction, setModalAction] = useState<"add" | "edit" | "view">(
     "add",
@@ -56,6 +55,7 @@ export default function EnrollmentPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterData, setFilterData] = useState("");
   const [totalItems, setTotalItems] = useState(storeRetrievedData.length);
+  const toast = useToast();
 
   const openModal = (action: "add" | "edit" | "view") => {
     setModalAction(action);
@@ -126,11 +126,19 @@ export default function EnrollmentPage() {
 
   const fetchUsers = async () => {
     try {
+      setLoadingUserDetails(true);
       const res = await fetch(
         `/api/enrollment?paginate=true&page=${pageCount}&size=${pageSize}`,
       );
 
       if (!res.ok) {
+        toast({
+          title: "Error!",
+          description: "Failed to load users",
+          status: "error", // 'info', 'warning', 'error', 'success'
+          duration: 3000, // Duration in milliseconds
+          isClosable: true, // Allows closing the toast
+        });
         throw new Error(`HTTP error! status: ${res.status}`);
       }
 
@@ -139,6 +147,17 @@ export default function EnrollmentPage() {
       setTotalItems(data.totalElements);
     } catch (error) {
       console.error("Error Fecthing users:", error);
+      toast({
+        title: "Error!",
+        description: "Failed to load users",
+        status: "error", // 'info', 'warning', 'error', 'success'
+        duration: 3000, // Duration in milliseconds
+        isClosable: true, // Allows closing the toast
+      });
+    } finally {
+      setTimeout(() => {
+        setLoadingUserDetails(false);
+      }, 500);
     }
   };
 
@@ -364,7 +383,10 @@ export default function EnrollmentPage() {
           <AddEditBiometricUser
             actionType={modalAction}
             existingUserData={selectedUser}
-            callback={() => {}}
+            callback={() => {
+              fetchUsers();
+              setIsModalOpen(false);
+            }}
             onClose={() => setIsModalOpen(false)}
           />
         </DialogContent>
