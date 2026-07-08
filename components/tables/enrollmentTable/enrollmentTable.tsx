@@ -6,8 +6,29 @@ import { Tooltip } from "@chakra-ui/react";
 import { RiEdit2Line, RiEyeLine } from "react-icons/ri";
 import { TfiExchangeVertical, TfiReload } from "react-icons/tfi";
 import { MdDeleteForever } from "react-icons/md";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export const enrollmentTableColumns = (rowCallback: any) => [
+  {
+    id: "select",
+    header: ({ table }: { table: any }) => (
+      <div className="">
+        Check
+      </div>
+    ),
+    cell: ({ row }: { row: any }) => (
+      <div>
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(value) => row.toggleSelected(!!value)}
+          aria-label="Select row"
+        />
+      </div>
+    ),
+    enableSorting: false,
+    enableHiding: false,
+    size: 50,
+  },
   {
     accessorKey: "First Name",
     header: ({ column }: { column: any }) => (
