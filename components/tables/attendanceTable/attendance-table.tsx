@@ -31,9 +31,9 @@ export const attendanceTableColumns = (rowCallback: any) => [
     headerLabel: "Device",
     cell: ({ row }: { row: any }) => (
       <div>
-        <Badge variant="outline">{row.original.deviceName}</Badge>
+        {/* <Badge variant="outline">{row.original.deviceName}</Badge> */}
 
-        <p className="mt-1 text-xs text-slate-500">{row.original.deviceSn}</p>
+        <h1 className="mt-1 text-sm text-slate-500">{row.original.deviceName}</h1>
       </div>
     ),
   },

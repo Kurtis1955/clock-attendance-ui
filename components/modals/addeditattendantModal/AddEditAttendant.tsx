@@ -19,8 +19,9 @@ export default function AddEditAttendant({
   callback,
   onClose,
 }: any) {
-  
-  const [userId, setUserId] = useState(existingAttendantData?.id || existingAttendantData?.userId || "");
+  const [userId, setUserId] = useState(
+    existingAttendantData?.id || existingAttendantData?.userId || "",
+  );
   const [firstName, setFirstName] = useState(
     existingAttendantData?.firstName || "",
   );
@@ -55,8 +56,9 @@ export default function AddEditAttendant({
     ? parseVerifyTime(existingAttendantData.verifyTime)
     : { date: undefined, time: "" };
 
-  const [attendanceDate, setAttendanceDate] =
-    useState<Date | undefined>(initialVerify.date);
+  const [attendanceDate, setAttendanceDate] = useState<Date | undefined>(
+    initialVerify.date,
+  );
   const [appointmentTime, setAppointmentTime] = useState(initialVerify.time);
   const [errorMessage, setErrorMessage] = useState("");
   // const [verifyTime, setVerifyTime] = useState(
@@ -150,7 +152,9 @@ export default function AddEditAttendant({
       event.preventDefault();
 
       if (!userId || !statusId || !attendanceDate || !appointmentTime) {
-        setErrorMessage("Please provide User, Attendance Status, date, and time.");
+        setErrorMessage(
+          "Please provide User, Attendance Status, date, and time.",
+        );
         setLoading(false);
         return;
       }
@@ -271,6 +275,7 @@ export default function AddEditAttendant({
               <Popover open={open} onOpenChange={setOpen}>
                 <PopoverTrigger asChild>
                   <Button
+                    disabled={isViewMode}
                     variant="outline"
                     id="date-picker-optional"
                     className="w-full justify-between py-4.5 text-sm"
@@ -294,12 +299,13 @@ export default function AddEditAttendant({
                       setAttendanceDate(date);
                       setOpen(false);
                     }}
+                    disabled={isViewMode}
                   />
                 </PopoverContent>
               </Popover>
             </div>
             <div className="w-1/2">
-            {/* {appointmentTime} */}
+              {/* {appointmentTime} */}
               <Input
                 id="appointment-time"
                 type="time"
@@ -311,6 +317,7 @@ export default function AddEditAttendant({
                 step="60"
                 className="w-full h-10"
                 required
+                disabled={isViewMode}
               />
             </div>
           </div>
