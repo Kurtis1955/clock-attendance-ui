@@ -16,7 +16,7 @@ import {
   parseApiError,
 } from "@/lib/user-payload";
 import type { DepartmentOption } from "@/hooks/useDepartments";
-
+import { useToast } from "@chakra-ui/react";
 
 const AddEditBiometricUser = ({
   actionType,
@@ -56,6 +56,7 @@ const AddEditBiometricUser = ({
   );
   const [assignedDevices, setAssignedDevices] = useState<any[]>([]);
   const isView = actionType === "view";
+  const toast = useToast();
 
   useEffect(() => {
     setFirstName(existingUserData?.firstName || "");
@@ -106,7 +107,8 @@ const AddEditBiometricUser = ({
   };
 
   const validatePhoneNumber = (value: string): boolean => {
-    const regex = /^(?:\+233|233|0)(20|23|24|25|26|27|28|50|53|54|55|56|57|59)\d{7}$/;
+    const regex =
+      /^(?:\+233|233|0)(20|23|24|25|26|27|28|50|53|54|55|56|57|59)\d{7}$/;
     return regex.test(value);
   };
 
@@ -133,12 +135,12 @@ const AddEditBiometricUser = ({
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setSubmitError("")
+    setSubmitError("");
 
     setloadingSaveUpdateUser(true);
 
     try {
-      const payload =({
+      const payload = {
         id:
           actionType === "edit"
             ? (resolvedUser?.id ?? existingUserData?.id)
@@ -146,12 +148,12 @@ const AddEditBiometricUser = ({
         email,
         firstName,
         lastName,
-        phone:phoneNumber,
+        phone: phoneNumber,
         enabled,
         e_code: ecode,
         devices: assignedDevices.map((device) => device.value),
-        userInfos: []
-      });
+        userInfos: [],
+      };
 
       if (actionType === "edit") {
         const userId = resolvedUser?.id ?? existingUserData?.id;
@@ -183,6 +185,13 @@ const AddEditBiometricUser = ({
       });
 
       if (!response.ok) {
+        toast({
+          title: "Error!",
+          description: "Failed to save user",
+          status: "error", // 'info', 'warning', 'error', 'success'
+          duration: 3000, // Duration in milliseconds
+          isClosable: true, // Allows closing the toast
+        });
         throw new Error(await parseApiError(response));
       }
 
@@ -194,6 +203,13 @@ const AddEditBiometricUser = ({
         error instanceof Error ? error.message : "Failed to save user.";
       setSubmitError(message);
       console.error("Error saving user:", error);
+      toast({
+        title: "Error!",
+        description: "Failed to save user",
+        status: "error", // 'info', 'warning', 'error', 'success'
+        duration: 3000, // Duration in milliseconds
+        isClosable: true, // Allows closing the toast
+      });
     } finally {
       setloadingSaveUpdateUser(false);
     }
