@@ -126,3 +126,16 @@
     @apply font-sans bg-background text-foreground;
   }
 }
+.pagination-link {
+  transition: all .2s;
+}
+
+.selected .pagination-link {
+  background: #171717 !important;
+  color: white !important;
+  border-color: #171717 !important;
+}
+
+.selected .pagination-link:hover {
+  background: #171717 !important;
+}
