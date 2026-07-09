@@ -7,15 +7,15 @@ import { RiEdit2Line, RiEyeLine } from "react-icons/ri";
 import { TfiExchangeVertical, TfiReload } from "react-icons/tfi";
 import { MdDeleteForever } from "react-icons/md";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useState } from "react";
+
+let sortValue = "asc"
 
 export const enrollmentTableColumns = (rowCallback: any) => [
+  
   {
     id: "select",
-    header: ({ table }: { table: any }) => (
-      <div className="">
-        Check
-      </div>
-    ),
+    header: ({ table }: { table: any }) => <div className="">Check</div>,
     cell: ({ row }: { row: any }) => (
       <div>
         <Checkbox
@@ -30,11 +30,14 @@ export const enrollmentTableColumns = (rowCallback: any) => [
     size: 50,
   },
   {
-    accessorKey: "First Name",
+    accessorKey: "firstName",
     header: ({ column }: { column: any }) => (
       <Button
         variant="ghost"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        onClick={() => {
+          sortValue = sortValue === "asc" ? "desc" : "asc";
+          rowCallback("sort", { sortValue, field: "firstName" });
+        }}
       >
         First Name
         <TfiExchangeVertical />
@@ -56,11 +59,14 @@ export const enrollmentTableColumns = (rowCallback: any) => [
     size: 250,
   },
   {
-    accessorKey: "Last Name",
+    accessorKey: "lastName",
     header: ({ column }: { column: any }) => (
       <Button
         variant="ghost"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        onClick={() => {
+          sortValue = sortValue === "asc" ? "desc" : "asc";
+          rowCallback("sort", { sortValue, field: "lastName" });
+        }}
       >
         Last Name
         <TfiExchangeVertical />
@@ -87,7 +93,10 @@ export const enrollmentTableColumns = (rowCallback: any) => [
     header: ({ column }: { column: any }) => (
       <Button
         variant="ghost"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        onClick={() => {
+          sortValue = sortValue === "asc" ? "desc" : "asc";
+          rowCallback("sort", { sortValue, field: "email" });
+        }}
       >
         Email
         <TfiExchangeVertical />
@@ -104,7 +113,10 @@ export const enrollmentTableColumns = (rowCallback: any) => [
     header: ({ column }: { column: any }) => (
       <Button
         variant="ghost"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        onClick={() => {
+          sortValue = sortValue === "asc" ? "desc" : "asc";
+          rowCallback("sort", { sortValue, field: "e_code" });
+        }}
       >
         Employee ID
         <TfiExchangeVertical />
@@ -214,7 +226,7 @@ export const enrollmentTableColumns = (rowCallback: any) => [
   {
     accessorKey: "actions",
 
-    header: () => <div className="text-right pr-2">Actions</div>,
+    header: () => <div className="text-center">Actions</div>,
 
     cell: ({ row }: { row: any }) => (
       <div className="flex justify-center gap-2">
@@ -246,7 +258,7 @@ export const enrollmentTableColumns = (rowCallback: any) => [
             <TfiReload />
           </Button>
         </Tooltip> */}
-        <Tooltip
+        {/* <Tooltip
           label="Delete User Bio"
           hasArrow
           placement="top"
@@ -259,7 +271,7 @@ export const enrollmentTableColumns = (rowCallback: any) => [
           >
             <MdDeleteForever />
           </Button>
-        </Tooltip>
+        </Tooltip> */}
       </div>
     ),
   },

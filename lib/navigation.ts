@@ -1,4 +1,4 @@
-import type { IconType } from "react-icons"
+import type { IconType } from "react-icons";
 import {
   RiBarChartBoxLine,
   RiCalendarCheckLine,
@@ -9,13 +9,13 @@ import {
   RiSettings3Line,
   RiShieldKeyholeLine,
   RiUserLine,
-} from "react-icons/ri"
+} from "react-icons/ri";
 
 export interface NavigationItem {
-  label: string
-  href: string
-  icon: IconType
-  children?: NavigationItem[]
+  label: string;
+  href: string;
+  icon: IconType;
+  children?: NavigationItem[];
 }
 
 export const navigationItems: NavigationItem[] = [
@@ -25,22 +25,21 @@ export const navigationItems: NavigationItem[] = [
     icon: RiDashboardLine,
   },
   {
-    label: "Administration",
-    href: "/admin",
+    label: "User Management",
+    href: "/users",
     icon: RiUserLine,
-    children: [
-      {
-        label: "Users Management",
-        href: "/users",
-        icon: RiUserLine,
-      },
-      {
-        label: "Roles Management",
-        href: "/roles",
-        icon: RiUserLine,
-      },
-    ],
   },
+  {
+    label: "Role Management",
+    href: "/roles",
+    icon: RiUserLine,
+  },
+  // {
+  //   label: "Administration",
+  //   href: "/admin",
+  //   icon: RiUserLine,
+  //   children: [],
+  // },
   // {
   //   label: "Roles & Permissions",
   //   href: "/roles",
@@ -59,7 +58,7 @@ export const navigationItems: NavigationItem[] = [
   //   // ],
   // },
   {
-    label: "Devices",
+    label: "Device",
     href: "/devices",
     icon: RiRouterLine,
     // children: [
@@ -114,7 +113,7 @@ export const navigationItems: NavigationItem[] = [
   //     },
   //   ],
   // },
-]
+];
 
 export function getNavigationItemPermissionValues(
   item: NavigationItem,
@@ -124,19 +123,19 @@ export function getNavigationItemPermissionValues(
     ...(item.children?.flatMap((child) =>
       getNavigationItemPermissionValues(child),
     ) ?? []),
-  ]
+  ];
 }
 
 export function getAllNavigationPermissionValues(
   items = navigationItems,
 ): string[] {
-  return items.flatMap((item) => getNavigationItemPermissionValues(item))
+  return items.flatMap((item) => getNavigationItemPermissionValues(item));
 }
 
 export function isNavigationActive(pathname: string, href: string): boolean {
   if (href === "/dashboard") {
-    return pathname === "/dashboard"
+    return pathname === "/dashboard";
   }
 
-  return pathname === href || pathname.startsWith(`${href}/`)
+  return pathname === href || pathname.startsWith(`${href}/`);
 }

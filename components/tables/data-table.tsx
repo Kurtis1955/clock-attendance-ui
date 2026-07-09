@@ -20,6 +20,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import "../../app/globals.css";
 import { Button } from "@/components/ui/button";
 import SearchFilter from "@/components/ui/SearchFilter";
 import { Menu, MenuButton, MenuItem, MenuList, Portal } from "@chakra-ui/react";
@@ -417,26 +418,26 @@ export function DataTable<TData, TValue>({
           </select>
         </div>
 
-        <div className="flex items-center space-x-2 px-4 cursor-pointer">
+        <div className="flex items-center px-4">
           <ReactPaginate
-            className="pagination flex items-center justify-center gap-2"
-            previousLabel={"Previous"}
-            nextLabel={"Next"}
-            breakLabel={"..."}
             pageCount={pageCountTotal}
+            onPageChange={handlePageChange}
+            forcePage={pagination.pageIndex}
+            previousLabel="Previous"
+            nextLabel="Next"
+            breakLabel="..."
             marginPagesDisplayed={2}
             pageRangeDisplayed={3}
-            onPageChange={handlePageChange}
-            containerClassName="pagination"
-            activeClassName="activeB"
-            pageClassName="page-item"
-            pageLinkClassName="page-link"
-            previousClassName="page-item"
-            previousLinkClassName="page-link"
-            nextClassName="page-item"
-            nextLinkClassName="page-link"
-            breakClassName="page-item"
-            breakLinkClassName="page-link"
+            className="flex items-center justify-center gap-2"
+            pageClassName="list-none"
+            pageLinkClassName="pagination-link flex h-10 min-w-10 items-center justify-center rounded-md border border-slate-300 bg-white px-3"
+            previousClassName="list-none"
+            previousLinkClassName="flex h-10 bg-white items-center justify-center rounded-md border border-slate-300 px-4 text-sm font-medium hover:bg-slate-100"
+            nextClassName="list-none"
+            nextLinkClassName="flex h-10 items-center justify-center rounded-md border border-slate-300 bg-white px-4 text-sm font-medium hover:bg-slate-100"
+            breakClassName="list-none"
+            breakLinkClassName="flex h-10 min-w-10 items-center justify-center rounded-md border border-slate-300 bg-white px-3"
+            disabledClassName="opacity-50 pointer-events-none"
           />
         </div>
       </div>

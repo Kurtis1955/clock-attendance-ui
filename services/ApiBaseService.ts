@@ -35,6 +35,8 @@ export const queryService = async (endpoint: string, options?: Options) => {
     ...options?.headers,
   };
 
+  console.log("url for api call>>",url)
+
   try {
     let body: BodyInit | null | undefined;
     if (options?.data) {
@@ -89,6 +91,7 @@ export const queryDeviceAttendanceService = async (endpoint: string, options?: O
     ...(isFormData ? {} : { "Content-Type": "application/json" }),
     ...options?.headers,
   };
+  console.log("url for queryDeviceAttendanceService api call>>",url)
 
   try {
     let body: BodyInit | null | undefined;
