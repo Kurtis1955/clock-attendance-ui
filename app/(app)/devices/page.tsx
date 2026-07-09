@@ -31,7 +31,6 @@ import {
 import ReactSelect from "react-select";
 import _debounce from "lodash/debounce";
 
-
 type DeviceStatus = "Online" | "Offline" | "Warning" | "offline";
 
 const getDeviceStatCards = () => [
@@ -194,10 +193,13 @@ export default function DevicesPage() {
         }
         console.log("Device synced");
       } else {
-        const deviceResync = await fetch(`/api/device/?id=${rowData.uuid}`, {
-          method: "PATCH",
-          body: JSON.stringify({ status: rowData.statusCheck }),
-        });
+        const deviceResync = await fetch(
+          `/api/device/${rowData.uuid}?enabled=${rowData.statusCheck}`,
+          {
+            method: "PATCH",
+            body: JSON.stringify({ status: rowData.statusCheck }),
+          },
+        );
 
         if (!deviceResync.ok) {
           throw new Error(`HTTP error! status: ${deviceResync.status}`);
