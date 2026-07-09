@@ -295,7 +295,7 @@ function SidebarContent({ collapsed, onNavigate }: SidebarContentProps) {
       </nav>
 
       {/* Device Status Widget */}
-      {!collapsed && (
+      {/* {!collapsed && (
         <div className="mx-3 mb-3 rounded-xl border border-slate-700/80 bg-slate-800/50 p-4">
           <div className="mb-2 flex items-center justify-between">
             <span className="text-xs font-semibold tracking-wide text-slate-300 uppercase">
@@ -323,9 +323,9 @@ function SidebarContent({ collapsed, onNavigate }: SidebarContentProps) {
             Last sync: {deviceStatus.lastSyncTime}
           </p>
         </div>
-      )}
+      )} */}
 
-      {collapsed && (
+      {/* {collapsed && (
         <TooltipProvider delayDuration={0}>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -341,7 +341,7 @@ function SidebarContent({ collapsed, onNavigate }: SidebarContentProps) {
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
-      )}
+      )} */}
 
       <Separator className="bg-slate-800" />
 
