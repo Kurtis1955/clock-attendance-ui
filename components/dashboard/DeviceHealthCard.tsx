@@ -42,7 +42,7 @@ export function DeviceHealthCard({onLineDevice,offLineDevice} : any) {
               strokeWidth={STROKE}
             />
             {segments.map((segment) => {
-              const length = (segment.value / total) * CIRCUMFERENCE
+              const length = (segment?.value / total) * CIRCUMFERENCE
               const dashArray = `${length} ${CIRCUMFERENCE - length}`
               const dashOffset = -offset
               offset += length
@@ -87,7 +87,7 @@ export function DeviceHealthCard({onLineDevice,offLineDevice} : any) {
                 <span className="text-[#64748b]">{segment.label}</span>
               </div>
               <span className="font-semibold text-[#0f172a]">
-                {segment.value}
+                {segment?.value}
               </span>
             </div>
           ))}
