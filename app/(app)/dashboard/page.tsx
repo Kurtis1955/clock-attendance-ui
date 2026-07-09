@@ -181,7 +181,7 @@ export default function DashboardPage() {
       const startDate = format(startOfToday(), "yyyy-MM-dd");
       const endDate = format(endOfToday(), "yyyy-MM-dd");
       const res = await fetch(
-        `/api/attendance?paginate=true&pageNo=${0}&pageSize=${7}`,
+        `/api/attendance?paginate=true&pageNo=${0}&pageSize=${10}`,
       );
 
       if (!res.ok) {
@@ -192,7 +192,7 @@ export default function DashboardPage() {
       const records = data?.content;
 
       if (records.length) {
-        setRecentAttendance(records.slice(0, 7));
+        setRecentAttendance(records.slice(0, 10));
       } else {
         setRecentAttendance(recentAttendanceRecords);
       }
@@ -296,7 +296,7 @@ export default function DashboardPage() {
         })}
       </div>
 
-      <div className="mt-6 h-120 w-full flex flex-col lg:flex-row gap-4">
+      <div className="mt-6 h-full w-full flex flex-col lg:flex-row gap-4">
         <div className="w-full lg:w-3/4 h-full">
           {/* <AttendanceTrendCard /> */}
           {/* <ChartLineLabel /> */}
@@ -324,7 +324,7 @@ export default function DashboardPage() {
                     <th className="px-4 py-3">Time</th>
                     <th className="px-4 py-3">Employee</th>
                     <th className="px-4 py-3">Email</th>
-                    <th className="px-4 py-3">Ecode</th>
+                    {/* <th className="px-4 py-3">Ecode</th> */}
                     <th className="px-4 py-3">Status</th>
                     <th className="px-4 py-3">Direction</th>
                     <th className="px-4 py-3">Device</th>
@@ -364,28 +364,28 @@ export default function DashboardPage() {
                       <tr
                         key={record.attId ?? record.userId ?? record.verifyTime}
                       >
-                        <td className="px-4 py-4 whitespace-nowrap">
+                        <td className="px-4 py-4 whitespace-nowrap text-sm">
                           {record.verifyTime}
                         </td>
-                        <td className="px-4 py-4 whitespace-nowrap">
+                        <td className="px-4 py-4 whitespace-nowrap text-sm">
                           {record.userName || "—"}
                         </td>
-                        <td className="px-4 py-4 whitespace-nowrap">
+                        <td className="px-4 py-4 whitespace-nowrap text-xs">
                           {record.userEmail || "—"}
                         </td>
-                        <td className="px-4 py-4 whitespace-nowrap">
+                        {/* <td className="px-4 py-4 whitespace-nowrap">
                           {record.userEcode || "—"}
-                        </td>
-                        <td className="px-4 py-4 whitespace-nowrap">
+                        </td> */}
+                        <td className="px-4 py-4 whitespace-nowrap text-sm">
                           {record.statusName || record.status || "—"}
                         </td>
-                        <td className="px-4 py-4 whitespace-nowrap">
+                        <td className="px-4 py-4 whitespace-nowrap text-sm">
                           {record.statusDirection || "—"}
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap">
                           {record.deviceName || record.deviceSn || "—"}
                         </td>
-                        <td className="px-4 py-4 whitespace-nowrap">
+                        <td className="px-4 py-4 whitespace-nowrap text-sm">
                           {record.deviceLocation || record.source || "—"}
                         </td>
                       </tr>
