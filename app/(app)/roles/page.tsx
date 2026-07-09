@@ -425,7 +425,7 @@ export default function RolesPage() {
         }
       />
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      {/* <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {statCards.map((stat) => {
           const Icon = stat.icon;
 
@@ -450,7 +450,7 @@ export default function RolesPage() {
             </Card>
           );
         })}
-      </div>
+      </div> */}
 
       <div className="space-y-4 mt-2 flex flex-col gap-4 lg:mt-0">
         <div className="w-full space-y-4 mt-4 flex flex-col gap-4 lg:mt-0">
