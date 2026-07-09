@@ -42,10 +42,18 @@ export async function PATCH(
 ) {
   const { id } = await params;
   const body = await request.json();
-  const res = await queryDeviceAttendanceService(`/devices/${id}/enabled`, {
-    method: "PATCH",
-    data: { ...body },
-  });
+  const urlData = new URL(request.url);
+
+  const queryParamsObject = Object.fromEntries(urlData.searchParams.entries());
+
+  const queryParams = new URLSearchParams(queryParamsObject).toString();
+
+  const res = await queryDeviceAttendanceService(
+    `/devices/${id}/status?${decodeURIComponent(queryParams)}`,
+    {
+      method: "PATCH"
+    },
+  );
   return res;
 }
 
