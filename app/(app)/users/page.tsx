@@ -298,12 +298,12 @@ export default function UsersPage() {
         </div>
       </div>
 
-      <UserStatsCards
+      {/* <UserStatsCards
         totalUsers={totalUsers}
         activeUser={activeUser}
         inActiveUsers={inActiveUser}
         adminUsers={adminUser}
-      />
+      /> */}
 
       <div className="w-full flex items-center justify-between mt-2">
         <div className="sm:w-1/3 flex items-center max-w-sm">
