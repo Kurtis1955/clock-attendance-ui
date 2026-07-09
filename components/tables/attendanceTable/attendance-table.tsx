@@ -54,11 +54,11 @@ export const attendanceTableColumns = (rowCallback: any) => [
   },
 
   {
-    accessorKey: "source",
-    header: "Source",
-    headerLabel: "Source",
+    accessorKey: "verifyTypeName",
+    header: "verification Type",
+    headerLabel: "verification Type",
     cell: ({ row }: { row: any }) => (
-      <div className=" text-gray-600">{row.original.source}</div>
+      <div className=" text-gray-600">{row.original.verifyTypeName}</div>
     ),
   },
 
@@ -67,15 +67,15 @@ export const attendanceTableColumns = (rowCallback: any) => [
     header: "Direction",
     headerLabel: "Status Direction",
     cell: ({ row }: { row: any }) => (
-      <Badge
-        className={
-          row.original.statusDirection === "IN"
-            ? "bg-green-100 text-green-700 w-1/3"
-            : "bg-orange-100 text-orange-700 w-1/3"
-        }
+      <div
+        // className={
+        //   row.original.statusDirection === "IN"
+        //     ? "bg-green-100 text-green-700 w-1/3"
+        //     : "bg-orange-100 text-orange-700 w-1/3"
+        // }
       >
         {row.original.statusDirection}
-      </Badge>
+      </div>
     ),
   },
 
@@ -84,21 +84,21 @@ export const attendanceTableColumns = (rowCallback: any) => [
     header: "Status",
     headerLabel: "Status",
     cell: ({ row }: { row: any }) => (
-      <Badge
-        className={
-          row.original.statusName === "Check-in"
-            ? "bg-green-100 text-green-700 w-2/3"
-            : row.original.statusName === "Check-out"
-              ? "bg-red-100 text-red-700 w-2/3"
-              : row.original.statusName === "Break-out"
-                ? "bg-amber-100 text-amber-700 w-2/3"
-                : row.original.statusName === "Break-in"
-                  ? "bg-blue-100 text-blue-700 w-2/3"
-                  : "bg-slate-100 text-slate-700 w-2/3"
-        }
+      <div
+        // className={
+        //   row.original.statusName === "Check-in"
+        //     ? "bg-green-100 text-green-700 w-2/3"
+        //     : row.original.statusName === "Check-out"
+        //       ? "bg-red-100 text-red-700 w-2/3"
+        //       : row.original.statusName === "Break-out"
+        //         ? "bg-amber-100 text-amber-700 w-2/3"
+        //         : row.original.statusName === "Break-in"
+        //           ? "bg-blue-100 text-blue-700 w-2/3"
+        //           : "bg-slate-100 text-slate-700 w-2/3"
+        // }
       >
         {row.original.statusName}
-      </Badge>
+      </div>
     ),
   },
 
