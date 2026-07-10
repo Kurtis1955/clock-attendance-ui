@@ -208,7 +208,7 @@ const AddEditUser = ({
 
       try {
         const response = await fetch(
-          `/api/users/${existingUserData.id}/permissions`
+          `/api/users/permissions?username=${existingUserData?.userName}`
         );
 
         if (!response.ok) {
@@ -216,13 +216,13 @@ const AddEditUser = ({
         }
 
         const json = await response.json();
-        const content = json?.data?.content ?? json?.data ?? [];
+        const content = json?.data?.content ?? json ?? [];
         const permissionIds = Array.isArray(content)
           ? content.map((item: { id?: string } | string) =>
               typeof item === "string" ? item : item.id ?? ""
             ).filter(Boolean)
           : [];
-
+        console.log("user permmissions fetched",content,"permissionIds>>",permissionIds)
         if (permissionIds.length) {
           setSelectedPermissions(permissionIds);
         }
@@ -351,7 +351,7 @@ const AddEditUser = ({
       });
 
       if (actionType === "edit") {
-        const userId = resolvedUser?.id ?? existingUserData?.id;
+        const userId = resolvedUser?.userName ?? existingUserData?.userName;
 
         if (!userId) {
           throw new Error("Missing user id for update.");
