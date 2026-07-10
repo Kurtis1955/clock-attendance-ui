@@ -40,9 +40,11 @@ export function usePermissions(): UsePermissionsResult {
       }
 
       const json = await response.json()
-      const content: Permission[] = json?.data?.content ?? []
+      const content: Permission[] = json ?? []
       const grouped = groupPermissionsByCategory(content)
       const ids = getAllPermissionIds(content)
+
+      console.log("permission content>>", content, json, "permission ids", ids )
 
       setPermissions(content)
       setCategories(grouped)
