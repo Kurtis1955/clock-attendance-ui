@@ -183,7 +183,7 @@ export default function DevicesPage() {
         }
         console.log("Device removed");
       } else if (actionType.toLowerCase() === "sync-device") {
-        const deviceResync = await fetch(`/api/device/?id=${rowData.uuid}`, {
+        const deviceResync = await fetch(`/api/device/${rowData.uuid}/?id=${rowData.uuid}`, {
           method: "POST",
           body: JSON.stringify({ status: "ACTIVE" }),
         });
