@@ -30,7 +30,10 @@ import { getAllNavigationPermissionValues } from "@/lib/navigation";
 import { DataTable } from "@/components/tables/data-table";
 import { roleTableColumns } from "@/components/tables/roleTable/role-management-table";
 import AddEditRole from "@/components/modals/addeditroleModal/AddEditRole";
-import { regrexForSpecialDashChars } from "@/lib/helpers";
+import {
+  groupByCategoryIdUtility,
+  regrexForSpecialDashChars,
+} from "@/lib/helpers";
 import useSearchRoles from "@/hooks/useSearchRoles";
 import _debounce from "lodash/debounce";
 import { Spinner } from "@chakra-ui/react";
@@ -214,6 +217,7 @@ export default function RolesPage() {
   const [filterData, setFilterData] = useState("");
   const [loadingRoleDetails, setLoadingUserDetails] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [existingRolePermission, setExistingRolePermission] = useState<any>([]);
 
   const statCards = useMemo(
     () => getStatCards(storeRetrievedData),
@@ -265,10 +269,7 @@ export default function RolesPage() {
       setRoleModalAction("edit");
       setIsRoleModalOpen(true);
       console.log("edit action clicked", rowData.id);
-      Promise.all([
-        // getUserPermissionsByUserId(rowData.userName),
-        // getUserById(rowData.userName),
-      ]);
+      getRolePermissionsByUserId(rowData.id);
     } else if (actionType === "view") {
       setSelectedRole(rowData);
       setRoleModalAction("view");
@@ -302,6 +303,24 @@ export default function RolesPage() {
       console.error("Error Fecthing users:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const getRolePermissionsByUserId = async (rowId: any) => {
+    setLoadingUserDetails(true);
+    console.log("userId>>", rowId);
+    const req = await fetch(`/api/roles/${rowId}/permissions`);
+    if (req.ok) {
+      const result = await req.json();
+      console.log("result form permission ", result);
+      const groupedId = groupByCategoryIdUtility(
+        result.data.permissions,
+        "permissionCategoryId",
+      );
+
+      setExistingRolePermission({ ...result.data, permissions: groupedId });
+    } else {
+      setExistingRolePermission({});
     }
   };
 
@@ -417,6 +436,7 @@ export default function RolesPage() {
                 <AddEditRole
                   actionType="add"
                   callback={handleRoleSave}
+                  existingRolePermission
                   onClose={() => setIsAddRoleModalOpen(false)}
                 />
               </DialogContent>
@@ -583,6 +603,7 @@ export default function RolesPage() {
           <AddEditRole
             actionType={roleModalAction}
             existingRoleData={selectedRole}
+            existingRolePermission={existingRolePermission}
             callback={() => {
               handleRoleSave;
               fetchRoles();
