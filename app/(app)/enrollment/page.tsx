@@ -225,6 +225,8 @@ export default function EnrollmentPage() {
       console.log("isGeneralModalOpen:", true);
     } else if (actionType == "switch") {
       getChangeUserStatus(rowData);
+    } else if (actionType == "sort") {
+      getChangeUserStatus(rowData);
     }
   };
 
