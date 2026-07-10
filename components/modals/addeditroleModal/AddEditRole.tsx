@@ -22,6 +22,7 @@ interface AddEditRoleProps {
   existingRoleData?: any;
   callback?: (role: any) => void;
   onClose?: () => void;
+  existingRolePermission : any
 }
 
 interface RoleFormErrors {
@@ -33,6 +34,7 @@ interface RoleFormErrors {
 export default function AddEditRole({
   actionType,
   existingRoleData,
+  existingRolePermission,
   callback,
   onClose,
 }: AddEditRoleProps) {
