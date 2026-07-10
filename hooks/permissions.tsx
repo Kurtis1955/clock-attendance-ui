@@ -20,6 +20,7 @@ export function PermissionCategoryGroup({
   selectedPermissionIds,
   onToggle,
 }: PermissionCategoryGroupProps) {
+  console.log("permission category group>>>",category)
   const [isExpanded, setIsExpanded] = useState(true)
   const permissionIds = category.permissions.map((permission) => permission.id)
   const checkedCount = permissionIds.filter((id) =>
