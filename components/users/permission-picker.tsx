@@ -41,6 +41,8 @@ export function PermissionPicker({
     onChange(allSelected ? [] : allPermissionIds)
   }
 
+  console.log("permission categories", categories)
+
   if (loading) {
     return (
       <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
