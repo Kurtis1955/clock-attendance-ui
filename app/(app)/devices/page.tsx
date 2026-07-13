@@ -30,6 +30,8 @@ import {
 } from "react-icons/ri";
 import ReactSelect from "react-select";
 import _debounce from "lodash/debounce";
+import { useUserPermissions } from "@/hoc/permissions-context";
+import { toast } from "sonner";
 
 type DeviceStatus = "Online" | "Offline" | "Warning" | "offline";
 
@@ -68,6 +70,7 @@ const getDeviceStatCards = () => [
 ];
 
 export default function DevicesPage() {
+  const { permissions: userPermissions } = useUserPermissions();
   const [isAddDeviceModalOpen, setIsAddDeviceModalOpen] = useState(false);
   const [storeRetrievedData, setStoreRetrievedData] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -88,7 +91,47 @@ export default function DevicesPage() {
     loading: loadingRole,
   } = useSearchDevice({ pageCount, pageSize, filterData });
 
+  const notifySuccess = (message: string) =>
+    toast.success(message, {
+      position: "top-right",
+      style: {
+        background: "#16a34a",
+        color: "#fff",
+        border: "1px solid #15803d",
+      },
+    });
+
+  const notifyError = (message: string) =>
+    toast.error(message, {
+      position: "top-right",
+      style: {
+        background: "#dc2626",
+        color: "#fff",
+        border: "1px solid #b91c1c",
+      },
+    });
+
   const statCards = useMemo(() => getDeviceStatCards(), [storeRetrievedData]);
+
+  const canCreateDevice = userPermissions.some((permission) =>
+    ["device_create"].some((hint) =>
+      permission.toLowerCase().includes(hint),
+    ),
+  );
+
+  const canManageDevices = userPermissions.some((permission) =>
+    ["device_manage", "device_create", "device_sync"].some((hint) =>
+      permission.toLowerCase().includes(hint),
+    ),
+  );
+
+  const canViewDevices = userPermissions.some((permission) =>
+    ["device_read"].some((hint) =>
+      permission.toLowerCase().includes(hint),
+    ),
+  );
+
+  const canToggleDeviceStatus = canManageDevices;
 
   // useEffect(() => {
   //   fetchDevices();
@@ -123,11 +166,17 @@ export default function DevicesPage() {
       setTotalItems(data.totalElements);
     } catch (error) {
       console.error("Error Fecthing users:", error);
+      notifyError("Unable to load devices. Please try again.");
     }
   };
 
   const handleRowAction = (actionType: any, rowData: any) => {
     console.log("actionType", actionType, "rowData>>", rowData);
+
+    if (actionType === "view" && !canViewDevices) return
+    if ((actionType === "edit" || actionType === "switch") && !canManageDevices) return
+    if (["delete", "sync-device"].includes(actionType) && !canManageDevices) return
+
     if (actionType === "edit") {
       setSelectedDevice(rowData);
       setActionType("edit");
@@ -182,6 +231,7 @@ export default function DevicesPage() {
           throw new Error(`HTTP error! status: ${deviceRemoval.status}`);
         }
         console.log("Device removed");
+        notifySuccess("Device removed successfully.");
       } else if (actionType.toLowerCase() === "sync-device") {
         const deviceResync = await fetch(`/api/device/${rowData.uuid}/?id=${rowData.uuid}`, {
           method: "POST",
@@ -192,6 +242,7 @@ export default function DevicesPage() {
           throw new Error(`HTTP error! status: ${deviceResync.status}`);
         }
         console.log("Device synced");
+        notifySuccess("Device synced successfully.");
       } else {
         const deviceResync = await fetch(
           `/api/device/${rowData.uuid}?enabled=${rowData.statusCheck}`,
@@ -205,10 +256,12 @@ export default function DevicesPage() {
           throw new Error(`HTTP error! status: ${deviceResync.status}`);
         }
         console.log("Device synced");
+        notifySuccess("Device status updated successfully.");
       }
       fetchDevices();
     } catch (error) {
       console.log("error occured");
+      notifyError("Unable to complete the device action. Please try again.");
     }
   };
 
@@ -239,6 +292,7 @@ export default function DevicesPage() {
         <Button
           variant="outline"
           className="h-10 border-slate-200"
+          disabled={!canCreateDevice}
           onClick={() => {
             setActionType("add");
             setSelectedDevice(null);
@@ -324,7 +378,14 @@ export default function DevicesPage() {
 
           <div className="w-full flex flex-row gap-4">
             <DataTable
-              columns={deviceTableColumns(handleRowAction) as any}
+              columns={deviceTableColumns(
+            handleRowAction,
+            {
+              canViewDevices,
+              canManageDevices,
+              canToggleDeviceStatus,
+            },
+          ) as any}
               data={storeRetrievedData}
               pageCount={pageCount}
               onPageChange={handlePageChange}
