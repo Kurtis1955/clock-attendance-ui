@@ -3,6 +3,7 @@ import { Poppins } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/hoc/providers";
 import SessionGuard from "@/hoc/SessionGuard";
+import { Toaster } from "@/components/ui/sonner";
 
 const poppins = Poppins({
   variable: "--font-poppins",
@@ -24,12 +25,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${poppins.variable} h-full font-sans antialiased`}
-      >
+      <body className={`${poppins.variable} h-full font-sans antialiased`}>
         <Providers>
           <SessionGuard>{children}</SessionGuard>
         </Providers>
+        <Toaster />
       </body>
     </html>
   );
