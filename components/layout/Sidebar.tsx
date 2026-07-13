@@ -40,6 +40,7 @@ import { cn } from "@/lib/utils";
 import { useLayout } from "./layout-context";
 import federatedLogout from "@/utils/federatedLogout";
 import { useSession } from "next-auth/react";
+import { hasPermissionAccessToRoute, useUserPermissions } from "@/hoc/permissions-context";
 
 interface SidebarContentProps {
   collapsed: boolean;
@@ -54,6 +55,7 @@ function SidebarContent({ collapsed, onNavigate }: SidebarContentProps) {
   const [userEmail, setUserEmail] = useState("");
   const [userData, setUserData] = useState<any>({});
   const { data: session } = useSession();
+  const { permissions: userPermissions } = useUserPermissions();
 
   useEffect(() => {
     console.log("session>>", session);
@@ -77,7 +79,6 @@ function SidebarContent({ collapsed, onNavigate }: SidebarContentProps) {
 
   const fetchUserData = async () => {
     try {
-      console.log(userName)
       const id = "catalystta"
       const res = await fetch(`/api/users/${id}/byusername`);
       if (res.ok) {
@@ -86,6 +87,18 @@ function SidebarContent({ collapsed, onNavigate }: SidebarContentProps) {
       }
     } catch (error) {}
   };
+
+  const visibleNavigationItems = navigationItems.filter((item) => {
+    if (!userPermissions?.length) {
+      return true;
+    }
+
+    const permissionValues = [item.href, ...(item.children?.map((child) => child.href) ?? [])];
+
+    return permissionValues.some((permission) =>
+      hasPermissionAccessToRoute(permission, userPermissions),
+    );
+  });
 
   const toggleExpandedItem = (href: string) => {
     setExpandedItems((currentItems) =>
@@ -159,7 +172,7 @@ function SidebarContent({ collapsed, onNavigate }: SidebarContentProps) {
         aria-label="Main navigation"
       >
         <TooltipProvider delayDuration={0}>
-          {navigationItems.map((item) => {
+          {visibleNavigationItems.map((item) => {
             const hasChildren = Boolean(item.children?.length);
             const childIsActive = item.children?.some((child) =>
               isNavigationActive(pathname, child.href),
