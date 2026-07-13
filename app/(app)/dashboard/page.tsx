@@ -32,6 +32,9 @@ import {
   type RecentAttendanceRecord,
 } from "@/lib/dashboard-data";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
+import { useUserPermissions } from "@/hoc/permissions-context";
+import { toast } from "sonner";
 
 const stats = [
   {
@@ -70,7 +73,13 @@ export default function DashboardPage() {
   const [attendanceError, setAttendanceError] = useState<string | null>(null);
   const [loadingStats, setloadingStats] = useState(true);
   const [cardsValue, setCardsValue] = useState<any>([]);
-  const toast = useToast();
+  const { data: session } = useSession();
+  const { permissions: userPermissions, loading: permissionsLoading } =
+    useUserPermissions();
+
+  const userName = session?.user?.name;
+
+  console.log("userId", userName, "permissions>>>", userPermissions);
 
   useEffect(() => {
     const now = new Date();
@@ -81,7 +90,7 @@ export default function DashboardPage() {
       getDashboardCards(startDateD, endOfMonthD),
       // getDashboardGraph(startDateD, endOfMonthD),
     ]);
-  }, []);
+  }, [userName]);
 
   const handleDashboardFilterGraph = async (filterData: any) => {
     console.log("filterData>>", filterData);
@@ -117,72 +126,46 @@ export default function DashboardPage() {
         setCardsValue(result);
         setloadingStats(false);
       } else {
-        toast({
-          title: "Error!",
-          description: "Failed to load stats",
-          status: "error", // 'info', 'warning', 'error', 'success'
-          duration: 3000, // Duration in milliseconds
-          isClosable: true, // Allows closing the toast
+        toast.error("Error fetching dashboard statistics", {
+          position: "top-right",
+          style: {
+            background: "#dc2626",
+            color: "#fff",
+            border: "1px solid #b91c1c",
+          },
         });
       }
     } catch (error) {
       setloadingStats(false);
-      toast({
-        title: "Error!",
-        description: "Failed to load stats",
-        status: "error", // 'info', 'warning', 'error', 'success'
-        duration: 3000, // Duration in milliseconds
-        isClosable: true, // Allows closing the toast
+      toast.error("Error fetching dashboard statistics", {
+        position: "top-right",
+        style: {
+          background: "#dc2626",
+          color: "#fff",
+          border: "1px solid #b91c1c",
+        },
       });
       setloadingStats(false);
     }
   };
-
-  // const getDashboardGraph = async (startDate: any, endDate: any) => {
-  //   setloadingStats(true);
-  //   try {
-  //     let query;
-  //     query = `startDate=${startDate}&endDate=${endDate}`;
-
-  //     console.log("query to fetch dashboard data", query);
-  //     // return;
-  //     const res = await fetch(`/api/dashboard?${query}`);
-  //     if (res.ok) {
-  //       const result = await res.json();
-  //       //console.log("result graph", result);
-
-  //       // setGraphMetrics({
-  //       //   ...graphMetrics,
-  //       //   ...result,
-  //       //   timePeriods: result.timePeriods.map((r) => {
-  //       //     return format(r, "dd-MM-yyyy");
-  //       //   }),
-  //       // });
-  //     }
-  //   } catch (error) {
-  //     //  console.log("error>>", error);
-  //     setloadingStats(false);
-  //     toast({
-  //       title: "Error!",
-  //       description: "Failed to load stats",
-  //       status: "error", // 'info', 'warning', 'error', 'success'
-  //       duration: 3000, // Duration in milliseconds
-  //       isClosable: true, // Allows closing the toast
-  //     });
-  //     setloadingStats(false);
-  //   }
-  // };
 
   const fetchRecentAttendance = async () => {
     setLoadingAttendance(true);
     setAttendanceError(null);
 
     try {
-      const startDate = format(startOfToday(), "yyyy-MM-dd");
-      const endDate = format(endOfToday(), "yyyy-MM-dd");
-      const res = await fetch(
-        `/api/attendance?paginate=true&pageNo=${0}&pageSize=${10}`,
-      );
+      const payload = {
+        page: 0,
+        size: 7,
+        sortDir: "desc",
+        sortBy: "verifyTime",
+      };
+
+      const res = await fetch(`/api/attendance`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
       if (!res.ok) {
         throw new Error(`Failed to fetch recent attendance: ${res.status}`);
@@ -190,7 +173,6 @@ export default function DashboardPage() {
 
       const data = await res.json();
       const records = data?.content;
-
       if (records.length) {
         setRecentAttendance(records.slice(0, 10));
       } else {
@@ -203,6 +185,14 @@ export default function DashboardPage() {
           : "Unable to load recent attendance.";
       setAttendanceError(message);
       console.error(message, error);
+      toast.error("Error laoding attendance", {
+        position: "top-right",
+        style: {
+          background: "#dc2626",
+          color: "#fff",
+          border: "1px solid #b91c1c",
+        },
+      });
     } finally {
       setLoadingAttendance(false);
     }
@@ -397,7 +387,10 @@ export default function DashboardPage() {
           </div>
         </div>
         <div className="w-full lg:w-1/4 h-full">
-          <DeviceHealthCard onLineDevice = {cardsValue.deviceStats?.onlineDevices} offLineDevice = {cardsValue.deviceStats?.offlineDevices}/>
+          <DeviceHealthCard
+            onLineDevice={cardsValue.deviceStats?.onlineDevices}
+            offLineDevice={cardsValue.deviceStats?.offlineDevices}
+          />
         </div>
       </div>
 
