@@ -21,20 +21,20 @@ interface UseDepartmentsResult {
 
 function mapDepartmentItem(
   item: Record<string, unknown>,
-  companyName: string,
-  companyId?: string,
+  company: string,
+  companycode?: string,
 ): DepartmentOption | null {
   const departmentId = String(
-    item.departmentId ?? item.id ?? item.department_id ?? "",
+    item.department ?? item.department ?? item.department ?? "",
   );
   const departmentName = String(
-    item.departmentName ?? item.department ?? item.name ?? "",
+    item.department ?? item.department ?? item.department ?? "",
   );
   const resolvedCompanyId = String(
-    item.companyId ?? item.company_id ?? companyId ?? "",
+    item.companyId ?? item.company_id ?? companycode ?? "",
   );
   const resolvedCompanyName = String(
-    item.companyName ?? item.company ?? companyName,
+    item.companyName ?? item.company ?? company,
   );
 
   if (!departmentId || !departmentName) {
@@ -58,7 +58,7 @@ function mapDepartmentItem(
 
 export function useDepartments(
   companyName: string | null,
-  companyId?: string | null,
+  companyId?: any | null,
 ): UseDepartmentsResult {
   const [departments, setDepartments] = useState<DepartmentOption[]>([]);
   const [loading, setLoading] = useState(false);
@@ -75,9 +75,11 @@ export function useDepartments(
     setLoading(true);
     setError(null);
 
+    console.log("companyName",companyName,"companyId",companyId)
+
     try {
       const response = await fetch(
-        `/api/departments?name=${encodeURIComponent(companyName)}`,
+        `/api/departments?name=${encodeURIComponent(companyId)}`,
       );
 
       if (!response.ok) {
@@ -89,14 +91,15 @@ export function useDepartments(
       }
 
       const json = await response.json();
-      const content = json?.data?.content ?? json?.data ?? json ?? [];
+      const content = json?.department ?? json?.data ?? json ?? [];
       const mapped = (Array.isArray(content) ? content : [])
-        .map((item: Record<string, unknown>) =>
+        .map((item: any) =>
           mapDepartmentItem(item, companyName, companyId ?? undefined),
         )
         .filter(Boolean) as DepartmentOption[];
 
       setDepartments(mapped);
+      console.log("mapped>>>",mapped)
     } catch (fetchError) {
       const message =
         fetchError instanceof Error

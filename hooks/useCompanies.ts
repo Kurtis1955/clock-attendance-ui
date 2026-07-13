@@ -39,17 +39,18 @@ export function useCompanies(): UseCompaniesResult {
       }
 
       const json = await response.json()
-      const content = json?.data?.content ?? json?.data ?? json ?? []
+      console.log("json data>>>",json,"json.companies",json.companies)
+      const content = json?.companies ?? json?.data ?? json ?? []
       const mapped = (Array.isArray(content) ? content : [])
         .map(
           (company: {
-            id: string
-            name: string
+            company: string
+            companycode: string
             description?: string
             enabled?: boolean
           }) => ({
-            id: company.id,
-            name: company.name,
+            id: company.companycode,
+            name: company.company,
             description: company.description,
             enabled: company.enabled ?? true,
           })
