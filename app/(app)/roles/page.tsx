@@ -37,6 +37,8 @@ import {
 import useSearchRoles from "@/hooks/useSearchRoles";
 import _debounce from "lodash/debounce";
 import { Spinner } from "@chakra-ui/react";
+import { useUserPermissions } from "@/hoc/permissions-context";
+import { toast } from "sonner";
 
 type RoleType = "System" | "Custom";
 type RoleStatus = "Active" | "Inactive";
@@ -52,109 +54,36 @@ interface RoleItem {
   color: string;
 }
 
-const roles: RoleItem[] = [
-  {
-    id: "1",
-    name: "Super Administrator",
-    description: "Full system access and configuration",
-    type: "System",
-    users: 2,
-    status: "Active",
-    permissions: getAllNavigationPermissionValues(),
-    color: "bg-purple-50 text-purple-700",
-  },
-  {
-    id: "2",
-    name: "Administrator",
-    description: "Manage users, devices, and system settings",
-    type: "System",
-    users: 5,
-    status: "Active",
-    permissions: ["/dashboard", "/users", "/roles", "/devices", "/reports"],
-    color: "bg-blue-50 text-blue-700",
-  },
-  {
-    id: "3",
-    name: "Manager",
-    description: "Manages a branch or deparment operations and reports",
-    type: "Custom",
-    users: 8,
-    status: "Active",
-    permissions: ["/dashboard", "/users", "/attendance", "/reports"],
-    color: "bg-green-50 text-green-700",
-  },
-  {
-    id: "4",
-    name: "HR Manager",
-    description: "Manage employees and attendance",
-    type: "Custom",
-    users: 6,
-    status: "Active",
-    permissions: ["/users", "/enrollment", "/attendance", "/reports"],
-    color: "bg-amber-50 text-amber-700",
-  },
-  {
-    id: "5",
-    name: "Attendance Officer",
-    description: "View and manage attendance records",
-    type: "Custom",
-    users: 12,
-    status: "Active",
-    permissions: ["/dashboard", "/attendance", "/reports"],
-    color: "bg-violet-50 text-violet-700",
-  },
-  {
-    id: "6",
-    name: "Device Operator",
-    description: "Manage device operations and logs",
-    type: "Custom",
-    users: 4,
-    status: "Active",
-    permissions: ["/devices", "/enrollment"],
-    color: "bg-cyan-50 text-cyan-700",
-  },
-  // {
-  //   id: "7",
-  //   name: "Reports Viewer",
-  //   description: "View reports and analytics",
-  //   type: "Custom",
-  //   users: 7,
-  //   status: "Inactive",
-  //   permissions: ["/dashboard", "/reports"],
-  //   color: "bg-slate-100 text-slate-700",
-  // },
-];
-
-const getStatCards = (currentRoles: RoleItem[]) => [
-  {
-    title: "Total Roles",
-    value: currentRoles.length,
-    caption: "All system roles",
-    icon: RiShieldKeyholeLine,
-    color: "bg-purple-50 text-purple-700",
-  },
-  {
-    title: "Active Roles",
-    value: currentRoles.filter((role) => role.status === "Active").length,
-    caption: "Currently active",
-    icon: RiUserLine,
-    color: "bg-green-50 text-green-700",
-  },
-  {
-    title: "System Roles",
-    value: currentRoles.filter((role) => role.type === "System").length,
-    caption: "Default system roles",
-    icon: RiShieldCheckLine,
-    color: "bg-amber-50 text-amber-700",
-  },
-  {
-    title: "Custom Roles",
-    value: currentRoles.filter((role) => role.type === "Custom").length,
-    caption: "Created by administrators",
-    icon: RiAddLine,
-    color: "bg-red-50 text-red-600",
-  },
-];
+// const getStatCards = (currentRoles: RoleItem[]) => [
+//   {
+//     title: "Total Roles",
+//     value: currentRoles.length,
+//     caption: "All system roles",
+//     icon: RiShieldKeyholeLine,
+//     color: "bg-purple-50 text-purple-700",
+//   },
+//   {
+//     title: "Active Roles",
+//     value: currentRoles.filter((role) => role.status === "Active").length,
+//     caption: "Currently active",
+//     icon: RiUserLine,
+//     color: "bg-green-50 text-green-700",
+//   },
+//   {
+//     title: "System Roles",
+//     value: currentRoles.filter((role) => role.type === "System").length,
+//     caption: "Default system roles",
+//     icon: RiShieldCheckLine,
+//     color: "bg-amber-50 text-amber-700",
+//   },
+//   {
+//     title: "Custom Roles",
+//     value: currentRoles.filter((role) => role.type === "Custom").length,
+//     caption: "Created by administrators",
+//     icon: RiAddLine,
+//     color: "bg-red-50 text-red-600",
+//   },
+// ];
 
 const permissionSummary = [
   {
@@ -201,10 +130,11 @@ const totalPermissions = permissionSummary.reduce(
 );
 
 export default function RolesPage() {
+  const { permissions: userPermissions } = useUserPermissions();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
-  const [storeRetrievedData, setStoreRetrievedData] = useState(roles);
+  const [storeRetrievedData, setStoreRetrievedData] = useState<any>([]);
   const [pageCount, setPageCount] = useState(0);
   const [pageSize, setPageSize] = useState(10);
   const [selectedRole, setSelectedRole] = useState<RoleItem | null>(null);
@@ -219,10 +149,10 @@ export default function RolesPage() {
   const [loading, setLoading] = useState(false);
   const [existingRolePermission, setExistingRolePermission] = useState<any>([]);
 
-  const statCards = useMemo(
-    () => getStatCards(storeRetrievedData),
-    [storeRetrievedData],
-  );
+  // const statCards = useMemo(
+  //   () => getStatCards(storeRetrievedData),
+  //   [storeRetrievedData],
+  // );
   const {
     inputValue,
     handleInputRoleChange,
@@ -230,6 +160,26 @@ export default function RolesPage() {
     error: roleSearchError,
     loading: loadingRole,
   } = useSearchRoles({ pageCount, pageSize, filterData });
+
+  const notifySuccess = (message: string) =>
+    toast.success(message, {
+      position: "top-right",
+      style: {
+        background: "#16a34a",
+        color: "#fff",
+        border: "1px solid #15803d",
+      },
+    });
+
+  const notifyError = (message: string) =>
+    toast.error(message, {
+      position: "top-right",
+      style: {
+        background: "#dc2626",
+        color: "#fff",
+        border: "1px solid #b91c1c",
+      },
+    });
 
   useEffect(() => {
     if (inputValue == "") {
@@ -248,8 +198,28 @@ export default function RolesPage() {
     console.log("loadingRoleDetails>>", loadingRoleDetails);
   }, [roleSearch?.content?.length, inputValue, pageCount, pageSize]);
 
+  const canCreateRole = userPermissions.some((permission) =>
+    ["role_create", "role_manage", "permission_create", "setup_create"].some((hint) =>
+      permission.toLowerCase().includes(hint),
+    ),
+  );
+
+  const canManageRoles = userPermissions.some((permission) =>
+    ["role_manage", "role_create", "permission_manage", "setup_manage"].some((hint) =>
+      permission.toLowerCase().includes(hint),
+    ),
+  );
+
+  const canViewRoles = userPermissions.some((permission) =>
+    ["role_read", "role_manage", "role_create", "permission_read", "setup_read"].some((hint) =>
+      permission.toLowerCase().includes(hint),
+    ),
+  );
+
+  const canToggleRoleStatus = canManageRoles;
+
   const filteredRoles = useMemo(() => {
-    return storeRetrievedData.filter((role) => {
+    return storeRetrievedData.filter((role:any) => {
       const matchesSearch =
         role.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         role.description.toLowerCase().includes(searchQuery.toLowerCase());
@@ -264,6 +234,11 @@ export default function RolesPage() {
 
   const handleRowAction = (actionType: any, rowData: any) => {
     console.log("actionType", actionType, "rowData>>", rowData);
+
+    if (actionType === "view" && !canViewRoles) return
+    if ((actionType === "edit" || actionType === "switch") && !canManageRoles) return
+    if (actionType === "duplicate" && !canCreateRole) return
+
     if (actionType === "edit") {
       setSelectedRole(rowData);
       setRoleModalAction("edit");
@@ -301,6 +276,7 @@ export default function RolesPage() {
       setTotalItems(data.data.totalElements);
     } catch (error) {
       console.error("Error Fecthing users:", error);
+      notifyError("Unable to load roles. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -321,6 +297,7 @@ export default function RolesPage() {
       setExistingRolePermission({ ...result.data, permissions: groupedId });
     } else {
       setExistingRolePermission({});
+      notifyError("Unable to load role permissions.");
     }
   };
 
@@ -338,15 +315,7 @@ export default function RolesPage() {
         body: JSON.stringify(payload),
       });
       if (userReq.ok) {
-        // toast({
-        //   title: "Success!",
-        //   description: "User updated successfully",
-        //   status: "success", // 'info', 'warning', 'error', 'success'
-        //   duration: 3000, // Duration in milliseconds
-        //   isClosable: true, // Allows closing the toast
-        // });
-
-        setStoreRetrievedData((prevData) => {
+        setStoreRetrievedData((prevData:any) => {
           if (!prevData) return prevData;
           return prevData.map((item: any) => {
             console.log("item", item, "equals", item.id === rowData.id);
@@ -355,18 +324,14 @@ export default function RolesPage() {
               : item;
           });
         });
+        notifySuccess("Role status updated successfully.");
       } else {
         console.log("error changing role status");
+        notifyError("Failed to update role status. Please try again.");
       }
     } catch (error) {
       console.error("Error updating role status:", error);
-      // toast({
-      //   title: "Error!",
-      //   description: "Failed to update role status",
-      //   status: "error", // 'info', 'warning', 'error', 'success'
-      //   duration: 3000, // Duration in milliseconds
-      //   isClosable: true, // Allows closing the toast
-      // });
+      notifyError("Failed to update role status. Please try again.");
     }
     setTimeout(() => {
       setLoading(false);
@@ -380,16 +345,16 @@ export default function RolesPage() {
   };
 
   const handleRoleSave = (updatedRole: RoleItem) => {
-    setStoreRetrievedData((currentRoles) => {
+    setStoreRetrievedData((currentRoles:any) => {
       const roleExists = currentRoles.some(
-        (role) => role.id === updatedRole.id,
+        (role:any) => role.id === updatedRole.id,
       );
 
       if (!roleExists) {
         return [updatedRole, ...currentRoles];
       }
 
-      return currentRoles.map((role) =>
+      return currentRoles.map((role:any) =>
         role.id === updatedRole.id ? { ...role, ...updatedRole } : role,
       );
     });
@@ -421,6 +386,7 @@ export default function RolesPage() {
                 <Button
                   variant="outline"
                   className="h-10 border-slate-200 bg-white"
+                  disabled={!canCreateRole}
                 >
                   <RiAddLine className="size-4" />
                   Add Role
@@ -518,7 +484,15 @@ export default function RolesPage() {
             )}
             <div className="w-full flex flex-row gap-4">
               <DataTable
-                columns={roleTableColumns(handleRowAction) as any}
+                columns={roleTableColumns(
+            handleRowAction,
+            {
+              canViewRoles,
+              canManageRoles,
+              canToggleRoleStatus,
+              canCreateRole,
+            },
+          ) as any}
                 data={storeRetrievedData as any}
                 pageCount={pageCount}
                 onPageChange={handlePageChange}
