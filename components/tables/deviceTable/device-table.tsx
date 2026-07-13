@@ -16,7 +16,19 @@ import {
 } from "react-icons/ri";
 import { FaEye } from "react-icons/fa";
 
-export const deviceTableColumns = (rowCallback: any) => [
+export const deviceTableColumns = (
+  rowCallback: any,
+  permissions: {
+    canViewDevices?: boolean
+    canManageDevices?: boolean
+    canToggleDeviceStatus?: boolean
+  } = {},
+) => {
+  const canViewDevices = permissions.canViewDevices ?? true
+  const canManageDevices = permissions.canManageDevices ?? true
+  const canToggleDeviceStatus = permissions.canToggleDeviceStatus ?? true
+
+  return [
   {
     accessorKey: "serialNumber",
     header: "Serial Number",
@@ -120,7 +132,12 @@ export const deviceTableColumns = (rowCallback: any) => [
               type="checkbox"
               className="sr-only peer"
               checked={row.original.enabled}
+              disabled={!canToggleDeviceStatus}
               onChange={(e) => {
+                if (!canToggleDeviceStatus) {
+                  return
+                }
+
                 rowCallback("switch", {
                   ...row.original,
                   statusCheck: e.target.checked,
@@ -140,7 +157,12 @@ export const deviceTableColumns = (rowCallback: any) => [
               type="checkbox"
               checked={row.original.enabled}
               className="sr-only peer"
+              disabled={!canToggleDeviceStatus}
               onChange={(e) => {
+                if (!canToggleDeviceStatus) {
+                  return
+                }
+
                 rowCallback("switch", {
                   ...row.original,
                   statusCheck: e.target.checked,
@@ -171,7 +193,14 @@ export const deviceTableColumns = (rowCallback: any) => [
           <Button
             variant="outline"
             size="icon-sm"
-            onClick={() => rowCallback("view", row.original)}
+            disabled={!canViewDevices}
+            onClick={() => {
+              if (!canViewDevices) {
+                return
+              }
+
+              rowCallback("view", row.original)
+            }}
           >
             <FaEye />
           </Button>
@@ -186,7 +215,14 @@ export const deviceTableColumns = (rowCallback: any) => [
           <Button
             variant="outline"
             size="icon-sm"
-            onClick={() => rowCallback("edit", row.original)}
+            disabled={!canManageDevices}
+            onClick={() => {
+              if (!canManageDevices) {
+                return
+              }
+
+              rowCallback("edit", row.original)
+            }}
           >
             <RiEdit2Fill />
           </Button>
@@ -207,7 +243,14 @@ export const deviceTableColumns = (rowCallback: any) => [
             </DropdownMenuItem> */}
 
             <DropdownMenuItem
-              onClick={() => rowCallback("sync-device", row.original)}
+              disabled={!canManageDevices}
+              onClick={() => {
+                if (!canManageDevices) {
+                  return
+                }
+
+                rowCallback("sync-device", row.original)
+              }}
             >
               Sync Device
             </DropdownMenuItem>
@@ -224,7 +267,14 @@ export const deviceTableColumns = (rowCallback: any) => [
 
             <DropdownMenuItem
               className="text-red-600"
-              onClick={() => rowCallback("delete", row.original)}
+              disabled={!canManageDevices}
+              onClick={() => {
+                if (!canManageDevices) {
+                  return
+                }
+
+                rowCallback("delete", row.original)
+              }}
             >
               Delete Device
             </DropdownMenuItem>
@@ -233,4 +283,5 @@ export const deviceTableColumns = (rowCallback: any) => [
       </div>
     ),
   },
-];
+  ];
+};

@@ -16,7 +16,19 @@ import { RiMore2Fill } from "react-icons/ri";
 import { RiEdit2Fill } from "react-icons/ri";
 import { FaEye } from "react-icons/fa";
 
-export const roleTableColumns = (rowCallback: any) => {
+export const roleTableColumns = (
+  rowCallback: any,
+  permissions: {
+    canViewRoles?: boolean
+    canManageRoles?: boolean
+    canToggleRoleStatus?: boolean
+    canCreateRole?: boolean
+  } = {},
+) => {
+  const canViewRoles = permissions.canViewRoles ?? true
+  const canManageRoles = permissions.canManageRoles ?? true
+  const canToggleRoleStatus = permissions.canToggleRoleStatus ?? true
+
   return [
     {
       accessorKey: "drag",
@@ -137,7 +149,12 @@ export const roleTableColumns = (rowCallback: any) => {
                 type="checkbox"
                 className="sr-only peer"
                 checked={row.original.enabled}
+                disabled={!canToggleRoleStatus}
                 onChange={(e) => {
+                  if (!canToggleRoleStatus) {
+                    return
+                  }
+
                   rowCallback("switch", {
                     ...row.original,
                     statusCheck: e.target.checked,
@@ -157,7 +174,12 @@ export const roleTableColumns = (rowCallback: any) => {
                 type="checkbox"
                 checked={row.original.enabled}
                 className="sr-only peer"
+                disabled={!canToggleRoleStatus}
                 onChange={(e) => {
+                  if (!canToggleRoleStatus) {
+                    return
+                  }
+
                   rowCallback("switch", {
                     ...row.original,
                     statusCheck: e.target.checked,
@@ -184,7 +206,14 @@ export const roleTableColumns = (rowCallback: any) => {
             <Button
               variant="outline"
               size="icon-sm"
-              onClick={() => rowCallback("view", row.original)}
+              disabled={!canViewRoles}
+              onClick={() => {
+                if (!canViewRoles) {
+                  return
+                }
+
+                rowCallback("view", row.original)
+              }}
             >
               <FaEye />
             </Button>
@@ -194,7 +223,14 @@ export const roleTableColumns = (rowCallback: any) => {
             <Button
               variant="outline"
               size="icon-sm"
-              onClick={() => rowCallback("edit", row.original)}
+              disabled={!canManageRoles}
+              onClick={() => {
+                if (!canManageRoles) {
+                  return
+                }
+
+                rowCallback("edit", row.original)
+              }}
             >
               <RiEdit2Fill />
             </Button>

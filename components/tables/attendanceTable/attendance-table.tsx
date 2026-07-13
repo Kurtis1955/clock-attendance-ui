@@ -4,7 +4,17 @@ import { Tooltip } from "@chakra-ui/react";
 import { FaEye } from "react-icons/fa";
 import { RiEdit2Fill } from "react-icons/ri";
 
-export const attendanceTableColumns = (rowCallback: any) => [
+export const attendanceTableColumns = (
+  rowCallback: any,
+  permissions: {
+    canViewAttendance?: boolean;
+    canManageAttendance?: boolean;
+  } = {},
+) => {
+  const canViewAttendance = permissions.canViewAttendance ?? true;
+  const canManageAttendance = permissions.canManageAttendance ?? true;
+
+  return [
   {
     accessorKey: "userName",
     header: "Employee",
@@ -112,7 +122,11 @@ export const attendanceTableColumns = (rowCallback: any) => [
           <Button
             variant="outline"
             size="icon-sm"
-            onClick={() => rowCallback("view", row.original)}
+            disabled={!canViewAttendance || !canManageAttendance}
+            onClick={() => {
+              if (!canViewAttendance) return;
+              rowCallback("view", row.original);
+            }}
           >
             <FaEye />
           </Button>
@@ -120,10 +134,16 @@ export const attendanceTableColumns = (rowCallback: any) => [
 
         <Tooltip label="Edit" hasArrow placement="bottom">
           <Button
-            disabled={row.original.source?.toLowerCase() === "sdk"}
+            disabled={
+              !canManageAttendance ||
+              row.original.source?.toLowerCase() === "sdk"
+            }
             variant="outline"
             size="icon-sm"
-            onClick={() => rowCallback("edit", row.original)}
+            onClick={() => {
+              if (!canManageAttendance) return;
+              rowCallback("edit", row.original);
+            }}
           >
             <RiEdit2Fill />
           </Button>
@@ -131,4 +151,5 @@ export const attendanceTableColumns = (rowCallback: any) => [
       </div>
     ),
   },
-];
+  ];
+};

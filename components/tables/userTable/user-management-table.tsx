@@ -26,7 +26,18 @@ const columnHelper: any = createColumnHelper<any>();
 //to target the data in the backend response
 //this is for active Roles
 
-export const userTableColumns = (rowCallback: any) => {
+export const userTableColumns = (
+  rowCallback: any,
+  permissions: {
+    canViewUsers?: boolean
+    canManageUsers?: boolean
+    canToggleUserStatus?: boolean
+  } = {},
+) => {
+  const canViewUsers = permissions.canViewUsers ?? true
+  const canManageUsers = permissions.canManageUsers ?? true
+  const canToggleUserStatus = permissions.canToggleUserStatus ?? true
+
   return [
     // {
     //   accessorKey: "drag",
@@ -169,7 +180,12 @@ export const userTableColumns = (rowCallback: any) => {
                 type="checkbox"
                 className="sr-only peer"
                 checked={row.original.enabled}
+                disabled={!canToggleUserStatus}
                 onChange={(e) => {
+                  if (!canToggleUserStatus) {
+                    return
+                  }
+
                   rowCallback("switch", {
                     ...row.original,
                     statusCheck: e.target.checked,
@@ -189,7 +205,12 @@ export const userTableColumns = (rowCallback: any) => {
                 type="checkbox"
                 checked={row.original.enabled}
                 className="sr-only peer"
+                disabled={!canToggleUserStatus}
                 onChange={(e) => {
+                  if (!canToggleUserStatus) {
+                    return
+                  }
+
                   rowCallback("switch", {
                     ...row.original,
                     statusCheck: e.target.checked,
@@ -216,12 +237,16 @@ export const userTableColumns = (rowCallback: any) => {
               <Button
                 variant={"outline"}
                 className=" text-black-600"
-                onClick={() =>
-                  // router.push(`/management/users/${row.original.id}`)
+                disabled={!canViewUsers}
+                onClick={() => {
+                  if (!canViewUsers) {
+                    return
+                  }
+
                   rowCallback("view", {
                     ...row.original,
                   })
-                }
+                }}
               >
                 <FaEye />
               </Button>
@@ -230,12 +255,16 @@ export const userTableColumns = (rowCallback: any) => {
               <Button
                 variant={"outline"}
                 className=" text-black-600"
-                onClick={() =>
-                  // router.push(`/management/users/edit/${row.original.id}`)
+                disabled={!canManageUsers}
+                onClick={() => {
+                  if (!canManageUsers) {
+                    return
+                  }
+
                   rowCallback("edit", {
                     ...row.original,
                   })
-                }
+                }}
               >
                 <RiEdit2Fill />
               </Button>
