@@ -24,10 +24,11 @@ import AddEditAttendant from "@/components/modals/addeditattendantModal/AddEditA
 import useSearchAttendance from "@/hooks/useSearchAttendance";
 import _debounce from "lodash/debounce";
 import AsyncSelect from "react-select/async";
-import { Spinner, useToast } from "@chakra-ui/react";
+import { Spinner } from "@chakra-ui/react";
+import { useUserPermissions } from "@/hoc/permissions-context";
+import { toast } from "sonner";
 
 type AttendanceStatus = "Present" | "Absent" | "On Duty" | "Remote";
-
 
 const branchCoverage = [
   { branch: "Head Office", present: 612, expected: 650, color: "bg-blue-600" },
@@ -86,6 +87,7 @@ const searchSelectStyles = {
 };
 
 export default function AttendancePage() {
+  const { permissions: userPermissions } = useUserPermissions();
   const [searchQuery, setSearchQuery] = useState("");
   const [branchFilter, setBranchFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -134,15 +136,31 @@ export default function AttendancePage() {
   const fetchAttendance = async () => {
     try {
       setLoading(true);
+      const payload = {
+        page: 0,
+        size: 10,
+        sortDir: "desc",
+        sortBy: "verifyTime",
+      };
 
-      const res = await fetch(
-        `/api/attendance?paginate=true&pageNo=${pageCount}&pageSize=${pageSize}`,
-      );
+      const res = await fetch(`/api/attendance`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
       if (res.ok) {
         const data = await res.json();
         setAttendanceRecords(data.content);
         setTotalItems(data.totalElements);
+        toast.success("Attendance records retrieved successfully", {
+          position: "top-right",
+          style: {
+            color: "#16a34a", // Green
+            background: "#fff",
+            border: "1px solid #16a34a",
+          },
+        });
       } else {
         throw new Error(`HTTP error! status: ${res.status}`);
       }
@@ -155,6 +173,10 @@ export default function AttendancePage() {
 
   const handleRowAction = (actionType: any, rowData: any) => {
     console.log("actionType", actionType, "rowData>>", rowData);
+
+    if (actionType === "view" && !canViewAttendance) return;
+    if (actionType === "edit" && !canManageAttendance) return;
+
     if (actionType === "edit") {
       setSelectedAttendant(rowData);
       setAttendantModalAction("edit");
@@ -235,6 +257,30 @@ export default function AttendancePage() {
     [],
   );
 
+  const canCreateAttendance = userPermissions.some((permission) =>
+    [
+      "manual_attendance_create",
+      "manual_attendance_manage",
+      "attendance_manage",
+    ].some((hint) => permission.toLowerCase().includes(hint)),
+  );
+
+  const canManageAttendance = userPermissions.some((permission) =>
+    ["manual_attendance_manage", "attendance_manage"].some((hint) =>
+      permission.toLowerCase().includes(hint),
+    ),
+  );
+
+  const canViewAttendance = userPermissions.some((permission) =>
+    [
+      "manual_attendance_read",
+      "manual_attendance_manage",
+      "manual_attendance_create",
+      "attendance_manage",
+      "attendance_read",
+    ].some((hint) => permission.toLowerCase().includes(hint)),
+  );
+
   return (
     <div className="flex flex-col gap-5 px-2 xl:px-8 pt-2">
       <PageHeader
@@ -252,7 +298,10 @@ export default function AttendancePage() {
             <Button
               variant="outline"
               className="h-10 border-slate-200 bg-white"
+              disabled={!canCreateAttendance}
               onClick={() => {
+                if (!canCreateAttendance) return;
+
                 setSelectedAttendant(null);
                 setAttendantModalAction("search");
                 setIsAttendantModalOpen(true);
@@ -316,7 +365,10 @@ export default function AttendancePage() {
           </div>
         )}
         <DataTable
-          columns={attendanceTableColumns(handleRowAction)}
+          columns={attendanceTableColumns(handleRowAction, {
+            canViewAttendance,
+            canManageAttendance,
+          })}
           data={attendanceRecords}
           pageCount={pageCount}
           pageSize={pageSize}
