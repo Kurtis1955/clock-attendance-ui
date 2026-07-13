@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/utils/security";
-import { signIn, signOut } from "next-auth/react";
+import { headers } from "next/headers";
+import { NextResponse } from "next/server";
 
 type Options = {
   data?: unknown;
@@ -8,6 +9,27 @@ type Options = {
   headers?: Record<string, string>;
   next?: { tags: string[] };
   token?: string;
+  callbackUrl?: string;
+};
+
+const redirectToKeycloakLogin = async (callbackUrl?: string) => {
+  const fallbackUrl = callbackUrl || "/dashboard";
+  const referer = (await headers()).get("referer");
+
+  let resolvedCallbackUrl = fallbackUrl;
+
+  if (referer) {
+    try {
+      const refererUrl = new URL(referer);
+      resolvedCallbackUrl = `${refererUrl.pathname}${refererUrl.search}`;
+    } catch {
+      resolvedCallbackUrl = fallbackUrl;
+    }
+  }
+
+  return NextResponse.redirect(
+    `/api/auth/redirect-keycloak?callbackUrl=${encodeURIComponent(resolvedCallbackUrl)}`
+  );
 };
 
 export const queryService = async (endpoint: string, options?: Options) => {
@@ -55,8 +77,7 @@ export const queryService = async (endpoint: string, options?: Options) => {
     });
 
     if (response.status === 401) {
-      await signOut({ redirect: false });
-      signIn("keycloak");
+      return redirectToKeycloakLogin(options?.callbackUrl);
     }
 
     return response;
@@ -111,8 +132,7 @@ export const queryDeviceAttendanceService = async (endpoint: string, options?: O
     });
 
     if (response.status === 401) {
-      await signOut({ redirect: false });
-      signIn("keycloak");
+      return redirectToKeycloakLogin(options?.callbackUrl);
     }
 
     return response;
