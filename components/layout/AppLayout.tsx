@@ -1,9 +1,12 @@
 "use client"
 
 import * as React from "react"
+import { useEffect } from "react"
+import { usePathname, useRouter } from "next/navigation"
 
 import { cn } from "@/lib/utils"
 
+import { hasPermissionAccessToRoute, useUserPermissions } from "@/hoc/permissions-context"
 import { Header } from "./Header"
 import { LayoutProvider, useLayout } from "./layout-context"
 import { MobileSidebar, Sidebar } from "./Sidebar"
@@ -14,6 +17,27 @@ interface AppLayoutProps {
 
 function AppLayoutContent({ children }: AppLayoutProps) {
   const { collapsed } = useLayout()
+  const pathname = usePathname()
+  const router = useRouter()
+  const { permissions, loading } = useUserPermissions()
+
+  useEffect(() => {
+    if (loading || !pathname || pathname === "/dashboard") {
+      return
+    }
+
+    const protectedRoutes = ["/users", "/roles", "/devices", "/enrollment", "/attendance"]
+
+    if (!protectedRoutes.includes(pathname)) {
+      return
+    }
+
+    const hasAccess = hasPermissionAccessToRoute(pathname, permissions)
+
+    if (!hasAccess) {
+      router.replace("/dashboard")
+    }
+  }, [loading, pathname, permissions, router])
 
   return (
     <div className="min-h-screen bg-slate-50">
