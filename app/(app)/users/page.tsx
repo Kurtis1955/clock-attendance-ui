@@ -20,9 +20,13 @@ import { Button } from "@/components/ui/button";
 import AddEditUser from "@/components/modals/addedituserModal/AddEditUser";
 import { RiAddLine, RiDownloadLine } from "react-icons/ri";
 import useSearchUsers from "@/hooks/useSearchUser";
+import { useUserPermissions } from "@/hoc/permissions-context";
+import { toast } from "sonner";
 
 const retrievedData = managedUsers;
 export default function UsersPage() {
+  const { permissions: userPermissions, loading: permissionsLoading } =
+    useUserPermissions();
   const [storeRetrievedData, setStoreRetrievedData] = useState(retrievedData);
   const [modalContentType, setmodalContentType] = useState<any>(null);
   const [isGeneralModalOpen, setIsGeneralModalOpen] = useState<boolean>(false);
@@ -50,7 +54,29 @@ export default function UsersPage() {
     loading: loadingUser,
   } = useSearchUsers({ pageCount, pageSize, filterData });
 
+  const notifySuccess = (message: string) =>
+    toast.success(message, {
+      position: "top-right",
+      style: {
+        background: "#16a34a",
+        color: "#fff",
+        border: "1px solid #15803d",
+      },
+    });
+
+  const notifyError = (message: string) =>
+    toast.error(message, {
+      position: "top-right",
+      style: {
+        background: "#dc2626",
+        color: "#fff",
+        border: "1px solid #b91c1c",
+      },
+    });
+  // const [addUserTrue,setAddUserTrue] = useState(false);
+
   useEffect(() => {
+    console.log("userPermission on user page", userPermissions)
     if (inputValue == "") {
       fetchUsers();
     } else {
@@ -64,6 +90,26 @@ export default function UsersPage() {
       }
     }
   }, [userSearch?.content?.length, inputValue, pageCount, pageSize]);
+
+  const canCreateUser = userPermissions.some((permission) =>
+    ["user_create", "user_manage", "user_read"].some((hint) =>
+      permission.toLowerCase().includes(hint),
+    ),
+  )
+
+  const canManageUsers = userPermissions.some((permission) =>
+    ["user_manage", "user_create"].some((hint) =>
+      permission.toLowerCase().includes(hint),
+    ),
+  )
+
+  const canViewUsers = userPermissions.some((permission) =>
+    ["user_read", "user_manage", "user_create"].some((hint) =>
+      permission.toLowerCase().includes(hint),
+    ),
+  )
+
+  const canToggleUserStatus = canManageUsers
 
   const initiateModal = (modalType: any) => {
     console.log("Setting modal content type to:", modalType);
@@ -122,8 +168,13 @@ export default function UsersPage() {
             : item;
         });
       });
+      notifySuccess("User status updated successfully.");
+    } catch (error) {
+      console.error("Error updating user status:", error);
+      notifyError("Failed to update user status. Please try again.");
+    } finally {
       setLoading(false);
-    } catch (error) {}
+    }
   };
 
   const handleChangeTextSearch = (e: any) => {
@@ -171,12 +222,12 @@ export default function UsersPage() {
           .includes("admin"),
       ).length;
 
-      setActiveUser(active)
-      setInActiveUser(inActive)
-      setAdminUser(admins)
-
+      setActiveUser(active);
+      setInActiveUser(inActive);
+      setAdminUser(admins);
     } catch (error) {
       console.error("Error Fecthing users:", error);
+      notifyError("Unable to load users. Please try again.");
     }
   };
 
@@ -227,6 +278,7 @@ export default function UsersPage() {
     } catch (error) {
       const message = error instanceof Error ? error.message : "Export failed";
       console.error("Error exporting users:", message);
+      notifyError("Unable to export users. Please try again.");
       setLoading(false);
     }
   };
@@ -244,7 +296,14 @@ export default function UsersPage() {
           <div className="w-1/2 flex items-center justify-end gap-2">
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
               <DialogTrigger asChild>
-                <Button variant="outline" className="border-slate-200 bg-white">
+                <Button
+                  variant="outline"
+                  className="border-slate-200 bg-white"
+                  disabled={!canCreateUser}
+                  onClick={() => {
+                    setIsAddDialogOpen(true)
+                  }}
+                >
                   <RiAddLine className="size-4" />
                   Add User
                 </Button>
@@ -358,7 +417,28 @@ export default function UsersPage() {
 
       <div className="mt-6">
         <DataTable
-          columns={userTableColumns(handleRowAction) as any}
+          columns={userTableColumns(
+            (actionType: string, rowData: any) => {
+              if (actionType === "view" && !canViewUsers) {
+                return
+              }
+
+              if (actionType === "edit" && !canManageUsers) {
+                return
+              }
+
+              if (actionType === "switch" && !canToggleUserStatus) {
+                return
+              }
+
+              handleRowAction(actionType, rowData)
+            },
+            {
+              canViewUsers,
+              canManageUsers,
+              canToggleUserStatus,
+            },
+          ) as any}
           data={storeRetrievedData as any}
           pageCount={pageCount}
           onPageChange={handlePageChange}
