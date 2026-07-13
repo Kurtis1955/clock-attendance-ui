@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { ChevronDownIcon } from "lucide-react";
+import { toast } from "sonner";
 export default function AddEditAttendant({
   actionType,
   existingAttendantData,
@@ -107,6 +108,14 @@ export default function AddEditAttendant({
           setUserPhone(data.phone || "");
         })
         .catch((error) => {
+          toast.error("Error fetching user records", {
+            position: "top-right",
+            style: {
+              color: "#dc2626",
+              background: "#fff",
+              border: "1px solid #dc2626",
+            },
+          });
           console.error("Error fetching user data:", error);
         });
     }
@@ -146,6 +155,14 @@ export default function AddEditAttendant({
       console.log("attendanceStatusOptions>>", options);
       setAttendanceStatusOptions(options || []);
     } catch (error) {
+      toast.error("Error fetching attendance statuses", {
+        position: "top-right",
+        style: {
+          color: "#dc2626",
+          background: "#fff",
+          border: "1px solid #dc2626",
+        },
+      });
       console.error("Error fetching attendance status:", error);
     }
   };
@@ -180,13 +197,16 @@ export default function AddEditAttendant({
       console.log("payload>>", payload);
 
       if (actionType === "edit") {
-        const res = await fetch(`/api/attendance/manual-attendance/${attendantId}`, {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
+        const res = await fetch(
+          `/api/attendance/manual-attendance/${attendantId}`,
+          {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payload),
           },
-          body: JSON.stringify(payload),
-        });
+        );
 
         if (!res.ok) {
           throw new Error("Failed to update attendance");
@@ -206,15 +226,39 @@ export default function AddEditAttendant({
         });
 
         if (!res.ok) {
+          toast.error("Failed to manually add attendance", {
+            position: "top-right",
+            style: {
+              color: "#dc2626",
+              background: "#fff",
+              border: "1px solid #dc2626",
+            },
+          });
           throw new Error("Failed to add attendance");
         } else {
           const data = await res.json();
           console.log("data>>", data);
+          toast.success("User attendance recorded successfully", {
+            position: "top-right",
+            style: {
+              color: "#16a34a",
+              background: "#fff",
+              border: "1px solid #16a34a",
+            },
+          });
           callback(data);
           onClose();
         }
       }
     } catch (error) {
+      toast.error("Failed to manually add attendance", {
+        position: "top-right",
+        style: {
+          color: "#dc2626",
+          background: "#fff",
+          border: "1px solid #dc2626",
+        },
+      });
       console.error("Error submitting form:", error);
     }
   };
