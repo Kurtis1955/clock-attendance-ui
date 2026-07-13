@@ -38,10 +38,10 @@ import { DataTable } from "@/components/tables/data-table";
 import { enrollmentTableColumns } from "@/components/tables/enrollmentTable/enrollmentTable";
 import useSearchBiometricUser from "@/hooks/useSearchBiometricUser";
 import _debounce from "lodash/debounce";
-import { totalmem } from "os";
-import { useToast } from "@chakra-ui/react";
 import { Label } from "@/components/ui/label";
 import ReactSelect from "react-select";
+import { toast } from "sonner";
+import { useUserPermissions } from "@/hoc/permissions-context";
 
 const searchSelectStyles = {
   control: (base: any) => ({
@@ -104,7 +104,27 @@ export default function EnrollmentPage() {
   >("assign");
   const [deviceOptions, setDeviceOptions] = useState<any[]>([]);
   const [assignedDevices, setAssignedDevices] = useState<any[]>([]);
-  const toast = useToast();
+
+  const notifySuccess = (message: string) =>
+    toast.success(message, {
+      position: "top-right",
+      style: {
+        color: "#16a34a",
+        background: "#fff",
+        border: "1px solid #16a34a",
+      },
+    });
+
+  const notifyError = (message: string) =>
+    toast.error(message, {
+      position: "top-right",
+      style: {
+        color: "#dc2626",
+        background: "#fff",
+        border: "1px solid #dc2626",
+      },
+    });
+  const { permissions: userPermissions } = useUserPermissions();
 
   const openModal = (action: "add" | "edit" | "view") => {
     setModalAction(action);
@@ -173,13 +193,7 @@ export default function EnrollmentPage() {
       );
 
       if (!res.ok) {
-        toast({
-          title: "Error!",
-          description: "Failed to load users",
-          status: "error", // 'info', 'warning', 'error', 'success'
-          duration: 3000, // Duration in milliseconds
-          isClosable: true, // Allows closing the toast
-        });
+        notifyError("Failed to load users.");
         throw new Error(`HTTP error! status: ${res.status}`);
       }
 
@@ -188,13 +202,7 @@ export default function EnrollmentPage() {
       setTotalItems(data.totalElements);
     } catch (error) {
       console.error("Error Fecthing users:", error);
-      toast({
-        title: "Error!",
-        description: "Failed to load users",
-        status: "error", // 'info', 'warning', 'error', 'success'
-        duration: 3000, // Duration in milliseconds
-        isClosable: true, // Allows closing the toast
-      });
+      notifyError("Failed to load users.");
     } finally {
       setTimeout(() => {
         setLoadingUserDetails(false);
@@ -258,14 +266,6 @@ export default function EnrollmentPage() {
         body: JSON.stringify(payload),
       });
       if (userReq.ok) {
-        // toast({
-        //   title: "Success!",
-        //   description: "User updated successfully",
-        //   status: "success", // 'info', 'warning', 'error', 'success'
-        //   duration: 3000, // Duration in milliseconds
-        //   isClosable: true, // Allows closing the toast
-        // });
-
         setStoreRetrievedData((prevData) => {
           if (!prevData) return prevData;
           return prevData.map((item: any) => {
@@ -277,16 +277,11 @@ export default function EnrollmentPage() {
         });
       } else {
         console.log("error changing role status");
+        notifyError("Failed to update enrollment status.");
       }
     } catch (error) {
       console.error("Error updating role status:", error);
-      // toast({
-      //   title: "Error!",
-      //   description: "Failed to update role status",
-      //   status: "error", // 'info', 'warning', 'error', 'success'
-      //   duration: 3000, // Duration in milliseconds
-      //   isClosable: true, // Allows closing the toast
-      // });
+      notifyError("Failed to update enrollment status.");
     }
     setTimeout(() => {
       setLoading(false);
@@ -320,6 +315,7 @@ export default function EnrollmentPage() {
       setDeviceOptions(options || []);
     } catch (error) {
       console.error("Error fetching devices:", error);
+      notifyError("Failed to load devices.");
     }
   };
 
@@ -354,48 +350,34 @@ export default function EnrollmentPage() {
 
       if (bulkassign.ok) {
         if (batchModalAction === "assign") {
-          toast({
-            title: "Success",
-            description: "Users assigned successfully",
-            status: "success", // 'info', 'warning', 'error', 'success'
-            duration: 3000, // Duration in milliseconds
-            isClosable: true, // Allows closing the toast
-          });
+          notifySuccess("Users assigned successfully.");
         } else if (batchModalAction === "unassign") {
-          toast({
-            title: "Success",
-            description: "Users unassigned successfully",
-            status: "success", // 'info', 'warning', 'error', 'success'
-            duration: 3000, // Duration in milliseconds
-            isClosable: true, // Allows closing the toast
-          });
+          notifySuccess("Users unassigned successfully.");
         }
       } else {
         if (batchModalAction === "assign") {
-          toast({
-            title: "error",
-            description: "Failed to assign Users",
-            status: "success", // 'info', 'warning', 'error', 'success'
-            duration: 3000, // Duration in milliseconds
-            isClosable: true, // Allows closing the toast
-          });
+          notifyError("Failed to assign users.");
         } else {
-          toast({
-            title: "error",
-            description: "Failed to unassign Users",
-            status: "success", // 'info', 'warning', 'error', 'success'
-            duration: 3000, // Duration in milliseconds
-            isClosable: true, // Allows closing the toast
-          });
+          notifyError("Failed to unassign users.");
         }
       }
     } catch (error) {
+      notifyError("Unable to complete the enrollment action.");
     } finally {
       setLoading(false);
-      fetchUsers;
-      setIsBatchModalOpen(false)
+      void fetchUsers();
+      setIsBatchModalOpen(false);
     }
   };
+
+  const canCreateStaff = userPermissions.some((permission) =>
+    ["staff_create"].some((hint) => permission.toLowerCase().includes(hint)),
+  );
+  const canManageStaff = userPermissions.some((permission) =>
+    ["staff_manage"].some((hint) => permission.toLowerCase().includes(hint)),
+  );
+
+  const canToggleUserStatus = canManageStaff;
 
   const debouncedSearch = _debounce(handleInputRoleChange, 500);
   console.log(
@@ -434,6 +416,7 @@ export default function EnrollmentPage() {
           <Button
             variant="outline"
             className="h-10 "
+            disabled={!canCreateStaff}
             onClick={() => openModal("add")}
           >
             <RiAddLine className="size-4" />
@@ -509,7 +492,7 @@ export default function EnrollmentPage() {
               setIsBatchModalOpen(true);
               setBatchModalAction("assign");
             }}
-            disabled={isenableAssign}
+            disabled={isenableAssign || !canManageStaff}
           >
             Bulk Device Assignment
           </Button>
@@ -520,7 +503,7 @@ export default function EnrollmentPage() {
               setIsBatchModalOpen(true);
               setBatchModalAction("unassign");
             }}
-            disabled={isenableAssign}
+            disabled={isenableAssign || !canManageStaff}
           >
             Bulk Device Unassignment
           </Button>
@@ -528,7 +511,25 @@ export default function EnrollmentPage() {
       </div>
       <div className="w-full">
         <DataTable
-          columns={enrollmentTableColumns(handleRowAction) as any}
+          columns={
+            enrollmentTableColumns(
+              (actionType: string, rowData: any) => {
+                if (actionType === "edit" && !canManageStaff) {
+                  return;
+                }
+
+                if (actionType === "switch" && !canToggleUserStatus) {
+                  return;
+                }
+
+                handleRowAction(actionType, rowData);
+              },
+              {
+                canManageStaff,
+                canToggleUserStatus,
+              },
+            ) as any
+          }
           data={storeRetrievedData as any}
           pageCount={pageCount}
           onPageChange={handlePageChange}
