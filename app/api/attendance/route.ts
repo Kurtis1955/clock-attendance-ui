@@ -8,7 +8,7 @@ export async function POST(
 
 	const body = await request.json();
 	const res = await queryDeviceAttendanceService(
-		`/roles`, {
+		`/attendance`, {
 		method: "POST",
 		data: { ...body },
 	}
