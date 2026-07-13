@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import Select from "react-select";
 import { Textarea } from "@chakra-ui/react";
-import { useToast } from "@chakra-ui/react";
+import { toast } from "sonner";
 
 interface AddEditDeviceProps {
   actionType: any;
@@ -55,7 +55,6 @@ export default function AddEditDevice({
   const [deviceTypeName, setDeviceTypeName] = useState("");
 
   const isViewMode = actionType === "view";
-  const toast = useToast();
 
   useEffect(() => {
     if (existingDeviceData) {
@@ -101,15 +100,24 @@ export default function AddEditDevice({
         });
 
         if (!response.ok) {
+          toast.error("Failed to update device", {
+            position: "top-right",
+            style: {
+              color: "#dc2626",
+              background: "#fff",
+              border: "1px solid #dc2626",
+            },
+          });
           throw new Error("Failed to update device.");
         } else {
           const data = await response.json();
-          toast({
-            title: "Success!",
-            description: "Device updated successfully",
-            status: "success", // 'info', 'warning', 'error', 'success'
-            duration: 3000, // Duration in milliseconds
-            isClosable: true, // Allows closing the toast
+          toast.success("Device update successfully", {
+            position: "top-right",
+            style: {
+              color: "#16a34a",
+              background: "#fff",
+              border: "1px solid #16a34a",
+            },
           });
           callback && callback(data);
           onClose && onClose();
@@ -124,15 +132,24 @@ export default function AddEditDevice({
         });
 
         if (!response.ok) {
+          toast.error("Failed to add device", {
+            position: "top-right",
+            style: {
+              color: "#dc2626",
+              background: "#fff",
+              border: "1px solid #dc2626",
+            },
+          });
           throw new Error("Failed to add device.");
         } else {
           const data = await response.json();
-          toast({
-            title: "Success!",
-            description: "Device added successfully",
-            status: "success", // 'info', 'warning', 'error', 'success'
-            duration: 3000, // Duration in milliseconds
-            isClosable: true, // Allows closing the toast
+          toast.success("Device saved successfully", {
+            position: "top-right",
+            style: {
+              color: "#16a34a",
+              background: "#fff",
+              border: "1px solid #16a34a",
+            },
           });
           callback && callback(data);
           onClose && onClose();

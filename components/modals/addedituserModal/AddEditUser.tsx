@@ -16,19 +16,12 @@ import {
   parseApiError,
 } from "@/lib/user-payload";
 import type { DepartmentOption } from "@/hooks/useDepartments";
-
-const deviceOptions = [
-  { value: "zk-speedface-v5l-main", label: "SpeedFace V5L - Main Entrance" },
-  { value: "zk-k40-hr", label: "K40 - HR Office" },
-  { value: "zk-u300-finance", label: "U300 - Finance" },
-  { value: "zk-mb360-warehouse", label: "MB360 - Warehouse" },
-  { value: "zk-speedface-mini-admin", label: "SpeedFace Mini - Admin Block" },
-];
+import { toast } from "sonner";
 
 function resolvePrimaryDepartment(
   companyNames: string[],
   departmentNames: string[],
-  options: DepartmentOption[]
+  options: DepartmentOption[],
 ): DepartmentOption | undefined {
   if (!options.length) {
     return undefined;
@@ -39,7 +32,7 @@ function resolvePrimaryDepartment(
       const match = options.find(
         (option) =>
           option.companyName === companyName &&
-          option.departmentName === departmentName
+          option.departmentName === departmentName,
       );
       if (match) {
         return match;
@@ -49,7 +42,7 @@ function resolvePrimaryDepartment(
 
   if (departmentNames.length) {
     return options.find(
-      (option) => option.departmentName === departmentNames[0]
+      (option) => option.departmentName === departmentNames[0],
     );
   }
 
@@ -69,16 +62,22 @@ const AddEditUser = ({
   onClose,
 }: any) => {
   const { roles: roleOptions, loading: loadingRoles } = useRoles();
-  const { companies, loading: loadingCompanies, error: companiesError } =
-    useCompanies();
+  const {
+    companies,
+    loading: loadingCompanies,
+    error: companiesError,
+  } = useCompanies();
   const [selectedCompany, setSelectedCompany] = useState<CompanyOption | null>(
-    null
+    null,
   );
   const {
     departments: departmentOptions,
     loading: loadingDepartments,
     error: departmentsError,
-  } = useDepartments(selectedCompany?.name ?? null, selectedCompany?.id ?? null);
+  } = useDepartments(
+    selectedCompany?.name ?? null,
+    selectedCompany?.id ?? null,
+  );
 
   const userType = [
     { value: "12Fes226Dkjsdfj45", label: "System User" },
@@ -125,12 +124,12 @@ const AddEditUser = ({
     normalizeStringArray(existingUserData?.departmentName),
   );
   const [submitError, setSubmitError] = useState<string>("");
-  const [resolvedUser, setResolvedUser] = useState<any>(existingUserData ?? null);
+  const [resolvedUser, setResolvedUser] = useState<any>(
+    existingUserData ?? null,
+  );
   const [selectedPermissions, setSelectedPermissions] = useState<string[]>(
     normalizeIdList(existingUserData?.permissions || userPermissions),
   );
-  const [assignedDevices, setAssignedDevices] = useState<any[]>([]);
-  const [assignUserType, setAssignUserType] = useState<any[]>([]);
   const isView = actionType === "view";
 
   function applyUserToForm(user: any) {
@@ -159,7 +158,7 @@ const AddEditUser = ({
     }
 
     const companyNames = normalizeStringArray(
-      resolvedUser?.companyName ?? existingUserData?.companyName
+      resolvedUser?.companyName ?? existingUserData?.companyName,
     );
     const companyId = resolvedUser?.companyId ?? existingUserData?.companyId;
     const matchedCompany =
@@ -200,7 +199,6 @@ const AddEditUser = ({
   }, [existingUserData]);
 
   useEffect(() => {
-
     async function loadUserPermissions() {
       if (!existingUserData?.id || actionType === "add") {
         return;
@@ -208,25 +206,48 @@ const AddEditUser = ({
 
       try {
         const response = await fetch(
-          `/api/users/permissions?username=${existingUserData?.userName}`
+          `/api/users/permissions?username=${existingUserData?.userName}`,
         );
 
         if (!response.ok) {
+          toast.error("Failed to fetch user permissions", {
+            position: "top-right",
+            style: {
+              color: "#dc2626",
+              background: "#fff",
+              border: "1px solid #dc2626",
+            },
+          });
           return;
         }
 
         const json = await response.json();
         const content = json?.data?.content ?? json ?? [];
         const permissionIds = Array.isArray(content)
-          ? content.map((item: { id?: string } | string) =>
-              typeof item === "string" ? item : item.id ?? ""
-            ).filter(Boolean)
+          ? content
+              .map((item: { id?: string } | string) =>
+                typeof item === "string" ? item : (item.id ?? ""),
+              )
+              .filter(Boolean)
           : [];
-        console.log("user permmissions fetched",content,"permissionIds>>",permissionIds)
+        console.log(
+          "user permmissions fetched",
+          content,
+          "permissionIds>>",
+          permissionIds,
+        );
         if (permissionIds.length) {
           setSelectedPermissions(permissionIds);
         }
       } catch (error) {
+        toast.error("Failed to fetch user permissions", {
+          position: "top-right",
+          style: {
+            color: "#dc2626",
+            background: "#fff",
+            border: "1px solid #dc2626",
+          },
+        });
         console.error("Error loading user permissions:", error);
       }
     }
@@ -285,11 +306,11 @@ const AddEditUser = ({
     setloadingSaveUpdateUser(true);
 
     try {
-      const companyNames = [selectedCompany.name];
+      const companyNames = [selectedCompany.id];
       const primaryDepartment = resolvePrimaryDepartment(
         companyNames,
         companyDepartments,
-        departmentOptions
+        departmentOptions,
       );
       const departmentId =
         primaryDepartment?.departmentId ??
@@ -316,7 +337,10 @@ const AddEditUser = ({
         companyDepartments.length > 0 ? companyDepartments : ["Applications"];
 
       const payload = buildUserApiPayload({
-        id: actionType === "edit" ? resolvedUser?.id ?? existingUserData?.id : undefined,
+        id:
+          actionType === "edit"
+            ? (resolvedUser?.id ?? existingUserData?.id)
+            : undefined,
         userName,
         email,
         firstName,
@@ -335,7 +359,8 @@ const AddEditUser = ({
           primaryDepartment?.companyBranchId ??
           resolvedUser?.companyBranchId ??
           existingUserData?.companyBranchId,
-        managerName: manager || resolvedUser?.managerName || existingUserData?.managerName,
+        managerName:
+          manager || resolvedUser?.managerName || existingUserData?.managerName,
         companyBranchName:
           primaryDepartment?.companyBranchName ??
           resolvedUser?.companyBranchName ??
@@ -344,10 +369,9 @@ const AddEditUser = ({
           selectedRoleNames.length > 0
             ? selectedRoleNames
             : normalizeStringArray(
-                resolvedUser?.userRoles ?? existingUserData?.userRoles
+                resolvedUser?.userRoles ?? existingUserData?.userRoles,
               ),
-        exists: false
-          
+        exists: false,
       });
 
       if (actionType === "edit") {
@@ -380,16 +404,41 @@ const AddEditUser = ({
       });
 
       if (!response.ok) {
+        toast.error("Failed to save user", {
+          position: "top-right",
+          style: {
+            color: "#dc2626",
+            background: "#fff",
+            border: "1px solid #dc2626",
+          },
+        });
         throw new Error(await parseApiError(response));
       }
 
       const json = await response.json();
+      toast.success("User save successfully", {
+        position: "top-right",
+        style: {
+          color: "#16a34a",
+          background: "#fff",
+          border: "1px solid #16a34a",
+        },
+      });
       callback?.(json?.data ?? payload);
       onClose?.();
     } catch (error) {
-       const message = error instanceof Error ? error.message : "Failed to save user.";
+      const message =
+        error instanceof Error ? error.message : "Failed to save user.";
       // const message = "Failed to save user details.";
       setSubmitError(message);
+      toast.error("Failed to save user", {
+        position: "top-right",
+        style: {
+          color: "#dc2626",
+          background: "#fff",
+          border: "1px solid #dc2626",
+        },
+      });
       console.error("Error saving user:", error);
     } finally {
       setloadingSaveUpdateUser(false);
@@ -397,10 +446,7 @@ const AddEditUser = ({
   };
 
   return (
-    <form
-      className="w-full space-y-5"
-      onSubmit={handleSubmit}
-    >
+    <form className="w-full space-y-5" onSubmit={handleSubmit}>
       <div className="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2">
         <div className="space-y-1.5">
           <Label>
@@ -607,10 +653,13 @@ const AddEditUser = ({
                 ? { value: selectedCompany.id, label: selectedCompany.name }
                 : null
             }
-            onChange={(selectedOption: { value: string; label: string } | null) => {
+            onChange={(
+              selectedOption: { value: string; label: string } | null,
+            ) => {
               const nextCompany =
-                companies.find((company) => company.id === selectedOption?.value) ??
-                null;
+                companies.find(
+                  (company) => company.id === selectedOption?.value,
+                ) ?? null;
               setSelectedCompany(nextCompany);
               setCompanyDepartments([]);
             }}

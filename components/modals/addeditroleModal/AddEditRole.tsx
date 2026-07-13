@@ -7,12 +7,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PermissionPicker } from "@/components/users/permission-picker";
 import { normalizeIdList } from "@/lib/user-payload";
-import { useToast } from "@chakra-ui/react";
 import {
   validateMinimumTextLength,
   validateRequiredText,
   validateRoleNameText,
 } from "@/lib/helpers";
+import { toast } from "sonner";
 
 type Roleenabled = "Active" | "Inactive";
 type RoleType = "System" | "Custom";
@@ -22,7 +22,7 @@ interface AddEditRoleProps {
   existingRoleData?: any;
   callback?: (role: any) => void;
   onClose?: () => void;
-  existingRolePermission : any
+  existingRolePermission: any;
 }
 
 interface RoleFormErrors {
@@ -54,7 +54,6 @@ export default function AddEditRole({
   const [errors, setErrors] = useState<RoleFormErrors>({});
 
   const isView = actionType === "view";
-  const toast = useToast()
 
   useEffect(() => {
     setName(existingRoleData?.name || "");
@@ -94,6 +93,14 @@ export default function AddEditRole({
           setSelectedPermissions(permissionIds);
         }
       } catch (error) {
+        toast.error("Failed to fetch role permissions ", {
+          position: "top-right",
+          style: {
+            color: "#dc2626",
+            background: "#fff",
+            border: "1px solid #dc2626",
+          },
+        });
         console.error("Error loading role permissions:", error);
       }
     }
@@ -160,8 +167,26 @@ export default function AddEditRole({
         });
         if (res.ok) {
           console.log("role created successfully");
+          toast.success("Role created successfully", {
+            position: "top-right",
+            style: {
+              color: "#16a34a",
+              background: "#fff",
+              border: "1px solid #16a34a",
+            },
+          });
           onClose?.();
-        } else console.log("an error occurred");
+        } else {
+          toast("Failed to create role", {
+            position: "top-right",
+            style: {
+              color: "#dc2626",
+              background: "#fff",
+              border: "1px solid #dc2626",
+            },
+          });
+          console.log("an error occurred");
+        }
       } else {
         const res = await fetch(`/api/roles/${existingRoleData.id}`, {
           method: "PUT",
@@ -180,17 +205,36 @@ export default function AddEditRole({
           );
           if (permission.ok) {
             console.log("role updated successfully");
+            toast.success("Role permissions updated successfully", {
+              position: "top-right",
+              style: {
+                color: "#16a34a",
+                background: "#fff",
+                border: "1px solid #16a34a",
+              },
+            });
             onClose?.();
-          } else console.log("an error occurred");
+          } else {
+            console.log("an error occurred");
+            toast("Failed to create role", {
+              position: "top-right",
+              style: {
+                color: "#dc2626",
+                background: "#fff",
+                border: "1px solid #dc2626",
+              },
+            });
+          }
         }
         if (res.ok) {
           console.log("role updated successfully");
-          toast({
-            title: "Success!",
-            description: "Role updated successfully",
-            status: "success", // 'info', 'warning', 'error', 'success'
-            duration: 3000, // Duration in milliseconds
-            isClosable: true, // Allows closing the toast
+          toast.success("Role updated successfully", {
+            position: "top-right",
+            style: {
+              color: "#16a34a",
+              background: "#fff",
+              border: "1px solid #16a34a",
+            },
           });
         } else console.log("an error occurred");
       }

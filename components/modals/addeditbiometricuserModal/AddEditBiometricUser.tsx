@@ -16,7 +16,42 @@ import {
   parseApiError,
 } from "@/lib/user-payload";
 import type { DepartmentOption } from "@/hooks/useDepartments";
-import { useToast } from "@chakra-ui/react";
+import { toast } from "sonner";
+
+function resolvePrimaryDepartment(
+  companyNames: string[],
+  departmentNames: string[],
+  options: DepartmentOption[],
+): DepartmentOption | undefined {
+  if (!options.length) {
+    return undefined;
+  }
+
+  for (const companyName of companyNames) {
+    for (const departmentName of departmentNames) {
+      const match = options.find(
+        (option) =>
+          option.companyName === companyName &&
+          option.departmentName === departmentName,
+      );
+      if (match) {
+        return match;
+      }
+    }
+  }
+
+  if (departmentNames.length) {
+    return options.find(
+      (option) => option.departmentName === departmentNames[0],
+    );
+  }
+
+  if (companyNames.length) {
+    return options.find((option) => option.companyName === companyNames[0]);
+  }
+
+  return undefined;
+}
 
 const AddEditBiometricUser = ({
   actionType,
@@ -25,6 +60,22 @@ const AddEditBiometricUser = ({
   callback,
   onClose,
 }: any) => {
+  const {
+    companies,
+    loading: loadingCompanies,
+    error: companiesError,
+  } = useCompanies();
+  const [selectedCompany, setSelectedCompany] = useState<CompanyOption | null>(
+    null,
+  );
+  const {
+    departments: departmentOptions,
+    loading: loadingDepartments,
+    error: departmentsError,
+  } = useDepartments(
+    selectedCompany?.name ?? null,
+    selectedCompany?.id ?? null,
+  );
   const [loadingSaveUpdateUser, setloadingSaveUpdateUser] =
     useState<boolean>(false);
   const [firstName, setFirstName] = useState<string>(
@@ -50,13 +101,15 @@ const AddEditBiometricUser = ({
   const [errorEmail, setErrorEmail] = useState<string>("");
   const [errorEcode, setErrorEcode] = useState<string>("");
   const [errorPhone, setErrorPhone] = useState<string>("");
+  const [companyDepartments, setCompanyDepartments] = useState<string[]>(
+    normalizeStringArray(existingUserData?.departmentName),
+  );
   const [submitError, setSubmitError] = useState<string>("");
   const [resolvedUser, setResolvedUser] = useState<any>(
     existingUserData ?? null,
   );
   const [assignedDevices, setAssignedDevices] = useState<any[]>([]);
   const isView = actionType === "view";
-  const toast = useToast();
 
   useEffect(() => {
     setFirstName(existingUserData?.firstName || "");
@@ -80,7 +133,28 @@ const AddEditBiometricUser = ({
         value: device.deviceId,
       })),
     );
+    setCompanyDepartments(
+      normalizeStringArray(existingUserData?.departmentName),
+    );
   }, [existingUserData, userPermissions]);
+
+  useEffect(() => {
+    if (!companies.length) {
+      return;
+    }
+
+    const companyNames = normalizeStringArray(
+      resolvedUser?.companyName ?? existingUserData?.companyName,
+    );
+    const companyId = resolvedUser?.companyId ?? existingUserData?.companyId;
+    const matchedCompany =
+      companies.find((company) => company.id === companyId) ??
+      companies.find((company) => companyNames.includes(company.name));
+
+    if (matchedCompany) {
+      setSelectedCompany(matchedCompany);
+    }
+  }, [companies, resolvedUser, existingUserData]);
 
   const validateFirstLastName = (value: string): boolean => {
     const regex = /^[A-Za-z\s\-']*$/;
@@ -116,6 +190,7 @@ const AddEditBiometricUser = ({
     try {
       const response = await fetch("/api/device");
       if (!response.ok) {
+        toast.error("Failed to fetch devices");
         throw new Error("Failed to fetch devices");
       }
       const data = await response.json();
@@ -125,6 +200,7 @@ const AddEditBiometricUser = ({
       }));
       setDeviceOptions(options || []);
     } catch (error) {
+      toast.error("Failed to fetch devices");
       console.error("Error fetching devices:", error);
     }
   };
@@ -133,13 +209,57 @@ const AddEditBiometricUser = ({
     fetchDeviceOptions();
   }, []);
 
+  const formatGhanaPhoneNumber = (phoneNumber: string) => {
+    const phone = phoneNumber.trim();
+
+    if (phone.startsWith("+233")) {
+      return phone.replace("+", "");
+    }
+
+    if (phone.startsWith("233")) {
+      return phone;
+    }
+
+    if (phone.startsWith("0")) {
+      return `233${phone.slice(1)}`;
+    }
+
+    return phone;
+  };
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setSubmitError("");
 
     setloadingSaveUpdateUser(true);
 
+    const formattedPhone = formatGhanaPhoneNumber(phoneNumber);
     try {
+      const companyNames = selectedCompany
+        ? [selectedCompany.id]
+        : normalizeStringArray(
+            resolvedUser?.companyName ?? existingUserData?.companyName,
+          );
+      const primaryDepartment = resolvePrimaryDepartment(
+        companyNames,
+        companyDepartments,
+        departmentOptions,
+      );
+      const departmentId =
+        primaryDepartment?.departmentId ??
+        resolvedUser?.departmentId ??
+        existingUserData?.departmentId;
+      const companyId =
+        selectedCompany?.id ??
+        primaryDepartment?.companyId ??
+        resolvedUser?.companyId ??
+        existingUserData?.companyId;
+      const departmentNames =
+        companyDepartments.length > 0
+          ? companyDepartments
+          : normalizeStringArray(
+              resolvedUser?.departmentName ?? existingUserData?.departmentName,
+            );
+
       const payload = {
         id:
           actionType === "edit"
@@ -148,11 +268,23 @@ const AddEditBiometricUser = ({
         email,
         firstName,
         lastName,
-        phone: phoneNumber,
+        phone: formattedPhone,
         enabled,
         e_code: ecode,
         devices: assignedDevices.map((device) => device.value),
         userInfos: [],
+        companyName: companyNames,
+        departmentName: departmentNames,
+        companyId,
+        departmentId,
+        companyBranchId:
+          primaryDepartment?.companyBranchId ??
+          resolvedUser?.companyBranchId ??
+          existingUserData?.companyBranchId,
+        companyBranchName:
+          primaryDepartment?.companyBranchName ??
+          resolvedUser?.companyBranchName ??
+          existingUserData?.companyBranchName,
       };
 
       if (actionType === "edit") {
@@ -167,12 +299,18 @@ const AddEditBiometricUser = ({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         });
+        const json = await response.json();
 
         if (!response.ok) {
-          throw new Error(await parseApiError(response));
+          toast.error(`Failed to save user, ${json.message} `, {
+            style: {
+              color: "red",
+              background: "#fff",
+              border: "1px solid red",
+            },
+          });
         }
 
-        const json = await response.json();
         callback?.(json?.data ?? payload);
         onClose?.();
         return;
@@ -185,14 +323,8 @@ const AddEditBiometricUser = ({
       });
 
       if (!response.ok) {
-        toast({
-          title: "Error!",
-          description: "Failed to save user",
-          status: "error", // 'info', 'warning', 'error', 'success'
-          duration: 3000, // Duration in milliseconds
-          isClosable: true, // Allows closing the toast
-        });
-        throw new Error(await parseApiError(response));
+        const data = await response.json();
+        toast.error(`Failed to save user ${data?.data.phone}`);
       }
 
       const json = await response.json();
@@ -203,12 +335,12 @@ const AddEditBiometricUser = ({
         error instanceof Error ? error.message : "Failed to save user.";
       setSubmitError(message);
       console.error("Error saving user:", error);
-      toast({
-        title: "Error!",
-        description: "Failed to save user",
-        status: "error", // 'info', 'warning', 'error', 'success'
-        duration: 3000, // Duration in milliseconds
-        isClosable: true, // Allows closing the toast
+      toast.error("Error saving user", {
+        style: {
+          color: "red",
+          background: "#fff",
+          border: "1px solid red",
+        },
       });
     } finally {
       setloadingSaveUpdateUser(false);
@@ -419,7 +551,36 @@ const AddEditBiometricUser = ({
           />
         </div> */}
 
-        {/* <div className="space-y-2 sm:col-span-2">
+        <div className="space-y-2 ">
+          <Label>
+            Assign Devices <span className="text-red-500">*</span>
+          </Label>
+          <ReactSelect
+            name="devices"
+            classNamePrefix="react-select"
+            placeholder="Select Devices"
+            isMulti
+            value={assignedDevices.map((device) => ({
+              label: device.label,
+              value: device.value,
+            }))}
+            onChange={(selectedOption: any) => {
+              setAssignedDevices(
+                selectedOption
+                  ? [...selectedOption].map((option) => ({
+                      label: option.label,
+                      value: option.value,
+                    }))
+                  : [],
+              );
+            }}
+            isDisabled={actionType === "view"}
+            options={deviceOptions}
+            isClearable
+          />
+        </div>
+
+        <div className="space-y-2 sm:col-span-2">
           <Label>
             Company <span className="text-red-500">*</span>
           </Label>
@@ -495,35 +656,6 @@ const AddEditBiometricUser = ({
           {departmentsError ? (
             <p className="text-xs text-red-500">{departmentsError}</p>
           ) : null}
-        </div> */}
-
-        <div className="space-y-2 ">
-          <Label>
-            Assign Devices <span className="text-red-500">*</span>
-          </Label>
-          <ReactSelect
-            name="devices"
-            classNamePrefix="react-select"
-            placeholder="Select Devices"
-            isMulti
-            value={assignedDevices.map((device) => ({
-              label: device.label,
-              value: device.value,
-            }))}
-            onChange={(selectedOption: any) => {
-              setAssignedDevices(
-                selectedOption
-                  ? [...selectedOption].map((option) => ({
-                      label: option.label,
-                      value: option.value,
-                    }))
-                  : [],
-              );
-            }}
-            isDisabled={actionType === "view"}
-            options={deviceOptions}
-            isClearable
-          />
         </div>
 
         <div className="sm:col-span-2">
