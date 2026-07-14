@@ -5,7 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 export interface DepartmentOption {
   id: string;
   departmentId: string;
-  companyId: string;
+  companycode: string;
   departmentName: string;
   companyName: string;
   companyBranchId?: string;
@@ -21,32 +21,23 @@ interface UseDepartmentsResult {
 
 function mapDepartmentItem(
   item: Record<string, unknown>,
-  company: string,
-  companycode?: string,
+  companyName: string,
+  companycode: string,
 ): DepartmentOption | null {
-  const departmentId = String(
-    item.department ?? item.department ?? item.department ?? "",
-  );
   const departmentName = String(
-    item.department ?? item.department ?? item.department ?? "",
-  );
-  const resolvedCompanyId = String(
-    item.companyId ?? item.company_id ?? companycode ?? "",
-  );
-  const resolvedCompanyName = String(
-    item.companyName ?? item.company ?? company,
+    item.department ?? item.departmentName ?? item.name ?? "",
   );
 
-  if (!departmentId || !departmentName) {
+  if (!departmentName) {
     return null;
   }
 
   return {
-    id: departmentId,
-    departmentId,
-    companyId: resolvedCompanyId,
+    id: departmentName,
+    departmentId: departmentName,
+    companycode,
     departmentName,
-    companyName: resolvedCompanyName,
+    companyName: String(item.companyName ?? item.company ?? companyName),
     companyBranchId: item.companyBranchId
       ? String(item.companyBranchId)
       : undefined,
@@ -58,14 +49,14 @@ function mapDepartmentItem(
 
 export function useDepartments(
   companyName: string | null,
-  companyId?: any | null,
+  companycode: string | null,
 ): UseDepartmentsResult {
   const [departments, setDepartments] = useState<DepartmentOption[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const fetchDepartments = useCallback(async () => {
-    if (!companyName) {
+    if (!companycode) {
       setDepartments([]);
       setLoading(false);
       setError(null);
@@ -75,31 +66,28 @@ export function useDepartments(
     setLoading(true);
     setError(null);
 
-    console.log("companyName",companyName,"companyId",companyId)
-
     try {
       const response = await fetch(
-        `/api/departments?name=${encodeURIComponent(companyId)}`,
+        `/api/departments?code=${encodeURIComponent(companycode)}`,
       );
 
       if (!response.ok) {
         if (response.status === 401) {
-          throw new Error(`Failed to fetch companies ("User not authorised")`);
-        } else {
-          throw new Error(`Failed to fetch companies (${response.status})`);
+          throw new Error("Failed to fetch departments (user not authorised)");
         }
+
+        throw new Error(`Failed to fetch departments (${response.status})`);
       }
 
       const json = await response.json();
       const content = json?.department ?? json?.data ?? json ?? [];
       const mapped = (Array.isArray(content) ? content : [])
-        .map((item: any) =>
-          mapDepartmentItem(item, companyName, companyId ?? undefined),
+        .map((item: Record<string, unknown>) =>
+          mapDepartmentItem(item, companyName ?? "", companycode),
         )
         .filter(Boolean) as DepartmentOption[];
 
       setDepartments(mapped);
-      console.log("mapped>>>",mapped)
     } catch (fetchError) {
       const message =
         fetchError instanceof Error
@@ -110,7 +98,7 @@ export function useDepartments(
     } finally {
       setLoading(false);
     }
-  }, [companyName, companyId]);
+  }, [companyName, companycode]);
 
   useEffect(() => {
     fetchDepartments();
