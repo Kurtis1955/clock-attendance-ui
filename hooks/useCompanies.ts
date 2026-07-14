@@ -4,7 +4,8 @@ import { useCallback, useEffect, useState } from "react"
 
 export interface CompanyOption {
   id: string
-  name: string
+  company: string
+  companycode: string
   description?: string
   enabled: boolean
 }
@@ -31,16 +32,16 @@ export function useCompanies(): UseCompaniesResult {
       )
 
       if (!response.ok) {
-        if(response.status === 401){
+        if (response.status === 401) {
           throw new Error(`Failed to fetch companies ("User not authorised")`)
-        }else{
-          throw new Error(`Failed to fetch companies (${response.status})`)
         }
+
+        throw new Error(`Failed to fetch companies (${response.status})`)
       }
 
       const json = await response.json()
-      console.log("json data>>>",json,"json.companies",json.companies)
-      const content = json?.companies ?? json?.data ?? json ?? []
+      const content =
+        json?.companies ?? json?.data?.content ?? json?.data ?? json ?? []
       const mapped = (Array.isArray(content) ? content : [])
         .map(
           (company: {
@@ -50,12 +51,13 @@ export function useCompanies(): UseCompaniesResult {
             enabled?: boolean
           }) => ({
             id: company.companycode,
-            name: company.company,
+            companycode: company.companycode,
+            company: company.company,
             description: company.description,
             enabled: company.enabled ?? true,
           })
         )
-        .filter((company: CompanyOption) => company.id && company.name)
+        .filter((company) => company.companycode && company.company)
 
       setCompanies(mapped)
     } catch (fetchError) {
@@ -75,4 +77,21 @@ export function useCompanies(): UseCompaniesResult {
   }, [fetchCompanies])
 
   return { companies, loading, error, refetch: fetchCompanies }
+}
+
+function normalizeCompanyName(value: string): string {
+  return value.trim().toLowerCase()
+}
+
+export function findCompanyByName(
+  companyName: string,
+  companies: CompanyOption[]
+): CompanyOption | null {
+  const normalized = normalizeCompanyName(companyName)
+
+  return (
+    companies.find(
+      (company) => normalizeCompanyName(company.company) === normalized
+    ) ?? null
+  )
 }
