@@ -30,23 +30,6 @@ import { toast } from "sonner";
 
 type AttendanceStatus = "Present" | "Absent" | "On Duty" | "Remote";
 
-const branchCoverage = [
-  { branch: "Head Office", present: 612, expected: 650, color: "bg-blue-600" },
-  {
-    branch: "Kumasi Branch",
-    present: 318,
-    expected: 340,
-    color: "bg-green-500",
-  },
-  { branch: "Tema Branch", present: 274, expected: 302, color: "bg-amber-500" },
-  {
-    branch: "Takoradi Branch",
-    present: 221,
-    expected: 248,
-    color: "bg-cyan-500",
-  },
-];
-
 const searchSelectStyles = {
   control: (base: any) => ({
     ...base,
@@ -89,8 +72,6 @@ const searchSelectStyles = {
 export default function AttendancePage() {
   const { permissions: userPermissions } = useUserPermissions();
   const [searchQuery, setSearchQuery] = useState("");
-  const [branchFilter, setBranchFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
   const [attendanceRecords, setAttendanceRecords] = useState<any[]>([]);
   const [pageSize, setPageSize] = useState(10);
   const [totalItems, setTotalItems] = useState(0);
@@ -153,19 +134,19 @@ export default function AttendancePage() {
         const data = await res.json();
         setAttendanceRecords(data.content);
         setTotalItems(data.totalElements);
-        toast.success("Attendance records retrieved successfully", {
-          position: "top-right",
-          style: {
-            color: "#16a34a", // Green
-            background: "#fff",
-            border: "1px solid #16a34a",
-          },
-        });
       } else {
         throw new Error(`HTTP error! status: ${res.status}`);
       }
     } catch (error) {
       console.error("Error Fecthing Attendance:", error);
+      toast.error("Failed fetching Attendance", {
+        position: "top-right",
+        style: {
+          color: "#dc2626",
+          background: "#fff",
+          border: "1px solid #dc2626",
+        },
+      });
     } finally {
       setLoading(false);
     }
