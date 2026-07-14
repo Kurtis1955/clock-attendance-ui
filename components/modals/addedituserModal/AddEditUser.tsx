@@ -4,9 +4,8 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { PermissionPicker } from "@/components/users/permission-picker";
-import { useCompanies } from "@/hooks/useCompanies";
+import { useCompanies, findCompanyByName } from "@/hooks/useCompanies";
 import type { CompanyOption } from "@/hooks/useCompanies";
-import { useDepartments } from "@/hooks/useDepartments";
 import { useRoles } from "@/hooks/useRoles";
 import {
   buildUserApiPayload,
@@ -17,6 +16,15 @@ import {
 } from "@/lib/user-payload";
 import type { DepartmentOption } from "@/hooks/useDepartments";
 import { toast } from "sonner";
+
+interface CompanyDepartmentRow {
+  id: string;
+  selectedCompany: any | null;
+  departmentNames: string[];
+  departmentOptions: DepartmentOption[];
+  loadingDepartments: boolean;
+  departmentsError: string | null;
+}
 
 function resolvePrimaryDepartment(
   companyNames: string[],
@@ -53,6 +61,52 @@ function resolvePrimaryDepartment(
   return undefined;
 }
 
+function buildRowsFromUserDepartments(
+  userDepartments: Array<{
+    companyName?: string;
+    departmentName?: string;
+  }>,
+  companies: CompanyOption[],
+): CompanyDepartmentRow[] {
+  const grouped = new Map<string, string[]>();
+
+  for (const entry of userDepartments) {
+    const companyName = entry.companyName?.trim();
+    const departmentName = entry.departmentName?.trim();
+
+    if (!companyName || !departmentName) {
+      continue;
+    }
+
+    const existing = grouped.get(companyName) ?? [];
+    grouped.set(companyName, [...existing, departmentName]);
+  }
+
+  if (!grouped.size) {
+    return [];
+  }
+
+  return Array.from(grouped.entries()).map(([companyName, departmentNames]) => {
+    const matchedCompany = findCompanyByName(companyName, companies);
+
+    return createCompanyDepartmentRow(matchedCompany, departmentNames);
+  });
+}
+
+function createCompanyDepartmentRow(
+  selectedCompany: CompanyOption | null = null,
+  departmentNames: string[] = [],
+): CompanyDepartmentRow {
+  return {
+    id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    selectedCompany,
+    departmentNames,
+    departmentOptions: [],
+    loadingDepartments: false,
+    departmentsError: null,
+  };
+}
+
 const AddEditUser = ({
   actionType,
   existingUserData,
@@ -67,17 +121,9 @@ const AddEditUser = ({
     loading: loadingCompanies,
     error: companiesError,
   } = useCompanies();
-  const [selectedCompany, setSelectedCompany] = useState<CompanyOption | null>(
-    null,
-  );
-  const {
-    departments: departmentOptions,
-    loading: loadingDepartments,
-    error: departmentsError,
-  } = useDepartments(
-    selectedCompany?.name ?? null,
-    selectedCompany?.id ?? null,
-  );
+  const [companyDepartmentRows, setCompanyDepartmentRows] = useState<
+    CompanyDepartmentRow[]
+  >([createCompanyDepartmentRow()]);
 
   const userType = [
     { value: "12Fes226Dkjsdfj45", label: "System User" },
@@ -120,9 +166,6 @@ const AddEditUser = ({
   const [errorEmail, setErrorEmail] = useState<string>("");
   const [errorEcode, setErrorEcode] = useState<string>("");
   const [errorPhone, setErrorPhone] = useState<string>("");
-  const [companyDepartments, setCompanyDepartments] = useState<string[]>(
-    normalizeStringArray(existingUserData?.departmentName),
-  );
   const [submitError, setSubmitError] = useState<string>("");
   const [resolvedUser, setResolvedUser] = useState<any>(
     existingUserData ?? null,
@@ -144,31 +187,70 @@ const AddEditUser = ({
     setEmail(user?.email || "");
     setEcode(user?.eCode || user?.ecode || "");
     setPhoneNumber(user?.phoneNumber || "");
-    setSelectedRoleIds(normalizeRoleIds(user?.userRoles));
+    setSelectedRoleIds(
+      normalizeRoleIds(
+        user?.roles ?? user?.userRoles ?? user?.roleNames ?? user?.roleName,
+      ),
+    );
     setManager(user?.managerName || user?.manager || "");
     setEnabled(Boolean(user?.enabled));
     setisLDAP(user?.isLDAP || false);
-    setCompanyDepartments(normalizeStringArray(user?.departmentName));
     setSelectedPermissions(normalizeIdList(user?.permissions));
   }
 
   useEffect(() => {
-    if (!companies.length) {
+    if (!companies.length || actionType === "add") {
       return;
     }
 
-    const companyNames = normalizeStringArray(
+    const userDepartments = Array.isArray(
+      resolvedUser?.userDepartments ?? existingUserData?.userDepartments,
+    )
+      ? (resolvedUser?.userDepartments ?? existingUserData?.userDepartments)
+      : [];
+
+    const rowsFromUserDepartments = buildRowsFromUserDepartments(
+      userDepartments,
+      companies,
+    );
+
+    if (rowsFromUserDepartments.length) {
+      setCompanyDepartmentRows(rowsFromUserDepartments);
+      return;
+    }
+
+    const userCompanyNames = normalizeStringArray(
       resolvedUser?.companyName ?? existingUserData?.companyName,
     );
-    const companyId = resolvedUser?.companyId ?? existingUserData?.companyId;
-    const matchedCompany =
-      companies.find((company) => company.id === companyId) ??
-      companies.find((company) => companyNames.includes(company.name));
+    const userDepartmentNames = normalizeStringArray(
+      resolvedUser?.departmentName ?? existingUserData?.departmentName,
+    );
 
-    if (matchedCompany) {
-      setSelectedCompany(matchedCompany);
+    if (!userCompanyNames.length) {
+      setCompanyDepartmentRows([createCompanyDepartmentRow()]);
+      return;
     }
-  }, [companies, resolvedUser, existingUserData]);
+
+    const nextRows = userCompanyNames.map((companyName, index) => {
+      const matchedCompany = findCompanyByName(companyName, companies);
+
+      return createCompanyDepartmentRow(
+        matchedCompany,
+        index === 0 ? userDepartmentNames : [],
+      );
+    });
+
+    setCompanyDepartmentRows(nextRows);
+  }, [
+    companies,
+    resolvedUser?.companyName,
+    resolvedUser?.departmentName,
+    resolvedUser?.userDepartments,
+    existingUserData?.companyName,
+    existingUserData?.departmentName,
+    existingUserData?.userDepartments,
+    actionType,
+  ]);
 
   useEffect(() => {
     async function loadUserDetails() {
@@ -279,6 +361,106 @@ const AddEditUser = ({
     setSelectedPermissions(permissionIds);
   };
 
+  const updateCompanyDepartmentRow = (
+    rowId: string,
+    updates: Partial<CompanyDepartmentRow>,
+  ) => {
+    setCompanyDepartmentRows((prevRows) =>
+      prevRows.map((row) => (row.id === rowId ? { ...row, ...updates } : row)),
+    );
+  };
+
+  const addCompanyDepartmentRow = () => {
+    setCompanyDepartmentRows((prevRows) => [...prevRows, createCompanyDepartmentRow()]);
+  };
+
+  const removeCompanyDepartmentRow = (rowId: string) => {
+    setCompanyDepartmentRows((prevRows) =>
+      prevRows.length > 1 ? prevRows.filter((row) => row.id !== rowId) : prevRows,
+    );
+  };
+
+  const fetchDepartmentsForRow = async (
+    rowId: string,
+    company: CompanyOption | null,
+  ) => {
+    if (!company?.companycode) {
+      updateCompanyDepartmentRow(rowId, {
+        departmentOptions: [],
+        departmentNames: [],
+        loadingDepartments: false,
+        departmentsError: null,
+      });
+      return;
+    }
+
+    updateCompanyDepartmentRow(rowId, {
+      loadingDepartments: true,
+      departmentsError: null,
+    });
+
+    try {
+      const response = await fetch(
+        `/api/departments?code=${encodeURIComponent(company.companycode)}`,
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          response.status === 401
+            ? "Failed to fetch departments (user not authorised)"
+            : `Failed to fetch departments (${response.status})`,
+        );
+      }
+
+      const json = await response.json();
+      const content = json?.department ?? json?.data ?? json ?? [];
+      const mapped = (Array.isArray(content) ? content : [])
+        .map((item: Record<string, unknown>) => {
+          const departmentName = String(
+            item.department ?? item.departmentName ?? item.name ?? "",
+          );
+
+          if (!departmentName) {
+            return null;
+          }
+
+          return {
+            id: departmentName,
+            departmentId: departmentName,
+            companycode: company.companycode,
+            departmentName,
+            companyName: company.company,
+          } as DepartmentOption;
+        })
+        .filter(Boolean) as DepartmentOption[];
+
+      updateCompanyDepartmentRow(rowId, {
+        departmentOptions: mapped,
+        loadingDepartments: false,
+        departmentsError: null,
+      });
+    } catch (error) {
+      updateCompanyDepartmentRow(rowId, {
+        departmentOptions: [],
+        loadingDepartments: false,
+        departmentsError:
+          error instanceof Error ? error.message : "Failed to load departments",
+      });
+    }
+  };
+
+  useEffect(() => {
+    companyDepartmentRows.forEach((row) => {
+      if (
+        row.selectedCompany &&
+        row.departmentOptions.length === 0 &&
+        !row.loadingDepartments
+      ) {
+        void fetchDepartmentsForRow(row.id, row.selectedCompany);
+      }
+    });
+  }, [companyDepartmentRows]);
+
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setSubmitError("");
@@ -293,8 +475,21 @@ const AddEditUser = ({
       return;
     }
 
-    if (!selectedCompany) {
-      setSubmitError("Select a company.");
+    const selectedCompanyRows = companyDepartmentRows.filter(
+      (row) => row.selectedCompany,
+    );
+
+    if (!selectedCompanyRows.length) {
+      setSubmitError("Select at least one company.");
+      return;
+    }
+
+    const hasMissingDepartments = selectedCompanyRows.some(
+      (row) => !row.departmentNames.length,
+    );
+
+    if (hasMissingDepartments) {
+      setSubmitError("Select at least one department for each company.");
       return;
     }
 
@@ -306,35 +501,35 @@ const AddEditUser = ({
     setloadingSaveUpdateUser(true);
 
     try {
-      const companyNames = [selectedCompany.id];
+      const companyDepartmentMappings = selectedCompanyRows.map((row) => ({
+        companyName: row.selectedCompany?.company ?? "",
+        departmentNames: row.departmentNames,
+      }));
+      const companyNames = companyDepartmentMappings.map(
+        (mapping) => mapping.companyName,
+      );
+      const primaryCompanyRow = selectedCompanyRows[0];
       const primaryDepartment = resolvePrimaryDepartment(
         companyNames,
-        companyDepartments,
-        departmentOptions,
+        primaryCompanyRow?.departmentNames ?? [],
+        primaryCompanyRow?.departmentOptions ?? [],
       );
       const departmentId =
         primaryDepartment?.departmentId ??
         resolvedUser?.departmentId ??
         existingUserData?.departmentId;
       const companyId =
-        selectedCompany.id ??
-        primaryDepartment?.companyId ??
+        primaryCompanyRow?.selectedCompany?.companycode ??
         resolvedUser?.companyId ??
         existingUserData?.companyId;
-
-      // if (actionType === "add" && (!departmentId || !companyId)) {
-      //   setSubmitError(
-      //     "Could not resolve company and department IDs. Select matching company and department values."
-      //   );
-      //   return;
-      // }
 
       const selectedRoleNames = roleOptions
         .filter((role) => selectedRoleIds.includes(role.id))
         .map((role) => role.name);
 
-      const departmentNames =
-        companyDepartments.length > 0 ? companyDepartments : ["Applications"];
+      const departmentNames = companyDepartmentMappings.flatMap(
+        (mapping) => mapping.departmentNames,
+      );
 
       const payload = buildUserApiPayload({
         id:
@@ -350,6 +545,7 @@ const AddEditUser = ({
         permissionIds: selectedPermissions,
         companyNames,
         departmentNames,
+        companyDepartmentMappings,
         enabled,
         ecode,
         departmentId,
@@ -638,81 +834,129 @@ const AddEditUser = ({
           />
         </div>
 
-        <div className="space-y-2 sm:col-span-2">
-          <Label>
-            Company <span className="text-red-500">*</span>
-          </Label>
-          <ReactSelect
-            name="company"
-            classNamePrefix="react-select"
-            placeholder={
-              loadingCompanies ? "Loading companies..." : "Select Company"
-            }
-            value={
-              selectedCompany
-                ? { value: selectedCompany.id, label: selectedCompany.name }
-                : null
-            }
-            onChange={(
-              selectedOption: { value: string; label: string } | null,
-            ) => {
-              const nextCompany =
-                companies.find(
-                  (company) => company.id === selectedOption?.value,
-                ) ?? null;
-              setSelectedCompany(nextCompany);
-              setCompanyDepartments([]);
-            }}
-            isDisabled={actionType === "view" || loadingCompanies}
-            options={companies.map((company) => ({
-              value: company.id,
-              label: company.name,
-            }))}
-            isClearable
-          />
+        <div className="space-y-3 sm:col-span-2">
+          <div className="flex items-center justify-between">
+            <Label>
+              Company & Department <span className="text-red-500">*</span>
+            </Label>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={addCompanyDepartmentRow}
+              disabled={actionType === "view"}
+            >
+              Add another
+            </Button>
+          </div>
+
+          {companyDepartmentRows.map((row, index) => (
+            <div
+              key={row.id}
+              className="rounded-lg border border-border/60 bg-background/70 p-3"
+            >
+              <div className="mb-3 flex items-center justify-between">
+                <p className="text-sm font-medium">Company {index + 1}</p>
+                {companyDepartmentRows.length > 1 && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => removeCompanyDepartmentRow(row.id)}
+                    disabled={actionType === "view"}
+                  >
+                    Remove
+                  </Button>
+                )}
+              </div>
+
+              <div className="grid gap-3 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label>Company</Label>
+                  <ReactSelect
+                    name={`company-${row.id}`}
+                    classNamePrefix="react-select"
+                    placeholder={
+                      loadingCompanies ? "Loading companies..." : "Select Company"
+                    }
+                    value={
+                      row.selectedCompany
+                        ? {
+                            value: row.selectedCompany.companycode,
+                            label: row.selectedCompany.company,
+                          }
+                        : null
+                    }
+                    onChange={(
+                      selectedOption: { value: string; label: string } | null,
+                    ) => {
+                      const nextCompany =
+                        companies.find(
+                          (company) =>
+                            company.companycode === selectedOption?.value,
+                        ) ?? null;
+
+                      updateCompanyDepartmentRow(row.id, {
+                        selectedCompany: nextCompany,
+                        departmentNames: [],
+                      });
+
+                      void fetchDepartmentsForRow(row.id, nextCompany);
+                    }}
+                    isDisabled={actionType === "view" || loadingCompanies}
+                    options={companies.map((company) => ({
+                      value: company.companycode,
+                      label: company.company,
+                    }))}
+                    isClearable
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Department</Label>
+                  <ReactSelect
+                    name={`department-${row.id}`}
+                    classNamePrefix="react-select"
+                    placeholder={
+                      !row.selectedCompany
+                        ? "Select a company first"
+                        : row.loadingDepartments
+                          ? "Loading departments..."
+                          : "Select Department"
+                    }
+                    isMulti
+                    value={row.departmentNames.map((dept) => ({
+                      label: dept,
+                      value: dept,
+                    }))}
+                    onChange={(selectedOption: any) => {
+                      updateCompanyDepartmentRow(row.id, {
+                        departmentNames: selectedOption
+                          ? [...selectedOption].map((option: any) => option.value)
+                          : [],
+                      });
+                    }}
+                    isDisabled={
+                      actionType === "view" || !row.selectedCompany || row.loadingDepartments
+                    }
+                    options={
+                      row.departmentOptions.map((dept) => ({
+                        value: dept.departmentName,
+                        label: dept.departmentName,
+                      })) || []
+                    }
+                    isClearable
+                  />
+                  {row.departmentsError ? (
+                    <p className="text-xs text-red-500">{row.departmentsError}</p>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+          ))}
+
           {companiesError ? (
             <p className="text-xs text-red-500">{companiesError}</p>
-          ) : null}
-        </div>
-        <div className="space-y-2 sm:col-span-2">
-          <Label>
-            Department <span className="text-red-500">*</span>
-          </Label>
-          <ReactSelect
-            name="department"
-            classNamePrefix="react-select"
-            placeholder={
-              !selectedCompany
-                ? "Select a company first"
-                : loadingDepartments
-                  ? "Loading departments..."
-                  : "Select Department"
-            }
-            isMulti
-            value={companyDepartments.map((dept) => ({
-              label: dept,
-              value: dept,
-            }))}
-            onChange={(selectedOption: any) => {
-              setCompanyDepartments(
-                selectedOption
-                  ? [...selectedOption].map((option) => option.value)
-                  : [],
-              );
-            }}
-            isDisabled={
-              actionType === "view" || !selectedCompany || loadingDepartments
-            }
-            options={
-              departmentOptions.map((dept) => ({
-                value: dept.departmentName,
-                label: dept.departmentName,
-              })) || []
-            }
-            isClearable
-          />
-          {departmentsError ? (
-            <p className="text-xs text-red-500">{departmentsError}</p>
           ) : null}
         </div>
 
