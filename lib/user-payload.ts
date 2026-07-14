@@ -4,6 +4,11 @@ export interface UserDepartmentPayload {
   departmentName: string
 }
 
+export interface CompanyDepartmentEntry {
+  companyName: string
+  departmentNames: string[]
+}
+
 export interface UserApiPayload {
   id?: string
   userName: string
@@ -42,6 +47,7 @@ export interface BuildUserPayloadInput {
   permissionIds: string[]
   companyNames: string[]
   departmentNames: string[]
+  companyDepartmentMappings?: CompanyDepartmentEntry[]
   enabled: boolean
   ecode: string
   departmentId?: string
@@ -58,17 +64,16 @@ export interface BuildUserPayloadInput {
 
 export function buildUserDepartments(
   userName: string,
-  companyNames: string[],
-  departmentNames: string[]
+  companyDepartmentMappings: CompanyDepartmentEntry[]
 ): UserDepartmentPayload[] {
-  if (!userName || !companyNames.length || !departmentNames.length) {
+  if (!userName || !companyDepartmentMappings.length) {
     return []
   }
 
-  return companyNames.flatMap((companyName) =>
-    departmentNames.map((departmentName) => ({
+  return companyDepartmentMappings.flatMap((mapping) =>
+    mapping.departmentNames.map((departmentName) => ({
       username: userName,
-      companyName,
+      companyName: mapping.companyName,
       departmentName,
     }))
   )
@@ -112,8 +117,20 @@ export function normalizeStringArray(value: unknown): string[] {
 }
 
 export function buildUserApiPayload(input: BuildUserPayloadInput): UserApiPayload {
-  const companyNames = normalizeStringArray(input.companyNames)
-  const departmentNames = normalizeStringArray(input.departmentNames)
+  const companyDepartmentMappings = (input.companyDepartmentMappings ?? [])
+    .filter((mapping) => mapping?.companyName)
+    .map((mapping) => ({
+      companyName: String(mapping.companyName),
+      departmentNames: normalizeStringArray(mapping.departmentNames),
+    }))
+    .filter((mapping) => mapping.departmentNames.length)
+
+  const companyNames = companyDepartmentMappings.length
+    ? companyDepartmentMappings.map((mapping) => mapping.companyName)
+    : normalizeStringArray(input.companyNames)
+  const departmentNames = companyDepartmentMappings.length
+    ? companyDepartmentMappings.flatMap((mapping) => mapping.departmentNames)
+    : normalizeStringArray(input.departmentNames)
 
   const payload: UserApiPayload = {
     userName: input.userName.trim(),
@@ -127,8 +144,12 @@ export function buildUserApiPayload(input: BuildUserPayloadInput): UserApiPayloa
     companyName: companyNames,
     userDepartments: buildUserDepartments(
       input.userName.trim(),
-      companyNames,
-      departmentNames
+      companyDepartmentMappings.length
+        ? companyDepartmentMappings
+        : companyNames.map((companyName) => ({
+            companyName,
+            departmentNames,
+          }))
     ),
     enabled: input.enabled,
     ecode: input.ecode.trim(),
