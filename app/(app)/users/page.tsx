@@ -23,11 +23,11 @@ import useSearchUsers from "@/hooks/useSearchUser";
 import { useUserPermissions } from "@/hoc/permissions-context";
 import { toast } from "sonner";
 
-const retrievedData = managedUsers;
+
 export default function UsersPage() {
   const { permissions: userPermissions, loading: permissionsLoading } =
     useUserPermissions();
-  const [storeRetrievedData, setStoreRetrievedData] = useState(retrievedData);
+  const [storeRetrievedData, setStoreRetrievedData] = useState<any>([]);
   const [modalContentType, setmodalContentType] = useState<any>(null);
   const [isGeneralModalOpen, setIsGeneralModalOpen] = useState<boolean>(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
@@ -159,7 +159,7 @@ export default function UsersPage() {
           method: "PUT",
         },
       );
-      setStoreRetrievedData((prevData) => {
+      setStoreRetrievedData((prevData:any) => {
         if (!prevData) return prevData;
         return prevData.map((item: any) => {
           console.log("item", item, "equals", item.id === rowData.id);
