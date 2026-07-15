@@ -104,6 +104,10 @@ export default function EnrollmentPage() {
   >("assign");
   const [deviceOptions, setDeviceOptions] = useState<any[]>([]);
   const [assignedDevices, setAssignedDevices] = useState<any[]>([]);
+  const [sortBy, setSortBy] = useState<any>("firstName");
+  const [sortDir, setSortDir] = useState<any>("desc");
+  const [loadingStats, setloadingStats] = useState(true);
+  const [cardsValue, setCardsValue] = useState<any>([]);
 
   const notifySuccess = (message: string) =>
     toast.success(message, {
@@ -131,35 +135,6 @@ export default function EnrollmentPage() {
     setSelectedUser([]);
     setIsModalOpen(true);
   };
-  const statCards = [
-    {
-      title: "Total Device Users",
-      value: 2,
-      caption: "All users in the system",
-      trend: "8.4%",
-      trendDirection: "up",
-      icon: RiTeamLine,
-      color: "bg-blue-50 text-blue-700",
-    },
-    {
-      title: "Assigned Users",
-      value: 4,
-      caption: "Assigned to at least one device",
-      trend: "6.7%",
-      trendDirection: "up",
-      icon: RiShieldUserLine,
-      color: "bg-emerald-50 text-emerald-700",
-    },
-    {
-      title: "Unassigned Users",
-      value: 3,
-      caption: "Not assigned to any device",
-      trend: "3.2%",
-      trendDirection: "down",
-      icon: RiUserUnfollowLine,
-      color: "bg-orange-50 text-orange-700",
-    },
-  ];
 
   const {
     inputValue,
@@ -183,13 +158,21 @@ export default function EnrollmentPage() {
         setLoadingUserDetails(!loadingRoleDetails);
       }
     }
-  }, [deviceSearch?.content?.length, inputValue, pageCount, pageSize]);
+    getDashboardCards();
+  }, [
+    deviceSearch?.content?.length,
+    inputValue,
+    pageCount,
+    pageSize,
+    sortBy,
+    sortDir,
+  ]);
 
-  const fetchUsers = async () => {
+  const fetchUsers = async (rowData?: any, actionType?: any) => {
     try {
       setLoadingUserDetails(true);
       const res = await fetch(
-        `/api/enrollment?paginate=true&page=${pageCount}&size=${pageSize}`,
+        `/api/enrollment?paginate=true&pageNo=${pageCount}&pageSize=${pageSize}&sortBy=${sortBy}&sortDir=${sortDir}`,
       );
 
       if (!res.ok) {
@@ -209,6 +192,74 @@ export default function EnrollmentPage() {
       }, 500);
     }
   };
+
+  const getDashboardCards = async () => {
+    setloadingStats(true);
+    try {
+      // let query = `startDate=${startDate}&endDate=${endDate}`;
+
+      // console.log("query to fetch dashboard data", query);
+      // return;
+
+      const res = await fetch(`/api/dashboard`);
+      if (res.ok) {
+        const result = await res.json();
+        console.log("result>>Cards", result);
+        setCardsValue(result);
+        setloadingStats(false);
+      } else {
+        toast.error("Error fetching dashboard statistics", {
+          position: "top-right",
+          style: {
+            background: "#dc2626",
+            color: "#fff",
+            border: "1px solid #b91c1c",
+          },
+        });
+      }
+    } catch (error) {
+      setloadingStats(false);
+      toast.error("Error fetching dashboard statistics", {
+        position: "top-right",
+        style: {
+          background: "#dc2626",
+          color: "#fff",
+          border: "1px solid #b91c1c",
+        },
+      });
+      setloadingStats(false);
+    }
+  };
+
+  const statCards = [
+    {
+      title: "Total Device Users",
+      value: cardsValue.userStats?.totalUsers || 0,
+      caption: "All users in the system",
+      trend: "8.4%",
+      trendDirection: "up",
+      icon: RiTeamLine,
+      color: "bg-blue-50 text-blue-700",
+    },
+    {
+      title: "Assigned Users",
+      value: cardsValue.userStats?.linkedToDeviceCount || 0,
+      caption: "Assigned to at least one device",
+      trend: "6.7%",
+      trendDirection: "up",
+      icon: RiShieldUserLine,
+      color: "bg-emerald-50 text-emerald-700",
+    },
+    {
+      title: "Unassigned Users",
+      value:  cardsValue.userStats?.unlinkedToDeviceCount,
+      caption: "Not assigned to any device",
+      trend: "3.2%",
+      trendDirection: "down",
+      icon: RiUserUnfollowLine,
+      color: "bg-orange-50 text-orange-700",
+    },
+  ];
 
   const handleRowAction = (actionType: any, rowData: any) => {
     console.log("actionType", actionType, "rowData>>", rowData);
@@ -232,9 +283,12 @@ export default function EnrollmentPage() {
       // setisLDAP(false);
       console.log("isGeneralModalOpen:", true);
     } else if (actionType == "switch") {
-      getChangeUserStatus(rowData);
+      getChangeUserStatus(rowData, actionType);
     } else if (actionType == "sort") {
-      getChangeUserStatus(rowData);
+      // getChangeUserStatus();
+      setSortBy(rowData.field);
+      setSortDir(rowData.sortValue);
+      fetchUsers();
     }
   };
 
@@ -252,7 +306,7 @@ export default function EnrollmentPage() {
     }
   };
 
-  const getChangeUserStatus = async (rowData: any) => {
+  const getChangeUserStatus = async (rowData: any, actionType: any) => {
     setLoading(true);
     const payload = {
       id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
@@ -261,23 +315,38 @@ export default function EnrollmentPage() {
       enabled: rowData.statusCheck,
     };
     try {
-      const userReq = await fetch(`/api/user/${rowData.id}`, {
-        method: "PUT",
-        body: JSON.stringify(payload),
-      });
-      if (userReq.ok) {
-        setStoreRetrievedData((prevData) => {
-          if (!prevData) return prevData;
-          return prevData.map((item: any) => {
-            console.log("item", item, "equals", item.id === rowData.id);
-            return item.id === rowData.id
-              ? { ...item, enabled: rowData.statusCheck }
-              : item;
-          });
+      if (actionType === "switch") {
+        const userReq = await fetch(`/api/user/${rowData.id}`, {
+          method: "PUT",
+          body: JSON.stringify(payload),
         });
-      } else {
-        console.log("error changing role status");
-        notifyError("Failed to update enrollment status.");
+        if (userReq.ok) {
+          setStoreRetrievedData((prevData) => {
+            if (!prevData) return prevData;
+            return prevData.map((item: any) => {
+              console.log("item", item, "equals", item.id === rowData.id);
+              return item.id === rowData.id
+                ? { ...item, enabled: rowData.statusCheck }
+                : item;
+            });
+          });
+        } else {
+          console.log("error changing role status");
+          notifyError("Failed to update enrollment status.");
+        }
+      } else if (actionType === "sort") {
+        const res = await fetch(
+          `/api/enrollment?paginate=true&pageNo=${pageCount}&pageSize=${pageSize}&sortBy=${rowData.field}&sortDir=${rowData.sortValue}`,
+        );
+
+        if (!res.ok) {
+          notifyError("Failed to load users.");
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+
+        const data = await res.json();
+        setStoreRetrievedData(data.content);
+        setTotalItems(data.totalElements);
       }
     } catch (error) {
       console.error("Error updating role status:", error);
@@ -303,7 +372,7 @@ export default function EnrollmentPage() {
 
   const fetchDeviceOptions = async () => {
     try {
-      const response = await fetch("/api/device");
+      const response = await fetch(`/api/device`);
       if (!response.ok) {
         throw new Error("Failed to fetch devices");
       }
@@ -484,10 +553,10 @@ export default function EnrollmentPage() {
           <RiSearchLine className="absolute right-3 top-1/2 size-5 -translate-y-1/2 text-slate-500" />
         </div>
 
-        <div>
+        <div className="w-full flex items-start md:justify-end gap-1">
           <Button
             variant="outline"
-            className="ml-2 h-10"
+            className=" h-10"
             onClick={() => {
               setIsBatchModalOpen(true);
               setBatchModalAction("assign");
