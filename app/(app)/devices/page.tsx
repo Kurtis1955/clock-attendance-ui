@@ -35,40 +35,6 @@ import { toast } from "sonner";
 
 type DeviceStatus = "Online" | "Offline" | "Warning" | "offline";
 
-const getDeviceStatCards = () => [
-  {
-    title: "Total Devices",
-    value: 1,
-    caption: "Registered devices",
-    icon: RiRouterLine,
-    color: "bg-blue-50 text-blue-700",
-  },
-
-  {
-    title: "Online Devices",
-    value: 1,
-    caption: "Currently connected",
-    icon: RiWifiLine,
-    color: "bg-green-50 text-green-700",
-  },
-
-  {
-    title: "Offline Devices",
-    value: 1,
-    caption: "Require attention",
-    icon: RiWifiOffLine,
-    color: "bg-red-50 text-red-700",
-  },
-
-  {
-    title: "Assigned Users",
-    value: 1,
-    caption: "Across all devices",
-    icon: RiUserLine,
-    color: "bg-amber-50 text-amber-700",
-  },
-];
-
 export default function DevicesPage() {
   const { permissions: userPermissions } = useUserPermissions();
   const [isAddDeviceModalOpen, setIsAddDeviceModalOpen] = useState(false);
@@ -82,7 +48,8 @@ export default function DevicesPage() {
   const [totalItems, setTotalItems] = useState(10);
   const [filterData, setFilterData] = useState("");
   const [loadingRoleDetails, setLoadingUserDetails] = useState(false);
-
+  const [sortBy, setSortBy] = useState<any>("serialNumber");
+  const [sortDir, setSortDir] = useState<any>("asc");
   const {
     inputValue,
     handleInputRoleChange,
@@ -90,6 +57,8 @@ export default function DevicesPage() {
     error: roleSearchError,
     loading: loadingRole,
   } = useSearchDevice({ pageCount, pageSize, filterData });
+  const [loadingStats, setloadingStats] = useState(true);
+  const [cardsValue, setCardsValue] = useState<any>([]);
 
   const notifySuccess = (message: string) =>
     toast.success(message, {
@@ -110,8 +79,6 @@ export default function DevicesPage() {
         border: "1px solid #b91c1c",
       },
     });
-
-  const statCards = useMemo(() => getDeviceStatCards(), [storeRetrievedData]);
 
   const canCreateDevice = userPermissions.some((permission) =>
     ["device_create"].some((hint) =>
@@ -149,12 +116,51 @@ export default function DevicesPage() {
         setLoadingUserDetails(!loadingRoleDetails);
       }
     }
-  }, [deviceSearch?.content?.length, inputValue, pageCount, pageSize]);
+    getDashboardCards()
+  }, [deviceSearch?.content?.length, inputValue, pageCount, pageSize, sortBy, sortDir]);
+
+  const getDashboardCards = async () => {
+    setloadingStats(true);
+    try {
+      // let query = `startDate=${startDate}&endDate=${endDate}`;
+
+      // console.log("query to fetch dashboard data", query);
+      // return;
+
+      const res = await fetch(`/api/dashboard`);
+      if (res.ok) {
+        const result = await res.json();
+        console.log("result>>Cards", result);
+        setCardsValue(result);
+        setloadingStats(false);
+      } else {
+        toast.error("Error fetching dashboard statistics", {
+          position: "top-right",
+          style: {
+            background: "#dc2626",
+            color: "#fff",
+            border: "1px solid #b91c1c",
+          },
+        });
+      }
+    } catch (error) {
+      setloadingStats(false);
+      toast.error("Error fetching dashboard statistics", {
+        position: "top-right",
+        style: {
+          background: "#dc2626",
+          color: "#fff",
+          border: "1px solid #b91c1c",
+        },
+      });
+      setloadingStats(false);
+    }
+  };
 
   const fetchDevices = async () => {
     try {
       const res = await fetch(
-        `/api/device?paginate=true&page=${pageCount}&size=${pageSize}`,
+        `/api/device?paginate=true&pageNo=${pageCount}&pageSize=${pageSize}&sortBy=${sortBy}&sortDir=${sortDir}`,
       );
 
       if (!res.ok) {
@@ -169,6 +175,42 @@ export default function DevicesPage() {
       notifyError("Unable to load devices. Please try again.");
     }
   };
+
+  const getDeviceStatCards = () => [
+    {
+      title: "Total Devices",
+      value: cardsValue.deviceStats?.totalDevices || 0,
+      caption: "Registered devices",
+      icon: RiRouterLine,
+      color: "bg-blue-50 text-blue-700",
+    },
+  
+    {
+      title: "Online Devices",
+      value: cardsValue.deviceStats?.onlineDevices || 0,
+      caption: "Currently connected",
+      icon: RiWifiLine,
+      color: "bg-green-50 text-green-700",
+    },
+  
+    {
+      title: "Offline Devices",
+      value: cardsValue.deviceStats?.offlineDevices || 0,
+      caption: "Require attention",
+      icon: RiWifiOffLine,
+      color: "bg-red-50 text-red-700",
+    },
+  
+    {
+      title: "Assigned Users",
+      value: cardsValue.userStats?.linkedToDeviceCount || 0,
+      caption: "Across all devices",
+      icon: RiUserLine,
+      color: "bg-amber-50 text-amber-700",
+    },
+  ];
+
+  const statCards = useMemo(() => getDeviceStatCards(), [storeRetrievedData])
 
   const handleRowAction = (actionType: any, rowData: any) => {
     console.log("actionType", actionType, "rowData>>", rowData);
@@ -202,6 +244,10 @@ export default function DevicesPage() {
       getDeviceSyncStatus(rowData, actionType);
     } else if (actionType == "switch") {
       getDeviceSyncStatus(rowData, actionType);
+    } else if (actionType == "sort") {
+      setSortBy(rowData.field);
+      setSortDir(rowData.sortValue);
+      fetchDevices();
     }
   };
 
@@ -281,6 +327,8 @@ export default function DevicesPage() {
     setIsAddDeviceModalOpen(false);
     // setIsAddDeviceModalOpen(false);
   };
+
+  console.log("totalItems",totalItems)
 
   return (
     <div className="w-full flex flex-col gap-5 px-2 xl:px-8 pt-2">
@@ -390,7 +438,7 @@ export default function DevicesPage() {
               pageCount={pageCount}
               onPageChange={handlePageChange}
               pageSize={pageSize}
-              totalItems={filteredDevices.length}
+              totalItems={totalItems ? totalItems : deviceSearch.totalElements}
               type="devices"
               defaultColumns={["Drag", "Actions", "User Number"]}
             />
