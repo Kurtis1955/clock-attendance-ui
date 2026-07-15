@@ -91,6 +91,8 @@ export default function AttendancePage() {
     error: attendanceSearchError,
     loading: loadingRole,
   } = useSearchAttendance({ pageCount, pageSize, filterData });
+  const [sortBy, setSortBy] = useState<any>("verifyTime");
+  const [sortDir, setSortDir] = useState<any>("desc");
 
   //useEffect implemented to run the function
   // which fetches attendance Records
@@ -109,7 +111,7 @@ export default function AttendancePage() {
       }
     }
     console.log("loadingRoleDetails>>", loadingRoleDetails);
-  }, [attendanceSearch?.content?.length, inputValue, pageCount, pageSize]);
+  }, [attendanceSearch?.content?.length, inputValue, pageCount, pageSize,sortBy,sortDir]);
 
   // fetch attendance api consumed using the fetchAttendance function.
   // the function runs to get data from the api and stores in a react
@@ -118,10 +120,10 @@ export default function AttendancePage() {
     try {
       setLoading(true);
       const payload = {
-        page: 0,
-        size: 10,
-        sortDir: "desc",
-        sortBy: "verifyTime",
+        page: pageCount,
+        size: pageSize,
+        sortDir,
+        sortBy,
       };
 
       const res = await fetch(`/api/attendance`, {
@@ -177,8 +179,11 @@ export default function AttendancePage() {
       ]);
       // setisLDAP(false);
       console.log("isGeneralModalOpen:", true);
-    } else if (actionType == "switch") {
-      // getChangeUserStatus(rowData);
+    } else if (actionType == "sort") {
+      console.log("sorting data>>>",rowData)
+      setSortBy(rowData.field);
+      setSortDir(rowData.sortValue);
+      fetchAttendance()
     }
   };
 
