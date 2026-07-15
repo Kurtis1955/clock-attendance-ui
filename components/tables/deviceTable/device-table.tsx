@@ -15,6 +15,9 @@ import {
   RiMore2Fill,
 } from "react-icons/ri";
 import { FaEye } from "react-icons/fa";
+import { TfiExchangeVertical } from "react-icons/tfi";
+let sortValue = "asc";
+
 
 export const deviceTableColumns = (
   rowCallback: any,
@@ -31,14 +34,36 @@ export const deviceTableColumns = (
   return [
   {
     accessorKey: "serialNumber",
-    header: "Serial Number",
+    header: ({ column }: { column: any }) => (
+      <Button
+        variant="ghost"
+        onClick={() => {
+          sortValue = sortValue === "asc" ? "desc" : "asc";
+            rowCallback("sort", { sortValue, field: "serialNumber" });
+        }}
+      >
+        Serial Number
+        <TfiExchangeVertical />
+      </Button>
+    ),
     cell: ({ row }: { row: any }) => (
-      <span className="font-mono text-sm">{row.original.serialNumber}</span>
+      <span className="font-mono text-sm ml-3">{row.original.serialNumber}</span>
     ),
   },
   {
     accessorKey: "name",
-    header: "Device Name",
+    header: ({ column }: { column: any }) => (
+      <Button
+        variant="ghost"
+        onClick={() => {
+          sortValue = sortValue === "asc" ? "desc" : "asc";
+          rowCallback("sort", { sortValue, field: "name" });
+        }}
+      >
+        Device Name
+        <TfiExchangeVertical />
+      </Button>
+    ),
     cell: ({ row }: { row: any }) => (
       <div className="flex items-center gap-3 pl-2">
         {/* <div
@@ -49,7 +74,7 @@ export const deviceTableColumns = (
           <RiRouterLine className="size-5" />
         </div> */}
 
-        <div>
+        <div className="ml-1">
           <p className="font-medium text-gray-700">{row.original.name}</p>
 
           <p className="text-xs text-slate-500">{row.original.model}</p>
@@ -60,14 +85,39 @@ export const deviceTableColumns = (
 
   {
     accessorKey: "location",
-    header: "Device Location",
+    header: ({ column }: { column: any }) => (
+      <Button
+        variant="ghost"
+        onClick={() => {
+          sortValue = sortValue === "asc" ? "desc" : "asc";
+          rowCallback("sort", { sortValue, field: "location" });
+        }}
+      >
+        Device Location
+        <TfiExchangeVertical />
+      </Button>
+    ),
+    cell: ({ row }: { row: any }) => (
+      <span className="text-sm ml-3">{row.original.location}</span>
+    ),
   },
 
   {
     accessorKey: "description",
-    header: "Description",
+    header: ({ column }: { column: any }) => (
+      <Button
+        variant="ghost"
+        onClick={() => {
+          sortValue = sortValue === "asc" ? "desc" : "asc";
+          rowCallback("sort", { sortValue, field: "description" });
+        }}
+      >
+        Description
+        <TfiExchangeVertical />
+      </Button>
+    ),
     cell: ({ row }: { row: any }) => (
-      <Badge variant="outline">{row.original.description}</Badge>
+      <Badge variant="outline" className="text-sm ml-3">{row.original.description}</Badge>
     ),
   },
 
@@ -84,12 +134,37 @@ export const deviceTableColumns = (
 
   {
     accessorKey: "deviceTypeName",
-    header: "Device Type",
+    header: ({ column }: { column: any }) => (
+      <Button
+        variant="ghost"
+        onClick={() => {
+          sortValue = sortValue === "asc" ? "desc" : "asc";
+          rowCallback("sort", { sortValue, field: "deviceTypeName" });
+        }}
+      >
+        Device Type
+        {/* <TfiExchangeVertical /> */}
+      </Button>
+    ),
+    cell: ({ row }: { row: any }) => (
+      <span className="text-sm ml-3">{row.original.deviceTypeName}</span>
+    ),
   },
 
   {
     accessorKey: "status",
-    header: "Sync Status",
+    header: ({ column }: { column: any }) => (
+      <Button
+        variant="ghost"
+        onClick={() => {
+          sortValue = sortValue === "asc" ? "desc" : "asc";
+          rowCallback("sort", { sortValue, field: "status" });
+        }}
+      >
+        Sync Status
+        <TfiExchangeVertical />
+      </Button>
+    ),
     cell: ({ row }: { row: any }) => {
       const status = row.original.status;
 
@@ -97,12 +172,12 @@ export const deviceTableColumns = (
         <Badge
           className={
             status.toLowerCase() === "active"
-              ? "bg-green-100 text-green-700"
+              ? "bg-green-100 text-green-700 text-sm ml-3"
               : status.toLowerCase() === "offline"
-                ? "bg-red-100 text-red-700"
+                ? "bg-red-100 text-red-700 text-sm ml-3"
                 : status.toLowerCase() === "not synced"
-                  ? "bg-red-100 text-red-700"
-                  : "bg-blue-100 text-blue-700"
+                  ? "bg-red-100 text-red-700 text-sm ml-3"
+                  : "bg-blue-100 text-blue-700 text-sm ml-3"
           }
         >
           {status}
@@ -114,20 +189,22 @@ export const deviceTableColumns = (
   {
     accessorKey: "enabled",
     headerLabel: " Active Status",
-    header: ({ column }: { column: any }) => {
-      return (
-        <div
-          className="flex gap-1 "
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          Active Status
-        </div>
-      );
-    },
+    header: ({ column }: { column: any }) => (
+      <Button
+        variant="ghost"
+        onClick={() => {
+          sortValue = sortValue === "asc" ? "desc" : "asc";
+          rowCallback("sort", { sortValue, field: "enabled" });
+        }}
+      >
+        Active Status
+        <TfiExchangeVertical />
+      </Button>
+    ),
     cell: ({ row }: { row: any }) => {
       if (row.original.enabled) {
         return (
-          <label className="inline-flex items-center cursor-pointer">
+          <label className="inline-flex items-center cursor-pointer ml-3">
             <input
               type="checkbox"
               className="sr-only peer"
@@ -152,7 +229,7 @@ export const deviceTableColumns = (
         // return <span className="text-green-500">Active</span>;
       } else {
         return (
-          <label className="inline-flex items-center cursor-pointer">
+          <label className="inline-flex items-center cursor-pointer ml-3">
             <input
               type="checkbox"
               checked={row.original.enabled}
