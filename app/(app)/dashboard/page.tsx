@@ -35,6 +35,7 @@ import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { useUserPermissions } from "@/hoc/permissions-context";
 import { toast } from "sonner";
+import websocket from "@/services/websocket";
 
 const stats = [
   {
@@ -91,6 +92,33 @@ export default function DashboardPage() {
       // getDashboardGraph(startDateD, endOfMonthD),
     ]);
   }, [userName]);
+
+  useEffect(() => {
+    websocket.connect(() => {
+      const attendance = websocket.subscribe(
+        "/topic/attendance",
+        (data) => {
+          console.log(data);
+        }
+      );
+  
+      const devices = websocket.subscribe(
+        "/topic/devices",
+        (data) => {
+          console.log("websockect data",data);
+        }
+      );
+  
+      return () => {
+        attendance.unsubscribe();
+        devices.unsubscribe();
+      };
+    });
+  
+    return () => {
+      websocket.disconnect();
+    };
+  }, []);
 
   const handleDashboardFilterGraph = async (filterData: any) => {
     console.log("filterData>>", filterData);
