@@ -73,7 +73,7 @@ const AddEditBiometricUser = ({
     loading: loadingDepartments,
     error: departmentsError,
   } = useDepartments(
-    selectedCompany?.name ?? null,
+    selectedCompany?.company ?? null,
     selectedCompany?.id ?? null,
   );
   const [loadingSaveUpdateUser, setloadingSaveUpdateUser] =
@@ -103,6 +103,9 @@ const AddEditBiometricUser = ({
   const [errorPhone, setErrorPhone] = useState<string>("");
   const [companyDepartments, setCompanyDepartments] = useState<string[]>(
     normalizeStringArray(existingUserData?.departmentName),
+  );
+  const [companyName, setCompanyName] = useState<string[]>(
+    normalizeStringArray(existingUserData?.companyName),
   );
   const [submitError, setSubmitError] = useState<string>("");
   const [resolvedUser, setResolvedUser] = useState<any>(
@@ -136,7 +139,26 @@ const AddEditBiometricUser = ({
     setCompanyDepartments(
       normalizeStringArray(existingUserData?.departmentName),
     );
-  }, [existingUserData, userPermissions]);
+    setCompanyName(normalizeStringArray(existingUserData?.companyName));
+    const userPreviousCompany = companies.find(
+      (company: any) =>
+        existingUserData?.companyName?.toLowerCase() ===
+        company.company?.toLowerCase(),
+    );
+    console.log("userPreviousCompany>>", userPreviousCompany);
+    setSelectedCompany(
+      userPreviousCompany
+        ? {
+            id: userPreviousCompany.id,
+            company: userPreviousCompany.company,
+            companycode: "",
+            description: "",
+            enabled: true,
+          }
+        : null,
+    );
+    console.log("selectedCompany>>", selectedCompany);
+  }, [existingUserData, userPermissions,companies]);
 
   useEffect(() => {
     if (!companies.length) {
@@ -149,7 +171,7 @@ const AddEditBiometricUser = ({
     const companyId = resolvedUser?.companyId ?? existingUserData?.companyId;
     const matchedCompany =
       companies.find((company) => company.id === companyId) ??
-      companies.find((company) => companyNames.includes(company.name));
+      companies.find((company) => companyNames.includes(company.companycode));
 
     if (matchedCompany) {
       setSelectedCompany(matchedCompany);
@@ -250,8 +272,8 @@ const AddEditBiometricUser = ({
         existingUserData?.departmentId;
       const companyId =
         selectedCompany?.id ??
-        primaryDepartment?.companyId ??
-        resolvedUser?.companyId ??
+        primaryDepartment?.companycode ??
+        resolvedUser?.companycode ??
         existingUserData?.companyId;
       const departmentNames =
         companyDepartments.length > 0
@@ -348,6 +370,8 @@ const AddEditBiometricUser = ({
   };
 
   console.log("deviceOption>>", deviceOptions);
+  console.log("selectedCompany>>", selectedCompany, companies);
+  console.log("companyName>>", companyName);
   return (
     <form className="w-full space-y-5 text-gray-600" onSubmit={handleSubmit}>
       <div className="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2">
@@ -592,7 +616,7 @@ const AddEditBiometricUser = ({
             }
             value={
               selectedCompany
-                ? { value: selectedCompany.id, label: selectedCompany.name }
+                ? { value: selectedCompany.id, label: selectedCompany.company }
                 : null
             }
             onChange={(
@@ -608,7 +632,7 @@ const AddEditBiometricUser = ({
             isDisabled={actionType === "view" || loadingCompanies}
             options={companies.map((company) => ({
               value: company.id,
-              label: company.name,
+              label: company.company,
             }))}
             isClearable
           />
