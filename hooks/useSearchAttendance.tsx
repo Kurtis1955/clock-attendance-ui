@@ -32,6 +32,13 @@ const useSearchAttendance = ({
         pageSize
       );
 
+      const payload = {
+        page: pageCount,
+        size: pageSize,
+        sortDir: "desc",
+        sortBy: "verifyTime",
+      };
+
       try {
         if (inputValue.trim() === "" && storedPageCount == pageCount) {
           //  setattendanceSearch([]);
@@ -41,7 +48,15 @@ const useSearchAttendance = ({
 
         if (filterData != "") {
           const res = await fetch(
-            `/api/attendance/filter?${filterData}&pageNo=${pageCount}&pageSize=${pageSize}`
+            `/api/attendance/filter`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                filterData: filterData,
+                pageNo: pageCount,
+                pageSize: pageSize,
+              }),
+            }
           );
 
           if (res.ok) {
@@ -64,9 +79,21 @@ const useSearchAttendance = ({
           const res =
             inputValue.trim() != ""
               ? await fetch(
-                  `/api/attendance?search=${inputValue.trim()}&pageNo=${pageCount}&pageSize=${pageSize}`
+                  `/api/attendance`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      search: inputValue.trim(),
+                      pageNo: pageCount,
+                      pageSize: pageSize,
+                    }),
+                  }
                 )
-              : await fetch(`/api/attendance?pageNo=${pageCount}&pageSize=${pageSize}`);
+              : await fetch(`/api/attendance`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+              });
 
           if (res.ok) {
             const dataFound = await res.json();
