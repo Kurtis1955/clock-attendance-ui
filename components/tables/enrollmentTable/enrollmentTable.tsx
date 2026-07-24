@@ -32,6 +32,7 @@ export const enrollmentTableColumns = (
             disabled={!canManageStaff}
             onCheckedChange={(value) => row.toggleSelected(!!value)}
             aria-label="Select row"
+            className="border-gray-500"
           />
         </div>
       ),
@@ -41,6 +42,7 @@ export const enrollmentTableColumns = (
     },
     {
       accessorKey: "firstName",
+      headerLabel: "First Name",
       header: ({ column }: { column: any }) => (
         <Button
           variant="ghost"
@@ -60,7 +62,7 @@ export const enrollmentTableColumns = (
         return (
           <div className="flex items-center gap-3">
             <div>
-              <p className=" ml-3">{user.firstName}</p>
+              <p className="text-xs ml-3">{user.firstName}</p>
             </div>
           </div>
         );
@@ -70,6 +72,7 @@ export const enrollmentTableColumns = (
     },
     {
       accessorKey: "lastName",
+      headerLabel: "Last Name",
       header: ({ column }: { column: any }) => (
         <Button
           variant="ghost"
@@ -87,7 +90,7 @@ export const enrollmentTableColumns = (
         const user = row.original;
 
         return (
-          <div className="flex items-center gap-3">
+          <div className="flex items-center text-xs gap-3">
             <div>
               <p className=" ml-3">{user.lastName}</p>
             </div>
@@ -99,7 +102,7 @@ export const enrollmentTableColumns = (
     },
     {
       accessorKey: "email",
-
+      headerLabel: "Email",
       header: ({ column }: { column: any }) => (
         <Button
           variant="ghost"
@@ -114,27 +117,27 @@ export const enrollmentTableColumns = (
       ),
 
       cell: ({ row }: { row: any }) => (
-        <span className="flex items-center ml-3">{row.original.email}</span>
+        <span className="flex items-center ml-3 text-xs">{row.original.email}</span>
       ),
     },
     {
       accessorKey: "e_code",
-
+      headerLabel: "Employee ID",
       header: ({ column }: { column: any }) => (
         <Button
           variant="ghost"
-          onClick={() => {
-            sortValue = sortValue === "asc" ? "desc" : "asc";
-            rowCallback("sort", { sortValue, field: "e_code" });
-          }}
+          // onClick={() => {
+          //   sortValue = sortValue === "asc" ? "desc" : "asc";
+          //   rowCallback("sort", { sortValue, field: "ECode" });
+          // }}
         >
           Employee ID
-          <TfiExchangeVertical />
+          {/* <TfiExchangeVertical /> */}
         </Button>
       ),
 
       cell: ({ row }: { row: any }) => (
-        <span className="font-mono text-sm text-slate-700 ml-3">
+        <span className="font-mono text-slate-700 ml-3 text-xs">
           {row.original.e_code}
         </span>
       ),
@@ -142,7 +145,7 @@ export const enrollmentTableColumns = (
 
     {
       accessorKey: "assignedDevices",
-
+      headerLabel: "Assigned Devices",
       header: "Assigned Devices",
 
       cell: ({ row }: { row: any }) => (
@@ -243,7 +246,7 @@ export const enrollmentTableColumns = (
 
     {
       accessorKey: "actions",
-
+      headerLabel: "Actions",
       header: () => <div className="text-center">Actions</div>,
 
       cell: ({ row }: { row: any }) => (

@@ -25,7 +25,7 @@ export function useRoles(): UseRolesResult {
     setError(null)
 
     try {
-      const response = await fetch("/api/roles?paginate=true&page=0&size=200")
+      const response = await fetch(`/api/roles?paginate=true&page=0 &size=200`)
 
       if (!response.ok) {
         throw new Error(`Failed to fetch roles (${response.status})`)

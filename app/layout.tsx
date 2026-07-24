@@ -4,7 +4,6 @@ import "./globals.css";
 import { Providers } from "@/hoc/providers";
 import SessionGuard from "@/hoc/SessionGuard";
 import { Toaster } from "@/components/ui/sonner";
-import WebSocketProvider from "@/hoc/WebSocketProvider";
 
 const poppins = Poppins({
   variable: "--font-poppins",
@@ -28,9 +27,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${poppins.variable} h-full font-sans antialiased`}>
         <Providers>
-          <SessionGuard>
-            <WebSocketProvider>{children}</WebSocketProvider>
-          </SessionGuard>
+          <SessionGuard>{children}</SessionGuard>
         </Providers>
         <Toaster />
       </body>

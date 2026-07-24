@@ -80,7 +80,7 @@ function SidebarContent({ collapsed, onNavigate }: SidebarContentProps) {
   const fetchUserData = async () => {
     try {
       const id = "catalystta"
-      const res = await fetch(`/api/users/${id}/byusername`);
+      const res = await fetch(`/api/users/current-user`);
       if (res.ok) {
         const data = await res.json();
         setUserData(data.data);

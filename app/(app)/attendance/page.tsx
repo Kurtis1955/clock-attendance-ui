@@ -24,9 +24,18 @@ import AddEditAttendant from "@/components/modals/addeditattendantModal/AddEditA
 import useSearchAttendance from "@/hooks/useSearchAttendance";
 import _debounce from "lodash/debounce";
 import AsyncSelect from "react-select/async";
+import ReactSelect from "react-select";
 import { Spinner } from "@chakra-ui/react";
 import { useUserPermissions } from "@/hoc/permissions-context";
 import { toast } from "sonner";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { ChevronDownIcon } from "lucide-react";
+import { format } from "date-fns";
 
 type AttendanceStatus = "Present" | "Absent" | "On Duty" | "Remote";
 
@@ -69,6 +78,110 @@ const searchSelectStyles = {
   }),
 };
 
+const selectStyles = {
+  control: (base: any, state: any) => ({
+    ...base,
+    minHeight: 40,
+    borderRadius: 8,
+    borderColor: state.isFocused ? "#2563eb" : "#cbd5e1",
+    boxShadow: state.isFocused ? "0 0 0 2px rgb(37 99 235 / 0.15)" : "none",
+    "&:hover": {
+      borderColor: "#94a3b8",
+    },
+    backgroundColor: "#fff",
+  }),
+
+  valueContainer: (base: any) => ({
+    ...base,
+    padding: "2px 8px",
+    gap: 4,
+  }),
+
+  placeholder: (base: any) => ({
+    ...base,
+    color: "#94a3b8",
+    fontSize: 14,
+  }),
+
+  input: (base: any) => ({
+    ...base,
+    margin: 0,
+    padding: 0,
+    fontSize: 14,
+  }),
+
+  multiValue: (base: any) => ({
+    ...base,
+    backgroundColor: "#f1f5f9",
+    borderRadius: 6,
+  }),
+
+  multiValueLabel: (base: any) => ({
+    ...base,
+    color: "#0f172a",
+    fontWeight: 500,
+    fontSize: 12,
+    paddingLeft: 8,
+  }),
+
+  multiValueRemove: (base: any) => ({
+    ...base,
+    cursor: "pointer",
+    borderRadius: 4,
+    ":hover": {
+      backgroundColor: "#ef4444",
+      color: "#fff",
+    },
+  }),
+
+  menu: (base: any) => ({
+    ...base,
+    borderRadius: 8,
+    overflow: "hidden",
+    zIndex: 50,
+  }),
+
+  menuList: (base: any) => ({
+    ...base,
+    padding: 4,
+  }),
+
+  option: (base: any, state: any) => ({
+    ...base,
+    borderRadius: 6,
+    fontSize: 14,
+    backgroundColor: state.isSelected
+      ? "#2563eb"
+      : state.isFocused
+        ? "#eff6ff"
+        : "#fff",
+    color: state.isSelected ? "#fff" : "#0f172a",
+    cursor: "pointer",
+  }),
+
+  dropdownIndicator: (base: any) => ({
+    ...base,
+    color: "#64748b",
+    padding: 6,
+  }),
+
+  clearIndicator: (base: any) => ({
+    ...base,
+    color: "#64748b",
+    padding: 6,
+  }),
+
+  indicatorSeparator: () => ({
+    display: "none",
+  }),
+
+  noOptionsMessage: (base: any) => ({
+    ...base,
+    color: "#94a3b8",
+    fontSize: 14,
+  }),
+};
+
 export default function AttendancePage() {
   const { permissions: userPermissions } = useUserPermissions();
   const [searchQuery, setSearchQuery] = useState("");
@@ -84,6 +197,35 @@ export default function AttendancePage() {
   const [filterData, setFilterData] = useState("");
   const [loadingRoleDetails, setLoadingUserDetails] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [filterDepartments, setFilterDepartments] = useState<
+    { label: string; value: string }[]
+  >([]);
+  const [filterCompanies, setFilterCompanies] = useState<
+    { label: string; value: string }[]
+  >([]);
+  const [filterVerifyTypes, setFilterVerifyTypes] = useState("");
+  const [filterStartDate, setFilterStartDate] = useState<Date | undefined>(
+    undefined,
+  );
+  const [filterEndDate, setFilterEndDate] = useState<Date | undefined>(
+    undefined,
+  );
+  const [exportStartDate, setExportStartDate] = useState<any>("");
+  const [exportEndDate, setExportEndDate] = useState<any>("");
+  const [departmentOptions, setDepartmentOptions] = useState<
+    { label: string; value: string }[]
+  >([]);
+  const [companyOptions, setCompanyOptions] = useState<
+    { label: string; value: string }[]
+  >([]);
+  const [selectedDepartments, setSelectedDepartments] = useState<
+    { label: string; value: string }[]
+  >([]);
+  const [selectedCompanies, setSelectedCompanies] = useState<
+    { label: string; value: string }[]
+  >([]);
+  const [exporting, setExporting] = useState(false);
   const {
     inputValue,
     handleInputRoleChange,
@@ -93,6 +235,38 @@ export default function AttendancePage() {
   } = useSearchAttendance({ pageCount, pageSize, filterData });
   const [sortBy, setSortBy] = useState<any>("verifyTime");
   const [sortDir, setSortDir] = useState<any>("desc");
+  const [openStartDate, setOpenStartDate] = useState(false);
+  const [openEndDate, setOpenEndDate] = useState(false);
+  const [filterOpen, setFilterOpen] = useState(false);
+
+  useEffect(() => {
+    const fetchDepartments = async () => {
+      try {
+        const response = await fetch("/api/users/current-user");
+        if (!response.ok) {
+          throw new Error(`Failed to load departments (${response.status})`);
+        }
+
+        const data = await response.json();
+        const userData = data.data.userDepartments;
+        console.log("departments data>>", userData);
+        const departmentOptions = userData.map((dept: any) => ({
+          label: dept.departmentName,
+          value: dept.departmentName,
+        }));
+        setDepartmentOptions(departmentOptions);
+        const companyOptions = userData.map((dept: any) => ({
+          label: dept.companyName,
+          value: dept.companyName,
+        }));
+        setCompanyOptions(companyOptions);
+      } catch (error) {
+        console.error("Unable to load export department options:", error);
+      }
+    };
+
+    void fetchDepartments();
+  }, []);
 
   //useEffect implemented to run the function
   // which fetches attendance Records
@@ -111,19 +285,34 @@ export default function AttendancePage() {
       }
     }
     console.log("loadingRoleDetails>>", loadingRoleDetails);
-  }, [attendanceSearch?.content?.length, inputValue, pageCount, pageSize,sortBy,sortDir]);
+  }, [
+    attendanceSearch?.content?.length,
+    inputValue,
+    pageCount,
+    pageSize,
+    sortBy,
+    sortDir,
+  ]);
 
   // fetch attendance api consumed using the fetchAttendance function.
   // the function runs to get data from the api and stores in a react
   // state which is used for the listing in the table
-  const fetchAttendance = async () => {
+  const fetchAttendance = async (requestedPageNo: number = pageCount) => {
     try {
       setLoading(true);
       const payload = {
-        page: pageCount,
-        size: pageSize,
+        pageNo: requestedPageNo,
+        pageSize: pageSize,
         sortDir,
         sortBy,
+        departmentNames: filterDepartments.map((option) => option.value),
+        companyNames: filterCompanies.map((option) => option.value),
+        verifyTypeNames: filterVerifyTypes
+          .split(",")
+          .map((item) => item.trim())
+          .filter(Boolean),
+        start: filterStartDate ? format(filterStartDate, "yyyy-MM-dd") : "",
+        end: filterEndDate ? format(filterEndDate, "yyyy-MM-dd") : "",
       };
 
       const res = await fetch(`/api/attendance`, {
@@ -180,10 +369,10 @@ export default function AttendancePage() {
       // setisLDAP(false);
       console.log("isGeneralModalOpen:", true);
     } else if (actionType == "sort") {
-      console.log("sorting data>>>",rowData)
+      console.log("sorting data>>>", rowData);
       setSortBy(rowData.field);
       setSortDir(rowData.sortValue);
-      fetchAttendance()
+      fetchAttendance();
     }
   };
 
@@ -198,6 +387,21 @@ export default function AttendancePage() {
     const dataToSearch = regrexForSpecialDashChars(e.target.value);
     setSearchQuery(dataToSearch);
     debouncedSearch(dataToSearch);
+  };
+
+  const handleApplyFilters = () => {
+    setPageCount(0);
+    void fetchAttendance(0);
+  };
+
+  const handleResetFilters = () => {
+    setFilterDepartments([]);
+    setFilterCompanies([]);
+    setFilterVerifyTypes("");
+    setFilterStartDate(undefined);
+    setFilterEndDate(undefined);
+    setPageCount(0);
+    void fetchAttendance(0);
   };
 
   const debouncedSearch = _debounce(handleInputRoleChange, 500);
@@ -267,23 +471,94 @@ export default function AttendancePage() {
     ].some((hint) => permission.toLowerCase().includes(hint)),
   );
 
+  const formatDateInputToIso = (dateValue: string) => {
+    if (!dateValue) return "";
+    const date = new Date(dateValue);
+    return Number.isNaN(date.getTime()) ? "" : date.toISOString();
+  };
+
+  const exportAttendance = async () => {
+    setExporting(true);
+    try {
+      const payload = {
+        format: "PDF",
+        startDate: formatDateInputToIso(exportStartDate),
+        endDate: formatDateInputToIso(exportEndDate),
+        departmentNames: selectedDepartments.map((option) => option.value),
+        companyNames: selectedCompanies.map((option) => option.value),
+        page: 0,
+        size: 1000,
+        limit: 1000,
+        sortDir: "desc",
+        sortBy: "verifyTime",
+      };
+      const response = await fetch("/api/attendance/export-report", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to export attendance report.");
+      }
+
+      const blob = await response.blob();
+      const contentDisposition = response.headers.get("Content-Disposition");
+      let fileName = "attendance-export.csv";
+
+      if (contentDisposition) {
+        const match = contentDisposition.match(/filename="(.+)"/);
+        if (match?.[1]) {
+          fileName = match[1];
+        }
+      }
+
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      setIsExportModalOpen(false);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Export failed";
+      toast.error(message, {
+        position: "top-right",
+        style: {
+          color: "#dc2626",
+          background: "#fff",
+          border: "1px solid #dc2626",
+        },
+      });
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  console.log("user department>>", departmentOptions, companyOptions);
+
   return (
     <div className="flex flex-col gap-5 px-2 xl:px-8 pt-2">
       <PageHeader
-        title="Attendance Command Center"
+        title="Attendance"
         // description="Monitor workforce coverage, device sync health, and verified clocking activity across branches."
         actions={
-          <div className="grid w-full grid-cols-1 gap-2 sm:grid-cols-3 md:flex md:justify-end">
+          <div className="w-full flex gap-2 flex-wrap justify-between sm:justify-end">
             <Button
               variant="outline"
-              className="h-10 border-slate-200 bg-white"
+              className="w-25 h-10 border-gray-400 bg-white text-xs"
+              onClick={() => setIsExportModalOpen(true)}
             >
               <RiDownloadLine className="size-4 text-gray-700" />
               Export
             </Button>
             <Button
               variant="outline"
-              className="h-10 border-slate-200 bg-white"
+              className="w-35 h-10 border-slate-200 bg-amber-400 text-black text-xs hover:bg-amber-500"
               disabled={!canCreateAttendance}
               onClick={() => {
                 if (!canCreateAttendance) return;
@@ -304,8 +579,8 @@ export default function AttendancePage() {
         }
       />
 
-      <div className="w-full flex flex-col gap-3 lg:flex-row lg:items-center">
-        <div className="w-1/3 relative">
+      <div className="w-full flex flex-col sm:flex-row gap-4  lg:items-start justify-between">
+        <div className="w-full sm:w-[49%] relative">
           <Input
             type="search"
             placeholder="Search by name, employee ID, or device..."
@@ -313,36 +588,144 @@ export default function AttendancePage() {
             onChange={(e) => {
               handleChangeTextSearch(e);
             }}
-            className="w-full h-10 pr-10"
+            className="w-full h-10 pr-10 border-gray-400 text-xs"
           />
           <RiSearchLine className="absolute right-3 top-1/2 size-5 -translate-y-1/2 text-slate-500" />
         </div>
-        {/* <div className="w-2/3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
-          <select
-            value={branchFilter}
-            onChange={(event) => setBranchFilter(event.target.value)}
-            className="h-10 rounded-lg border border-input bg-white px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 sm:w-44"
+
+        <div className="w-full sm:w-[49%] flex gap-2 justify-end">
+          <Button
+            className="w-35 h-9"
+            onClick={() => setFilterOpen(!filterOpen)}
           >
-            <option value="all">All Companies</option>
-            {branchCoverage.map((item) => (
-              <option key={item.branch} value={item.branch}>
-                {item.branch}
-              </option>
-            ))}
-          </select>
-          <select
-            value={statusFilter}
-            onChange={(event) => setStatusFilter(event.target.value)}
-            className="h-10 rounded-lg border border-input bg-white px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 sm:w-36"
-          >
-            <option value="all">All Status</option>
-            <option value="present">Present</option>
-            <option value="absent">Absent</option>
-            <option value="on-duty">On Duty</option>
-            <option value="remote">Remote</option>
-          </select>
-        </div> */}
+            Filter
+          </Button>
+        </div>
       </div>
+
+      {filterOpen && (
+        <div className="w-full flex flex-col gap-4 border border-gray-200 rounded-lg p-4 bg-gray-50">
+          <div className="w-full grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-slate-700">
+                Departments
+              </label>
+              <ReactSelect
+                isMulti
+                options={departmentOptions}
+                value={filterDepartments}
+                onChange={(options) =>
+                  setFilterDepartments(Array.isArray(options) ? options : [])
+                }
+                placeholder="Select departments"
+                styles={selectStyles}
+                noOptionsMessage={() => "No departments found"}
+                menuPortalTarget={typeof document !== "undefined" ? document.body : null}
+                menuPosition="fixed"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-slate-700">
+                Companies
+              </label>
+              <ReactSelect
+                isMulti
+                options={companyOptions}
+                value={filterCompanies}
+                onChange={(options) =>
+                  setFilterCompanies(Array.isArray(options) ? options : [])
+                }
+                placeholder="Select companies"
+                styles={selectStyles}
+                noOptionsMessage={() => "No companies found"}
+                menuPortalTarget={typeof document !== "undefined" ? document.body : null}
+                menuPosition="fixed"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-slate-700">
+                Start Date
+              </label>
+              <Popover open={openStartDate} onOpenChange={setOpenStartDate}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-between h-10 text-xs"
+                  >
+                    {filterStartDate
+                      ? format(filterStartDate, "PPP")
+                      : "Start date"}
+                    <ChevronDownIcon data-icon="inline-end" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent
+                  className="w-auto overflow-hidden p-0"
+                  align="start"
+                >
+                  <Calendar
+                    mode="single"
+                    selected={filterStartDate}
+                    captionLayout="dropdown"
+                    defaultMonth={filterStartDate}
+                    onSelect={(date) => {
+                      setFilterStartDate(date);
+                      setOpenStartDate(false);
+                    }}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-slate-700">
+                End Date
+              </label>
+              <Popover open={openEndDate} onOpenChange={setOpenEndDate}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-between h-10 text-xs"
+                  >
+                    {filterEndDate ? format(filterEndDate, "PPP") : "End date"}
+                    <ChevronDownIcon data-icon="inline-end" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent
+                  className="w-auto overflow-hidden p-0"
+                  align="start"
+                >
+                  <Calendar
+                    mode="single"
+                    selected={filterEndDate}
+                    captionLayout="dropdown"
+                    defaultMonth={filterStartDate || filterEndDate}
+                    onSelect={(date) => {
+                      setFilterEndDate(date);
+                      setOpenEndDate(false);
+                    }}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+          </div>
+          <div className="flex gap-2 justify-end">
+            <Button
+              className="h-9 px-6 bg-red-500 text-xs hover:bg-red-600"
+              onClick={handleResetFilters}
+            >
+              Reset
+            </Button>
+            <Button
+              className="h-9 px-6 bg-amber-400 text-black text-xs hover:bg-amber-500"
+              onClick={handleApplyFilters}
+            >
+              Apply Filters
+            </Button>
+          </div>
+        </div>
+      )}
 
       <div className="relative">
         {loading && (
@@ -416,6 +799,154 @@ export default function AttendancePage() {
               onClose={() => setIsAttendantModalOpen(false)}
             />
           )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isExportModalOpen} onOpenChange={setIsExportModalOpen}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Export Attendance</DialogTitle>
+            <DialogDescription>
+              Choose a date range and one or more departments, then export the
+              attendance report.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 mt-4">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                {/* <label className="text-sm font-medium text-slate-700">
+                  Start Date
+                </label> */}
+                {/* <Input
+                  type="date"
+                  value={exportStartDate}
+                  onChange={(e) => setExportStartDate(e.target.value)}
+                  className="w-full"
+                /> */}
+                <Popover open={openStartDate} onOpenChange={setOpenStartDate}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      id="date-picker-optional"
+                      className="w-full justify-between py-4.5 text-sm"
+                    >
+                      {exportStartDate
+                        ? format(exportStartDate, "PPP")
+                        : "Select start date"}
+                      <ChevronDownIcon data-icon="inline-end" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent
+                    className="w-auto overflow-hidden p-0"
+                    align="start"
+                  >
+                    <Calendar
+                      mode="single"
+                      selected={exportStartDate}
+                      captionLayout="dropdown"
+                      defaultMonth={exportStartDate}
+                      onSelect={(date) => {
+                        setExportStartDate(date);
+                        setOpenStartDate(false);
+                      }}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <div className="space-y-2">
+                {/* <label className="text-sm font-medium text-slate-700">
+                  End Date
+                </label> */}
+                {/* <Calendar
+                  mode="single"
+                  selected={exportEndDate}
+                  onSelect={setExportEndDate}
+                  className="w-full"
+                /> */}
+                <Popover open={openEndDate} onOpenChange={setOpenEndDate}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      id="date-picker-optional"
+                      className="w-full justify-between py-4.5 text-sm"
+                    >
+                      {exportEndDate
+                        ? format(exportEndDate, "PPP")
+                        : "Select end date"}
+                      <ChevronDownIcon data-icon="inline-end" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent
+                    className="w-auto overflow-hidden p-0"
+                    align="start"
+                  >
+                    <Calendar
+                      mode="single"
+                      selected={exportEndDate}
+                      captionLayout="dropdown"
+                      defaultMonth={exportStartDate}
+                      onSelect={(date) => {
+                        setExportEndDate(date);
+                        setOpenEndDate(false);
+                      }}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-700">
+                Department
+              </label>
+              <ReactSelect
+                isMulti
+                options={departmentOptions}
+                value={selectedDepartments}
+                onChange={(options) =>
+                  setSelectedDepartments(Array.isArray(options) ? options : [])
+                }
+                placeholder="Select departments"
+                classNamePrefix="react-select"
+                noOptionsMessage={() => "No departments found"}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-700">
+                Company
+              </label>
+              <ReactSelect
+                isMulti
+                options={companyOptions}
+                value={selectedCompanies}
+                onChange={(options) =>
+                  setSelectedCompanies(Array.isArray(options) ? options : [])
+                }
+                placeholder="Select companies"
+                classNamePrefix="react-select"
+                noOptionsMessage={() => "No companies found"}
+              />
+            </div>
+
+            <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+              <Button
+                variant="outline"
+                className="w-full sm:w-auto text-xs"
+                onClick={() => setIsExportModalOpen(false)}
+                disabled={exporting}
+              >
+                Cancel
+              </Button>
+              <Button
+                className="w-full sm:w-auto bg-amber-400 text-black text-xs hover:bg-amber-500"
+                onClick={async () => exportAttendance()}
+                disabled={exporting}
+              >
+                {exporting ? "Exporting..." : "Export"}
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

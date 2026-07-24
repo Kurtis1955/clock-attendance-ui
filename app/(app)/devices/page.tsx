@@ -103,6 +103,11 @@ export default function DevicesPage() {
   // useEffect(() => {
   //   fetchDevices();
   // }, [pageCount, pageSize]);
+
+  useEffect(() => {
+    getDashboardCards();
+  }, [cardsValue?.length]);
+
   useEffect(() => {
     if (inputValue == "") {
       fetchDevices();
@@ -116,7 +121,7 @@ export default function DevicesPage() {
         setLoadingUserDetails(!loadingRoleDetails);
       }
     }
-    getDashboardCards()
+    
   }, [deviceSearch?.content?.length, inputValue, pageCount, pageSize, sortBy, sortDir]);
 
   const getDashboardCards = async () => {
@@ -339,7 +344,7 @@ export default function DevicesPage() {
 
         <Button
           variant="outline"
-          className="h-10 border-slate-200"
+          className="h-10 text-black bg-amber-400 text-xs hover:bg-amber-500"
           disabled={!canCreateDevice}
           onClick={() => {
             setActionType("add");
@@ -347,7 +352,7 @@ export default function DevicesPage() {
             setIsAddDeviceModalOpen(true);
           }}
         >
-          <RiAddLine className="size-4 text-yellow-500" />
+          <RiAddLine className="size-4" />
           Add Device
         </Button>
       </div>
@@ -357,7 +362,7 @@ export default function DevicesPage() {
           const Icon = stat.icon;
 
           return (
-            <Card key={stat.title} className="border-slate-200 shadow-sm">
+            <Card key={stat.title} className={`border-slate-200 shadow-sm ${stat.color}`}>
               <CardContent className="flex items-center gap-4">
                 <div
                   className={`flex size-14 shrink-0 items-center justify-center rounded-xl ${stat.color}`}
@@ -391,7 +396,7 @@ export default function DevicesPage() {
                   handleChangeTextSearch(e);
                   // setFilterData("");
                 }}
-                className="h-10 pr-10"
+                className="h-10 pr-10 border-gray-400"
               />
               <RiSearchLine className="absolute right-3 top-1/2 size-5 -translate-y-1/2 text-slate-500" />
             </div>
@@ -455,7 +460,7 @@ export default function DevicesPage() {
             <DialogTitle>
               {actionType === "edit" ? "Edit Device" : "View Device"}
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-sm text-gray-600">
               {actionType === "edit"
                 ? "Update the selected device details."
                 : actionType === "add"

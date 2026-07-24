@@ -3,10 +3,11 @@
 import * as React from "react"
 import { useEffect } from "react"
 import { usePathname, useRouter } from "next/navigation"
+import { useSession } from "next-auth/react"
 
 import { cn } from "@/lib/utils"
 
-import { hasPermissionAccessToRoute, useUserPermissions } from "@/hoc/permissions-context"
+import { hasPermissionAccessToRoute, PermissionProvider, useUserPermissions } from "@/hoc/permissions-context"
 import { Header } from "./Header"
 import { LayoutProvider, useLayout } from "./layout-context"
 import { MobileSidebar, Sidebar } from "./Sidebar"
@@ -19,27 +20,38 @@ function AppLayoutContent({ children }: AppLayoutProps) {
   const { collapsed } = useLayout()
   const pathname = usePathname()
   const router = useRouter()
+  const { data: session, status } = useSession()
   const { permissions, loading } = useUserPermissions()
 
   useEffect(() => {
-    if (loading || !pathname || pathname === "/dashboard") {
+    if (status === "loading") {
+      return
+    }
+
+    const currentPath =
+      pathname || (typeof window !== "undefined" ? window.location.pathname : "")
+
+    if (loading || !currentPath || currentPath === "/dashboard") {
       return
     }
 
     const protectedRoutes = ["/users", "/roles", "/devices", "/enrollment", "/attendance"]
+    console.log("Checking access for route:", currentPath, "with permissions:", permissions)
 
-    if (!protectedRoutes.includes(pathname)) {
+    if (!protectedRoutes.some((route) => currentPath.startsWith(route))) {
       return
     }
 
-    const hasAccess = hasPermissionAccessToRoute(pathname, permissions)
+    const hasAccess = hasPermissionAccessToRoute(currentPath, permissions)
 
     if (!hasAccess) {
       router.replace("/dashboard")
     }
-  }, [loading, pathname, permissions, router])
+  }, [loading, pathname, permissions, router, status])
 
   return (
+
+
     <div className="min-h-screen bg-slate-50">
       <Sidebar />
       <MobileSidebar />
@@ -61,13 +73,14 @@ function AppLayoutContent({ children }: AppLayoutProps) {
         </main>
       </div>
     </div>
+    
   )
 }
 
 export function AppLayout({ children }: AppLayoutProps) {
   return (
     <LayoutProvider>
-      <AppLayoutContent>{children}</AppLayoutContent>
+          <PermissionProvider><AppLayoutContent>{children}</AppLayoutContent></PermissionProvider>
     </LayoutProvider>
   )
 }

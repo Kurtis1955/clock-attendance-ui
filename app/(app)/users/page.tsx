@@ -289,7 +289,7 @@ export default function UsersPage() {
     <div className="px-2 xl:px-8 pt-2 flex flex-col gap-4">
       <div className="w-full space-y-4">
         <div className="flex gap-4 flex-row lg:items-center lg:justify-between">
-          <h1 className="w-1/2 text-2xl font-bold tracking-tight text-[#0f172a] sm:text-3xl">
+          <h1 className="w-1/2 text-xl font-bold tracking-tight text-[#0f172a] sm:text-2xl">
             Users
           </h1>
 
@@ -298,7 +298,7 @@ export default function UsersPage() {
               <DialogTrigger asChild>
                 <Button
                   variant="outline"
-                  className="border-slate-200 bg-white"
+                  className="h-10 border-slate-200 bg-amber-400 text-black text-xs hover:bg-amber-500"
                   disabled={!canCreateUser}
                   onClick={() => {
                     setIsAddDialogOpen(true)
@@ -328,15 +328,15 @@ export default function UsersPage() {
             <RiUploadLine className="size-4" />
             Import Users
           </Button> */}
-            <Button
+            {/* <Button
               variant="outline"
-              className="border-slate-200 bg-white"
+              className="h-10 border-gray-400 bg-white text-xs"
               onClick={handleExportUsers}
               disabled={loading}
             >
               <RiDownloadLine className="size-4" />
               {loading ? "Exporting..." : "Export"}
-            </Button>
+            </Button> */}
             {/* <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" className="border-slate-200 bg-white">
@@ -369,8 +369,9 @@ export default function UsersPage() {
           <div className="relative w-full">
             <Input
               type="search"
-              placeholder="Search"
+              placeholder="Search for users..."
               value={searchQuery}
+              className="w-full h-10 pr-10 border-gray-400"
               onChange={(e) => {
                 handleChangeTextSearch(e);
                 setFilterData("");

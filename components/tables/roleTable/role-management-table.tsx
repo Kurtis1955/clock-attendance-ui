@@ -236,7 +236,7 @@ export const roleTableColumns = (
             </Button>
           </Tooltip>
 
-          <DropdownMenu>
+          {/* <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="icon-sm">
                 <RiMore2Fill />
@@ -263,7 +263,7 @@ export const roleTableColumns = (
                 Delete
               </DropdownMenuItem>
             </DropdownMenuContent>
-          </DropdownMenu>
+          </DropdownMenu> */}
         </div>
       ),
     },

@@ -1,4 +1,4 @@
-import  query, { queryService }  from "@/services/ApiBaseService";
+import  { queryService }  from "@/services/ApiBaseService";
 
 export const GET = async (request:any) => {
 
@@ -40,7 +40,7 @@ export async function POST(
 // 	const urlParams = new URL(request.url);
 // 	const userId = urlParams.searchParams.get("id");
   
-// 	const res = await query(
+// 	const res = await queryService(
 // 		`/users/${userId}`, {
 // 		method: "PUT",
 // 		data: { ...body },
@@ -54,7 +54,7 @@ export async function POST(
 // 	const urlParams = new URL(request.url);
 // 	const userId = urlParams.searchParams.get("id");
   
-// 	const res = await query(
+// 	const res = await queryService(
 // 		`/users/${userId}`, {
 // 		method: "DELETE"
 // 	}

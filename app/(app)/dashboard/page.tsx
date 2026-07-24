@@ -35,8 +35,9 @@ import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { useUserPermissions } from "@/hoc/permissions-context";
 import { toast } from "sonner";
-import websocket from "@/services/websocket";
-
+// import websocket from "@/services/websocket";
+import socketService from "@/services/websocket";
+import { useSocket } from "@/hoc/SocketProvider";
 const stats = [
   {
     title: "Total Application Users",
@@ -80,6 +81,8 @@ export default function DashboardPage() {
 
   const userName = session?.user?.name;
 
+  // console.log("userName", userName, "useToken>>>", useToken);
+
   console.log("userId", userName, "permissions>>>", userPermissions);
 
   useEffect(() => {
@@ -93,33 +96,6 @@ export default function DashboardPage() {
     ]);
   }, [userName]);
 
-  useEffect(() => {
-    websocket.connect(() => {
-      const attendance = websocket.subscribe(
-        "/topic/attendance",
-        (data) => {
-          console.log(data);
-        }
-      );
-  
-      const devices = websocket.subscribe(
-        "/topic/devices",
-        (data) => {
-          console.log("websockect data",data);
-        }
-      );
-  
-      return () => {
-        attendance.unsubscribe();
-        devices.unsubscribe();
-      };
-    });
-  
-    return () => {
-      websocket.disconnect();
-    };
-  }, []);
-
   const handleDashboardFilterGraph = async (filterData: any) => {
     console.log("filterData>>", filterData);
     getDashboardCards(
@@ -127,16 +103,6 @@ export default function DashboardPage() {
       filterData.endDate,
       // selectedDepartment
     );
-    // getDashboardGraph(filterData.startDate, filterData.endDate,selectedDepartment);
-
-    // const query = `startDate=${filterData.startDate}&endDate=${filterData.endDate}`;
-    // console.log("query", query);
-    // setpageRouteQuery(query);
-    // setContextState({
-    //   ...contextState,
-    //   incidentReportCacheName: filterData,
-    //   taskReportCacheName: filterData,
-    // });
   };
 
   const getDashboardCards = async (startDate: any, endDate: any) => {
@@ -145,7 +111,6 @@ export default function DashboardPage() {
       let query = `startDate=${startDate}&endDate=${endDate}`;
 
       console.log("query to fetch dashboard data", query);
-      // return;
 
       const res = await fetch(`/api/dashboard`);
       if (res.ok) {
@@ -233,6 +198,7 @@ export default function DashboardPage() {
       change: "+15.2% from last month",
       icon: FaUserFriends,
       iconColor: "text-purple-600 bg-purple-50",
+      color: "bg-purple-50 text-purple-600",
     },
     {
       title: "Total Device Users ",
@@ -240,6 +206,7 @@ export default function DashboardPage() {
       change: "-3.2% from last week",
       icon: FaUser,
       iconColor: "text-blue-600 bg-blue-50",
+      color: "bg-blue-50 text-blue-600",
     },
     {
       title: "Total Devices",
@@ -247,6 +214,7 @@ export default function DashboardPage() {
       change: "+8.1% from last month",
       icon: MdOutlineOnDeviceTraining,
       iconColor: "text-green-600 bg-green-50",
+      color: "bg-green-50 text-green-600",
     },
     {
       title: "Active Devices",
@@ -254,11 +222,28 @@ export default function DashboardPage() {
       change: "+12.4% from yesterday",
       icon: RiCalendarCheckLine,
       iconColor: "text-[#eab308] bg-yellow-50",
+      color: "bg-yellow-50 text-[#eab308]",
     },
   ];
 
   useEffect(() => {
     void fetchRecentAttendance();
+  }, []);
+
+  const socket = useSocket();
+
+  useEffect(() => {
+    socket.subscribe("/topic/attendance", (data) => {
+      console.log("Received attendance update via WebSocket:", data);
+      setRecentAttendance((prev) => [data, ...prev.slice(0, 9)]);
+    });
+    return () => socket.unsubscribe("/topic/attendance");
+  }, [socket]);
+  
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      (window as any).socketService = socketService;
+    }
   }, []);
 
   return (
@@ -292,7 +277,10 @@ export default function DashboardPage() {
         {stats.map((stat) => {
           const Icon = stat.icon;
           return (
-            <Card key={stat.title} className="border-slate-200 shadow-sm">
+            <Card
+              key={stat.title}
+              className={`border-slate-200 shadow-sm ${stat.color}`}
+            >
               <CardHeader className="flex flex-row items-center justify-between pb-0">
                 <CardTitle className="text-sm font-medium text-[#64748b]">
                   {stat.title}
@@ -342,7 +330,8 @@ export default function DashboardPage() {
                     <th className="px-4 py-3">Time</th>
                     <th className="px-4 py-3">Employee</th>
                     <th className="px-4 py-3">Email</th>
-                    {/* <th className="px-4 py-3">Ecode</th> */}
+                    <th className="px-4 py-3">Company</th>
+                    <th className="px-4 py-3">Deparment</th>
                     <th className="px-4 py-3">Status</th>
                     <th className="px-4 py-3">Direction</th>
                     <th className="px-4 py-3">Device</th>
@@ -378,36 +367,49 @@ export default function DashboardPage() {
                       </td>
                     </tr>
                   ) : (
-                    recentAttendance.map((record) => (
-                      <tr
-                        key={record.attId ?? record.userId ?? record.verifyTime}
-                      >
-                        <td className="px-4 py-4 whitespace-nowrap text-sm">
-                          {record.verifyTime}
-                        </td>
-                        <td className="px-4 py-4 whitespace-nowrap text-sm">
+                    recentAttendance.map((record, index) => {
+                      const rowKey = [
+                        record.attId ?? "",
+                        record.userId ?? "",
+                        record.verifyTime ?? "",
+                        record.deviceName ?? record.deviceSn ?? "",
+                        record.statusName ?? record.status ?? "",
+                        record.deviceLocation ?? record.source ?? "",
+                        index,
+                      ].join("-");
+
+                      return (
+                        <tr key={rowKey}>
+                          <td className="px-4 py-4 whitespace-nowrap text-xs">
+                            {record.verifyTime}
+                          </td>
+                        <td className="px-4 py-4 whitespace-nowrap text-xs">
                           {record.userName || "—"}
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap text-xs">
                           {record.userEmail || "—"}
                         </td>
-                        {/* <td className="px-4 py-4 whitespace-nowrap">
-                          {record.userEcode || "—"}
-                        </td> */}
-                        <td className="px-4 py-4 whitespace-nowrap text-sm">
+                        <td className="px-4 py-4 whitespace-nowrap text-xs">
+                          {record.companyName || "—"}
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap text-xs">
+                          {record.departmentName || "—"}
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap text-xs">
                           {record.statusName || record.status || "—"}
                         </td>
-                        <td className="px-4 py-4 whitespace-nowrap text-sm">
+                        <td className="px-4 py-4 whitespace-nowrap text-xs">
                           {record.statusDirection || "—"}
                         </td>
-                        <td className="px-4 py-4 whitespace-nowrap">
+                        <td className="px-4 py-4 whitespace-nowrap text-xs">
                           {record.deviceName || record.deviceSn || "—"}
                         </td>
-                        <td className="px-4 py-4 whitespace-nowrap text-sm">
-                          {record.deviceLocation || record.source || "—"}
-                        </td>
-                      </tr>
-                    ))
+                          <td className="px-4 py-4 whitespace-nowrap text-xs">
+                            {record.deviceLocation || record.source || "—"}
+                          </td>
+                        </tr>
+                      );
+                    })
                   )}
                 </tbody>
               </table>

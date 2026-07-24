@@ -1,3 +1,5 @@
+'use client'
+
 import { useState, useEffect } from "react";
 
 const useSearchAttendance = ({
@@ -33,10 +35,8 @@ const useSearchAttendance = ({
       );
 
       const payload = {
-        page: pageCount,
-        size: pageSize,
-        sortDir: "desc",
-        sortBy: "verifyTime",
+        pageNo: pageCount,
+        pageSize: pageSize,
       };
 
       try {

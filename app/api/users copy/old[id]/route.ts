@@ -1,4 +1,4 @@
-import query from "@/services/ApiBaseService";
+import {queryService} from "@/services/ApiBaseService";
 
 export async function GET(
 	request: Request,
@@ -6,7 +6,7 @@ export async function GET(
 ) {
 	const userId = params.id;
 
-	const res = await query(
+	const res = await queryService(
 		`/users/${userId}`
 	);
     return res
@@ -18,7 +18,7 @@ export async function PUT(request: Request,
 	const body = await request.json()
 	const userId = params.id;
   
-	const res = await query(
+	const res = await queryService(
 		`/users/${userId}/`, {
 		method: "PUT",
 		 data: { ...body },
@@ -35,7 +35,7 @@ export async function PUT(request: Request,
   ) {
 	const userId = params.id;
   
-	const res = await query(
+	const res = await queryService(
 		`/users/${userId}`, {
 		method: "DELETE"
 	}

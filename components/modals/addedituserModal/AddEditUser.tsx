@@ -157,6 +157,7 @@ const AddEditUser = ({
   const [enabled, setEnabled] = useState<boolean>(
     existingUserData?.enabled ?? existingUserData?.status === "active",
   );
+  const [exists, setExists] = useState<boolean>(false);
   const [isLDAP, setisLDAP] = useState<boolean>(
     existingUserData?.isLDAP || false,
   );
@@ -371,12 +372,17 @@ const AddEditUser = ({
   };
 
   const addCompanyDepartmentRow = () => {
-    setCompanyDepartmentRows((prevRows) => [...prevRows, createCompanyDepartmentRow()]);
+    setCompanyDepartmentRows((prevRows) => [
+      ...prevRows,
+      createCompanyDepartmentRow(),
+    ]);
   };
 
   const removeCompanyDepartmentRow = (rowId: string) => {
     setCompanyDepartmentRows((prevRows) =>
-      prevRows.length > 1 ? prevRows.filter((row) => row.id !== rowId) : prevRows,
+      prevRows.length > 1
+        ? prevRows.filter((row) => row.id !== rowId)
+        : prevRows,
     );
   };
 
@@ -414,6 +420,16 @@ const AddEditUser = ({
 
       const json = await response.json();
       const content = json?.department ?? json?.data ?? json ?? [];
+
+      if (content.length === 0) {
+        updateCompanyDepartmentRow(rowId, {
+          departmentOptions: [],
+          departmentNames: [],
+          loadingDepartments: false,
+          departmentsError: "No departments found for the selected company",
+        });
+        return;
+      }
       const mapped = (Array.isArray(content) ? content : [])
         .map((item: Record<string, unknown>) => {
           const departmentName = String(
@@ -456,7 +472,7 @@ const AddEditUser = ({
         row.departmentOptions.length === 0 &&
         !row.loadingDepartments
       ) {
-        void fetchDepartmentsForRow(row.id, row.selectedCompany);
+        fetchDepartmentsForRow(row.id, row.selectedCompany);
       }
     });
   }, [companyDepartmentRows]);
@@ -567,7 +583,7 @@ const AddEditUser = ({
             : normalizeStringArray(
                 resolvedUser?.userRoles ?? existingUserData?.userRoles,
               ),
-        exists: false,
+        exists: exists ?? resolvedUser?.exists ?? existingUserData?.exists,
       });
 
       if (actionType === "edit") {
@@ -650,7 +666,7 @@ const AddEditUser = ({
           </Label>
           <Input
             type="text"
-            className="form-control"
+            className="form-control border-gray-300 text-xs"
             value={firstName}
             onChange={(e) => {
               const value = e.target.value;
@@ -664,7 +680,7 @@ const AddEditUser = ({
             maxLength={25}
             required
             placeholder="Firstname"
-            disabled={actionType === "view"}
+            disabled={actionType === "view" || actionType === "edit"}
           />
           {errorFirstName && (
             <span className="text-red-500 text-[12px]">{errorFirstName}</span>
@@ -677,7 +693,7 @@ const AddEditUser = ({
           </Label>
           <Input
             type="text"
-            className="form-control"
+            className="form-control border-gray-300"
             value={lastName}
             onChange={(e) => {
               const value = e.target.value;
@@ -691,7 +707,7 @@ const AddEditUser = ({
             maxLength={25}
             required
             placeholder="Lastname"
-            disabled={actionType === "view"}
+            disabled={actionType === "view" || actionType === "edit"}
           />
           {errorLastName && (
             <span className="text-red-500 text-[12px]">{errorLastName}</span>
@@ -704,7 +720,7 @@ const AddEditUser = ({
           </Label>
           <Input
             type="text"
-            className="form-control"
+            className="form-control border-gray-300"
             value={userName}
             onChange={(e) => {
               const value = e.target.value;
@@ -718,7 +734,7 @@ const AddEditUser = ({
             maxLength={25}
             required
             placeholder="Enter username"
-            disabled={actionType === "view" || isLDAP}
+            disabled={actionType === "view" || actionType === "edit"}
           />
           {errorUsername && (
             <span className="text-red-500 text-[12px]">{errorUsername}</span>
@@ -731,7 +747,7 @@ const AddEditUser = ({
           </Label>
           <Input
             type="email"
-            className="form-control"
+            className="form-control border-gray-300"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             onBlur={() => {
@@ -744,7 +760,7 @@ const AddEditUser = ({
             maxLength={50}
             required
             placeholder="name@gmail.com"
-            disabled={actionType === "view"}
+            disabled={actionType === "view" || actionType === "edit"}
           />
           {errorEmail && (
             <span className="text-red-500 text-[12px]">{errorEmail}</span>
@@ -756,7 +772,7 @@ const AddEditUser = ({
           </Label>
           <Input
             type="text"
-            className="form-control"
+            className="form-control border-gray-300"
             value={ecode}
             onChange={(e) => {
               const value = e.target.value;
@@ -783,6 +799,7 @@ const AddEditUser = ({
           </Label>
           <Input
             type="tel"
+            className="form-control border-gray-300"
             placeholder="Enter phone number"
             value={phoneNumber}
             onChange={(e) => setPhoneNumber(e.target.value)}
@@ -804,7 +821,7 @@ const AddEditUser = ({
           </Label>
           <ReactSelect
             name="role"
-            classNamePrefix="react-select"
+            classNamePrefix="react-select border-gray-300"
             placeholder={loadingRoles ? "Loading roles..." : "Select Role"}
             value={
               roleOptions.find((role) => selectedRoleIds.includes(role.id))
@@ -840,6 +857,7 @@ const AddEditUser = ({
               Company & Department <span className="text-red-500">*</span>
             </Label>
             <Button
+              className="py-3 bg-yellow-400 hover:bg-yellow-500 text-black text-xs"
               type="button"
               variant="outline"
               size="sm"
@@ -853,10 +871,10 @@ const AddEditUser = ({
           {companyDepartmentRows.map((row, index) => (
             <div
               key={row.id}
-              className="rounded-lg border border-border/60 bg-background/70 p-3"
+              className="rounded-lg border border-gray-400 bg-background/70 p-3"
             >
               <div className="mb-3 flex items-center justify-between">
-                <p className="text-sm font-medium">Company {index + 1}</p>
+                <p className="text-xs">Company {index + 1}</p>
                 {companyDepartmentRows.length > 1 && (
                   <Button
                     type="button"
@@ -864,6 +882,7 @@ const AddEditUser = ({
                     size="sm"
                     onClick={() => removeCompanyDepartmentRow(row.id)}
                     disabled={actionType === "view"}
+                    className="text-red-500 hover:text-red-600 border border-red-500 hover:border-red-600 rounded px-2 py-1 text-xs"
                   >
                     Remove
                   </Button>
@@ -877,7 +896,9 @@ const AddEditUser = ({
                     name={`company-${row.id}`}
                     classNamePrefix="react-select"
                     placeholder={
-                      loadingCompanies ? "Loading companies..." : "Select Company"
+                      loadingCompanies
+                        ? "Loading companies..."
+                        : "Select Company"
                     }
                     value={
                       row.selectedCompany
@@ -901,7 +922,7 @@ const AddEditUser = ({
                         departmentNames: [],
                       });
 
-                      void fetchDepartmentsForRow(row.id, nextCompany);
+                      fetchDepartmentsForRow(row.id, nextCompany);
                     }}
                     isDisabled={actionType === "view" || loadingCompanies}
                     options={companies.map((company) => ({
@@ -932,12 +953,16 @@ const AddEditUser = ({
                     onChange={(selectedOption: any) => {
                       updateCompanyDepartmentRow(row.id, {
                         departmentNames: selectedOption
-                          ? [...selectedOption].map((option: any) => option.value)
+                          ? [...selectedOption].map(
+                              (option: any) => option.value,
+                            )
                           : [],
                       });
                     }}
                     isDisabled={
-                      actionType === "view" || !row.selectedCompany || row.loadingDepartments
+                      actionType === "view" ||
+                      !row.selectedCompany ||
+                      row.loadingDepartments
                     }
                     options={
                       row.departmentOptions.map((dept) => ({
@@ -948,7 +973,9 @@ const AddEditUser = ({
                     isClearable
                   />
                   {row.departmentsError ? (
-                    <p className="text-xs text-red-500">{row.departmentsError}</p>
+                    <p className="text-xs text-red-500">
+                      {row.departmentsError}
+                    </p>
                   ) : null}
                 </div>
               </div>
@@ -960,7 +987,7 @@ const AddEditUser = ({
           ) : null}
         </div>
 
-        <div className="sm:col-span-2">
+        <div className="flex flex-col sm:flex-row gap-3 sm:col-span-2">
           <div className="flex items-center gap-2">
             <Label className="mr-2">Enable User</Label>
             <input
@@ -971,6 +998,17 @@ const AddEditUser = ({
               onChange={(e) => setEnabled(e.target.checked)}
             />
           </div>
+          <div className="flex items-center gap-2">
+            <Label className="mr-2">User in Active Directory</Label>
+            <input
+              className="size-4 rounded border-input text-primary focus:ring-ring"
+              type="checkbox"
+              checked={exists}
+              disabled={actionType === "view"}
+              onChange={(e) => setExists(e.target.checked)}
+            />
+          </div>
+          
         </div>
       </div>
 

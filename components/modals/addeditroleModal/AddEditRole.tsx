@@ -263,6 +263,7 @@ export default function AddEditRole({
             aria-invalid={Boolean(errors.name)}
             aria-describedby={errors.name ? "role-name-error" : undefined}
             required
+            className="text-xs border-gray-300"
           />
           {errors.name ? (
             <p id="role-name-error" className="text-xs text-red-500">
@@ -307,6 +308,8 @@ export default function AddEditRole({
               errors.description ? "role-description-error" : undefined
             }
             required
+            className="text-xs border-gray-300"
+
           />
           {errors.description ? (
             <p id="role-description-error" className="text-xs text-red-500">

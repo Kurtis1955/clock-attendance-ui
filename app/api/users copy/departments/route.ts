@@ -1,4 +1,4 @@
-import  query, { queryService }  from "@/services/ApiBaseService";
+import  { queryService }  from "@/services/ApiBaseService";
 
 export const GET = async (request:any) => {
 

@@ -5,7 +5,8 @@ const nextConfig = {
   reactStrictMode: true,
   devIndicators: false,
   env: {
-    API_ENDPOINT_BASEURL_ACTIVITY: process.env.API_ENDPOINT_BASEURL_ACTIVITY,
+    API_ENDPOINT_BASEURL_DEVICE_ATTENDANCE: process.env.API_ENDPOINT_BASEURL_DEVICE_ATTENDANCE,
+    API_ENDPOINT_BASEURL: process.env.API_ENDPOINT_BASEURL,
     ENVIRONMENT:process.env.ENVIRONMENT,
     KEYCLOAK_URL:process.env.KEYCLOAK_URL,
     KEYCLOAK_REALM:process.env.KEYCLOAK_REALM,

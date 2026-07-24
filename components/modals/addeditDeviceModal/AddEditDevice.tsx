@@ -174,6 +174,7 @@ export default function AddEditDevice({
               value={serialNumber}
               disabled={isViewMode}
               onChange={(e) => setSerialNumber(e.target.value)}
+              className="text-xs border-gray-500 outline-none focus:border-black-100 focus:ring focus:ring-yellow-200 focus:ring-opacity-50"
             />
           </div>
 
@@ -183,6 +184,7 @@ export default function AddEditDevice({
               value={deviceName}
               disabled={isViewMode}
               onChange={(e) => setDeviceName(e.target.value)}
+              className="text-xs border-gray-500 outline-none focus:border-black-100 focus:ring focus:ring-yellow-200 focus:ring-opacity-50"
             />
           </div>
 
@@ -193,6 +195,7 @@ export default function AddEditDevice({
               value={deviceLocation}
               disabled={isViewMode}
               onChange={(e) => setDeviceLocation(e.target.value)}
+              className="text-xs border-gray-500 outline-none focus:border-black-100 focus:ring focus:ring-yellow-200 focus:ring-opacity-50"
             />
             {/* <Select
               isDisabled={isViewMode}
@@ -208,14 +211,14 @@ export default function AddEditDevice({
             /> */}
           </div>
 
-          <div className="flex flex-col gap-2">
+          {/* <div className="flex flex-col gap-2">
             <Label>Device Brand</Label>
             <Input
               value={deviceTypeCode || "ZKTECO"}
               disabled={isViewMode}
               onChange={(e) => setDeviceTypeCode(e.target.value)}
             />
-          </div>
+          </div> */}
 
           <div className="flex flex-col gap-2">
             <Label>Device Type</Label>
@@ -255,7 +258,7 @@ export default function AddEditDevice({
           <div className="flex flex-col gap-2 col-span-2">
             <Label>Device Description</Label>
             <Textarea
-              className="resize-none p-2 border rounded-md border-gray-300 focus:border-yellow-500 focus:ring focus:ring-yellow-200 focus:ring-opacity-50"
+              className="resize-none p-2 border rounded-md border-gray-500 outline-none focus:border-black-100 focus:ring focus:ring-yellow-200 focus:ring-opacity-50"
               rows={3}
               placeholder="Enter device description"
               value={description}

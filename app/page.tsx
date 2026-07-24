@@ -20,7 +20,8 @@ export default function Home() {
       router.push("/dashboard");
     } else if (status === "unauthenticated") {
       // Only trigger signIn if definitely unauthenticated, and do it ONCE
-      signIn("keycloak");
+      const callbackUrl = window.location.pathname + window.location.search;
+      signIn("keycloak", { callbackUrl });
     }
     // Do nothing while loading
   }, [router, session, status]);

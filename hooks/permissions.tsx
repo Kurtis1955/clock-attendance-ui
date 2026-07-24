@@ -21,7 +21,7 @@ export function PermissionCategoryGroup({
   onToggle,
 }: PermissionCategoryGroupProps) {
   console.log("permission category group>>>",category)
-  const [isExpanded, setIsExpanded] = useState(true)
+  const [isExpanded, setIsExpanded] = useState(false)
   const permissionIds = category.permissions.map((permission) => permission.id)
   const checkedCount = permissionIds.filter((id) =>
     selectedPermissionIds.includes(id)
@@ -33,7 +33,7 @@ export function PermissionCategoryGroup({
     checkedCount > 0 && checkedCount < permissionIds.length
 
   return (
-    <div className="rounded-lg border border-input bg-background text-sm">
+    <div className="rounded-lg border border-amber-400 bg-background text-sm">
       <div className="flex min-h-12 items-center gap-2 px-3 py-2">
         <Button
           type="button"

@@ -1,0 +1,9 @@
+services:
+  btas-ui:
+    image: gitlab.stlghana.com:5051/internal/btas-ui:${IMAGE_TAG:-latest}
+    container_name: btas-ui
+    restart: unless-stopped
+    ports:
+      - "${PORT:-3701}:3300"
+    env_file:
+      - .env

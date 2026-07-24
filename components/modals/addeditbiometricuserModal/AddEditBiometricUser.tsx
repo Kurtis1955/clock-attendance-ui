@@ -381,7 +381,7 @@ const AddEditBiometricUser = ({
           </Label>
           <Input
             type="text"
-            className="form-control"
+            className="form-control border-gray-500"
             value={firstName}
             onChange={(e) => {
               const value = e.target.value;
@@ -408,7 +408,7 @@ const AddEditBiometricUser = ({
           </Label>
           <Input
             type="text"
-            className="form-control"
+            className="form-control border-gray-500"
             value={lastName}
             onChange={(e) => {
               const value = e.target.value;
@@ -462,7 +462,7 @@ const AddEditBiometricUser = ({
           </Label>
           <Input
             type="email"
-            className="form-control"
+            className="form-control border-gray-500"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             onBlur={() => {
@@ -487,7 +487,7 @@ const AddEditBiometricUser = ({
           </Label>
           <Input
             type="text"
-            className="form-control"
+            className="form-control border-gray-500"
             value={ecode}
             onChange={(e) => {
               const value = e.target.value;
@@ -516,6 +516,7 @@ const AddEditBiometricUser = ({
           <Input
             type="text"
             placeholder="Enter phone number"
+            className="border-gray-500"
             value={phoneNumber}
             onChange={(e) => {
               const value = e.target.value;

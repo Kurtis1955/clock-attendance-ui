@@ -1,4 +1,4 @@
-import  query  from "@/services/ApiBaseService";
+import  {queryService}  from "@/services/ApiBaseService";
 
 export const GET = async ( request: Request,) => {
 	
@@ -14,6 +14,6 @@ export const GET = async ( request: Request,) => {
 
 	console.log("queryParams>>",decodeURIComponent(queryParams))
 	const url=`/users/paginated?${decodeURIComponent(queryParams)}`
-	const res = await query(url);
+	const res = await queryService(url);
 	return res;
 };

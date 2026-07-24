@@ -273,6 +273,7 @@ export default function AddEditAttendant({
             disabled={isViewMode}
             onChange={(event) => setFirstName(event.target.value)}
             placeholder="First Name"
+            className="text-xs border-gray-500 outline-none focus:border-black-100 focus:ring focus:ring-yellow-200 focus:ring-opacity-50"
           />
         </div>
 
@@ -283,6 +284,7 @@ export default function AddEditAttendant({
             disabled={isViewMode}
             onChange={(event) => setLastName(event.target.value)}
             placeholder="Last Name"
+            className="text-xs border-gray-500 outline-none focus:border-black-100 focus:ring focus:ring-yellow-200 focus:ring-opacity-50"
           />
         </div>
 
@@ -293,6 +295,7 @@ export default function AddEditAttendant({
             disabled={isViewMode}
             onChange={(event) => setUserEmail(event.target.value)}
             placeholder="User Email"
+            className="text-xs border-gray-500 outline-none focus:border-black-100 focus:ring focus:ring-yellow-200 focus:ring-opacity-50"
           />
         </div>
 
@@ -303,6 +306,7 @@ export default function AddEditAttendant({
             disabled={isViewMode}
             onChange={(event) => setUserEcode(event.target.value)}
             placeholder="Employee Code"
+            className="text-xs border-gray-500 outline-none focus:border-black-100 focus:ring focus:ring-yellow-200 focus:ring-opacity-50"
           />
         </div>
 

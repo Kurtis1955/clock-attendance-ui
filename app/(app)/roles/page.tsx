@@ -344,20 +344,10 @@ export default function RolesPage() {
     setPageSize(pageSize);
   };
 
-  const handleRoleSave = (updatedRole: RoleItem) => {
-    setStoreRetrievedData((currentRoles:any) => {
-      const roleExists = currentRoles.some(
-        (role:any) => role.id === updatedRole.id,
-      );
-
-      if (!roleExists) {
-        return [updatedRole, ...currentRoles];
-      }
-
-      return currentRoles.map((role:any) =>
-        role.id === updatedRole.id ? { ...role, ...updatedRole } : role,
-      );
-    });
+  const handleRoleSave = async (updatedRole: RoleItem) => {
+    await fetchRoles();
+    setIsAddRoleModalOpen(false);
+    notifySuccess("Role saved successfully.");
   };
 
   const handleChangeTextSearch = (e: any) => {
@@ -385,7 +375,7 @@ export default function RolesPage() {
               <DialogTrigger asChild>
                 <Button
                   variant="outline"
-                  className="h-10 border-slate-200 bg-white"
+                  className="h-10 border-slate-200 bg-amber-400 text-xs hover:bg-amber-500"
                   disabled={!canCreateRole}
                 >
                   <RiAddLine className="size-4" />
@@ -450,7 +440,7 @@ export default function RolesPage() {
                   handleChangeTextSearch(e);
                   setFilterData("");
                 }}
-                className="h-10 pr-10"
+                className="h-10 pr-10 border-gray-400"
               />
               <RiSearchLine className="absolute right-3 top-1/2 size-5 -translate-y-1/2 text-slate-500" />
             </div>

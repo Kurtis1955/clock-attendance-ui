@@ -42,9 +42,10 @@ export function DeviceHealthCard({onLineDevice,offLineDevice} : any) {
               strokeWidth={STROKE}
             />
             {segments.map((segment) => {
-              const length = (segment?.value / total) * CIRCUMFERENCE
+              const length = (segment?.value / total) * CIRCUMFERENCE || 1
               const dashArray = `${length} ${CIRCUMFERENCE - length}`
-              const dashOffset = -offset
+              console.log("offset",offset)
+              const dashOffset =  -offset
               offset += length
 
               return (
@@ -57,7 +58,7 @@ export function DeviceHealthCard({onLineDevice,offLineDevice} : any) {
                   stroke={segment.color}
                   strokeWidth={STROKE}
                   strokeDasharray={dashArray}
-                  strokeDashoffset={dashOffset}
+                  strokeDashoffset={dashOffset }
                   strokeLinecap="butt"
                   transform="rotate(-90 100 100)"
                 />

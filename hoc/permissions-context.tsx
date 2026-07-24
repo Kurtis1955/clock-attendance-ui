@@ -108,13 +108,18 @@ export function hasPermissionAccessToRoute(route: string, permissions: string[])
 export function PermissionProvider({ children }: { children: ReactNode }) {
   const { data: session, status } = useSession()
   const [permissions, setPermissions] = useState<string[]>([])
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(() => status === "loading" || status === "authenticated")
   const [error, setError] = useState<string | null>(null)
 
   const fetchPermissions = useCallback(async () => {
+    if (status === "loading") {
+      return
+    }
+
     if (status !== "authenticated") {
       setPermissions([])
       setError(null)
+      setLoading(false)
       return
     }
 

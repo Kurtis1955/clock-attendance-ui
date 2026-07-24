@@ -204,7 +204,7 @@ export function DataTable<TData, TValue>({
           {filteredColumnArray.map((column: any, index) => {
             return (
               <MenuItem key={index}>
-                <div className="px-1 w-full bg-white shadow-md">
+                <div className="px-1 py-1.5 w-full bg-white shadow-md text-sm border-b border-gray-200">
                   <label>
                     <input
                       {...{
@@ -226,7 +226,7 @@ export function DataTable<TData, TValue>({
 
   return (
     <div
-      className="rounded-md relative border w-full bg-background h-auto visible  "
+      className="rounded-md relative border border-gray-300 w-full bg-background h-auto visible  "
       style={{ overflowX: "auto" }}
     >
       <Table className="w-full" style={{ tableLayout: "auto" }}>
@@ -408,7 +408,7 @@ export function DataTable<TData, TValue>({
           <select
             value={pagination.pageSize}
             onChange={handlePageSizeChange}
-            className="ml-4 border rounded p-2 "
+            className="ml-4 border border-gray-400 text-xs rounded p-2 "
           >
             {[2, 5, 10, 20, 50].map((size) => (
               <option key={size} value={size}>
@@ -418,7 +418,7 @@ export function DataTable<TData, TValue>({
           </select>
         </div>
 
-        <div className="flex items-center px-4">
+        <div className="flex items-center px-4 cursor-pointer">
           <ReactPaginate
             pageCount={pageCountTotal}
             onPageChange={handlePageChange}

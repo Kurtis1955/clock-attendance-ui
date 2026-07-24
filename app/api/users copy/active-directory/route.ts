@@ -1,7 +1,7 @@
 import { queryService } from "@/services/ApiBaseService";
 import { NextApiResponse } from "next";
 
-export const GET = async (request:any,response:NextApiResponse) => {
+export const GET = async (request:any, response:NextApiResponse) => {
 
 
     const urlData = new URL(request.url);

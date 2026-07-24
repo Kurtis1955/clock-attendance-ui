@@ -43,8 +43,7 @@ export const queryService = async (endpoint: string, options?: Options) => {
 
   const session = await getServerSession(authOptions);
   const sessionToken = (session as any)?.accessToken?.toString?.();
-  const envToken = process.env.API_TOKEN?.replace(/^Bearer\s+/i, "").trim();
-  const token = options?.token || sessionToken || envToken;
+  const token = options?.token || sessionToken ;
 
   if (!token) {
     throw new Error("API token is not defined.");
@@ -99,8 +98,7 @@ export const queryDeviceAttendanceService = async (endpoint: string, options?: O
 
   const session = await getServerSession(authOptions);
   const sessionToken = (session as any)?.accessToken?.toString?.();
-  const envToken = process.env.API_TOKEN?.replace(/^Bearer\s+/i, "").trim();
-  const token = options?.token || sessionToken || envToken;
+  const token = options?.token || sessionToken;
 
   if (!token) {
     throw new Error("API token is not defined.");

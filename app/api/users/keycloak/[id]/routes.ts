@@ -1,4 +1,4 @@
-import query from "@/services/ApiBaseService";
+import {queryService} from "@/services/ApiBaseService";
 
 
 
@@ -7,7 +7,7 @@ export async function GET(
 ) {
 	const keyClockUserId = params.id;
 
-	const res = await query(
+	const res = await queryService(
 		`/users/${keyClockUserId}/from-keycloak`
 	);
     return res
@@ -23,7 +23,7 @@ export async function PUT(request: Request,
 	const userId = urlParams.searchParams.get("id");
     const isEnabled=urlParams.searchParams.get("enabled");
   
-	const res = await query(
+	const res = await queryService(
 		`/users/${userId}/enabled${isEnabled}`, {
 		method: "PUT",
 		// data: { ...body },

@@ -166,6 +166,7 @@ export default function EnrollmentPage() {
     pageSize,
     sortBy,
     sortDir,
+    cardsValue?.length,
   ]);
 
   const fetchUsers = async (rowData?: any, actionType?: any) => {
@@ -252,7 +253,7 @@ export default function EnrollmentPage() {
     },
     {
       title: "Unassigned Users",
-      value:  cardsValue.userStats?.unlinkedToDeviceCount,
+      value: cardsValue.userStats?.unlinkedToDeviceCount,
       caption: "Not assigned to any device",
       trend: "3.2%",
       trendDirection: "down",
@@ -283,7 +284,7 @@ export default function EnrollmentPage() {
       // setisLDAP(false);
       console.log("isGeneralModalOpen:", true);
     } else if (actionType == "switch") {
-      getChangeUserStatus(rowData, actionType);
+      // getChangeUserStatus(rowData, actionType);
     } else if (actionType == "sort") {
       // getChangeUserStatus();
       setSortBy(rowData.field);
@@ -484,7 +485,7 @@ export default function EnrollmentPage() {
           </Button> */}
           <Button
             variant="outline"
-            className="h-10 "
+            className="h-10 bg-amber-400 text-black text-xs hover:bg-amber-500"
             disabled={!canCreateStaff}
             onClick={() => openModal("add")}
           >
@@ -501,7 +502,10 @@ export default function EnrollmentPage() {
             stat.trendDirection === "up" ? RiArrowUpLine : RiArrowDownLine;
 
           return (
-            <Card key={stat.title} className="border-slate-200 shadow-sm">
+            <Card
+              key={stat.title}
+              className={`border-slate-200 shadow-sm ${stat.color}`}
+            >
               <CardContent className="flex min-h-22 items-center gap-4">
                 <div
                   className={cn(
@@ -538,8 +542,8 @@ export default function EnrollmentPage() {
         })}
       </div>
 
-      <div className="w-full flex flex-col items-center justify-between gap-2 sm:flex-row">
-        <div className="w-full md:w-1/2 xl:w-1/3 relative">
+      <div className="w-full flex flex-col items-center justify-between gap-2 md:flex-row">
+        <div className="w-full md:w-1/2 xl:w-120 relative">
           <Input
             type="search"
             placeholder="Search user by name or description..."
@@ -548,7 +552,7 @@ export default function EnrollmentPage() {
               handleChangeTextSearch(e);
               setFilterData("");
             }}
-            className="h-10 pr-10"
+            className="h-10 pr-10 border-gray-400 w-full"
           />
           <RiSearchLine className="absolute right-3 top-1/2 size-5 -translate-y-1/2 text-slate-500" />
         </div>
@@ -556,7 +560,7 @@ export default function EnrollmentPage() {
         <div className="w-full flex items-start md:justify-end gap-1">
           <Button
             variant="outline"
-            className=" h-10"
+            className=" h-10 border-gray-400 text-black text-xs hover:bg-amber-500"
             onClick={() => {
               setIsBatchModalOpen(true);
               setBatchModalAction("assign");
@@ -567,7 +571,7 @@ export default function EnrollmentPage() {
           </Button>
           <Button
             variant="outline"
-            className="ml-2 h-10"
+            className=" h-10 border-gray-400 text-black text-xs hover:bg-amber-500"
             onClick={() => {
               setIsBatchModalOpen(true);
               setBatchModalAction("unassign");

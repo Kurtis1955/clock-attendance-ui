@@ -35,10 +35,58 @@ export const attendanceTableColumns = (
       headerLabel: "Employee",
       cell: ({ row }: { row: any }) => (
         <div className="ml-3">
-          <p className="font-medium text-slate-800">{row.original.userName}</p>
+          <p className="font-medium text-slate-800 text-xs">{row.original.userName}</p>
 
           <p className="text-xs text-slate-500">
             {row.original.userEmail || "No Department"}
+          </p>
+        </div>
+      ),
+    },
+    {
+      accessorKey: "companyName",
+      // header: "Employee",
+      header: ({ column }: { column: any }) => (
+        <Button
+          variant="ghost"
+          onClick={() => {
+            sortValue = sortValue === "asc" ? "desc" : "asc";
+            rowCallback("sort", { sortValue, field: "companyName" });
+          }}
+        >
+          Company
+          <TfiExchangeVertical />
+        </Button>
+      ),
+      headerLabel: "Company",
+      cell: ({ row }: { row: any }) => (
+        <div className="ml-3">
+          <p className="text-xs text-slate-500">
+            {row.original.companyName || "No company"}
+          </p>
+        </div>
+      ),
+    },
+    {
+      accessorKey: "departmentName",
+      // header: "Employee",
+      header: ({ column }: { column: any }) => (
+        <Button
+          variant="ghost"
+          onClick={() => {
+            sortValue = sortValue === "asc" ? "desc" : "asc";
+            rowCallback("sort", { sortValue, field: "departmentName" });
+          }}
+        >
+          Department
+          <TfiExchangeVertical />
+        </Button>
+      ),
+      headerLabel: "Department",
+      cell: ({ row }: { row: any }) => (
+        <div className="ml-3">
+          <p className="text-xs text-slate-500">
+            {row.original.departmentName || "No Department"}
           </p>
         </div>
       ),
@@ -69,7 +117,7 @@ export const attendanceTableColumns = (
         <div>
           {/* <Badge variant="outline">{row.original.deviceName}</Badge> */}
 
-          <h1 className="mt-1 text-sm text-slate-500 ml-3">
+          <h1 className="mt-1 text-xs text-slate-500 ml-3">
             {row.original.deviceName}
           </h1>
         </div>
@@ -93,7 +141,7 @@ export const attendanceTableColumns = (
       ),
       headerLabel: "Location",
       cell: ({ row }: { row: any }) => (
-        <div className="text-gray-600 ml-3">{row.original.deviceLocation}</div>
+        <div className="text-gray-600 ml-3 text-xs">{row.original.deviceLocation}</div>
       ),
     },
 
@@ -114,7 +162,7 @@ export const attendanceTableColumns = (
       ),
       headerLabel: "Verification Time",
       cell: ({ row }: { row: any }) => (
-        <div className="text-gray-600 ml-3">{row.original.verifyTime}</div>
+        <div className="text-gray-600 ml-3 text-xs">{row.original.verifyTime}</div>
       ),
     },
 
@@ -135,7 +183,7 @@ export const attendanceTableColumns = (
       ),
       headerLabel: "verification Type",
       cell: ({ row }: { row: any }) => (
-        <div className=" text-gray-600 ml-3">{row.original.verifyTypeName}</div>
+        <div className=" text-gray-600 ml-3 text-xs">{row.original.verifyTypeName}</div>
       ),
     },
 
@@ -157,7 +205,7 @@ export const attendanceTableColumns = (
       headerLabel: "Status Direction",
       cell: ({ row }: { row: any }) => (
         <div
-          className="ml-3"
+          className="ml-3 text-xs"
           // className={
           //   row.original.statusDirection === "IN"
           //     ? "bg-green-100 text-green-700 w-1/3"
@@ -187,7 +235,7 @@ export const attendanceTableColumns = (
       headerLabel: "Status",
       cell: ({ row }: { row: any }) => (
         <div
-          className="ml-3"
+          className="ml-3 text-xs"
           // className={
           //   row.original.statusName === "Check-in"
           //     ? "bg-green-100 text-green-700 w-2/3"
